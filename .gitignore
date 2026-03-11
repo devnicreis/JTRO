@@ -1,0 +1,14 @@
+# Banco SQLite local
+storage/database.sqlite
+
+# Arquivos temporários do sistema
+Thumbs.db
+.DS_Store
+
+# VS Code
+.vscode/
+
+# Arquivos compactados
+*.rar
+*.zip
+*.7z
