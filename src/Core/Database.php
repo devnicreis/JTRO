@@ -7,7 +7,20 @@ class Database
     public static function getConnection(): PDO
     {
         if (self::$connection === null) {
-            $databasePath = __DIR__ . '/../../storage/database.sqlite';
+
+            $storagePath = __DIR__ . '/../../storage';
+            $databasePath = $storagePath . '/database.sqlite';
+
+            // cria pasta storage se não existir
+            if (!is_dir($storagePath)) {
+                mkdir($storagePath, 0777, true);
+            }
+
+            // cria arquivo sqlite se não existir
+            if (!file_exists($databasePath)) {
+                touch($databasePath);
+            }
+
             $dsn = 'sqlite:' . $databasePath;
 
             self::$connection = new PDO($dsn);
