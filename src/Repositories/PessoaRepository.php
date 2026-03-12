@@ -29,10 +29,22 @@ class PessoaRepository
 
     public function listarTodas(): array
     {
-        $sql = "SELECT * FROM pessoas";
+        $sql = "SELECT * FROM pessoas ORDER BY id DESC";
 
         $stmt = $this->connection->query($sql);
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function buscarPorCpf(string $cpf): ?array
+    {
+        $sql = "SELECT * FROM pessoas WHERE cpf = :cpf LIMIT 1";
+
+        $stmt = $this->connection->prepare($sql);
+        $stmt->execute([':cpf' => $cpf]);
+
+        $resultado = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $resultado ?: null;
     }
 }
