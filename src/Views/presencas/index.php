@@ -46,6 +46,67 @@
     <button type="submit">Carregar reunião</button>
 </form>
 
+<?php if ($grupoId > 0 && !empty($resumoGrupo)): ?>
+    <div class="quadro-reunioes">
+        <h2>Resumo do Grupo Familiar</h2>
+
+        <div class="cards-resumo">
+            <div class="card-resumo">
+                <h3>Membros ativos</h3>
+                <div class="numero"><?php echo htmlspecialchars($resumoGrupo['total_membros_ativos'] ?? 0); ?></div>
+            </div>
+
+            <div class="card-resumo">
+                <h3>Total de reuniões</h3>
+                <div class="numero"><?php echo htmlspecialchars($resumoGrupo['total_reunioes'] ?? 0); ?></div>
+            </div>
+
+            <div class="card-resumo">
+                <h3>Última reunião</h3>
+                <div class="numero" style="font-size: 16px;">
+                    <?php echo htmlspecialchars($resumoGrupo['ultima_data_reuniao'] ?? '—'); ?>
+                </div>
+            </div>
+
+            <div class="card-resumo">
+                <h3>Local padrão</h3>
+                <div class="numero" style="font-size: 16px;">
+                    <?php echo htmlspecialchars($resumoGrupo['local_padrao'] ?? '—'); ?>
+                </div>
+            </div>
+        </div>
+
+        <h2>Últimas reuniões</h2>
+
+        <?php if (count($ultimasReunioes) === 0): ?>
+            <p>Ainda não há reuniões registradas para este GF.</p>
+        <?php else: ?>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Data</th>
+                        <th>Horário</th>
+                        <th>Local</th>
+                        <th>Presentes</th>
+                        <th>Ausentes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($ultimasReunioes as $item): ?>
+                        <tr>
+                            <td><?php echo htmlspecialchars($item['data']); ?></td>
+                            <td><?php echo htmlspecialchars($item['horario']); ?></td>
+                            <td><?php echo htmlspecialchars($item['local'] ?? ''); ?></td>
+                            <td><?php echo htmlspecialchars($item['total_presentes']); ?></td>
+                            <td><?php echo htmlspecialchars($item['total_ausentes']); ?></td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        <?php endif; ?>
+    </div>
+<?php endif; ?>
+
 <?php if ($reuniao && count($listaPresencas) > 0): ?>
     <form method="POST" action="/presencas.php">
         <input type="hidden" name="salvar_presencas" value="1">

@@ -15,6 +15,15 @@ $data = trim($_GET['data'] ?? $_POST['data'] ?? '');
 $reuniaoId = 0;
 $reuniao = null;
 $listaPresencas = [];
+$resumoGrupo = [];
+$ultimasReunioes = [];
+
+if ($grupoId > 0 && !Auth::isAdmin()) {
+    if (!$repo->liderPodeAcessarGrupo(Auth::id(), $grupoId)) {
+        http_response_code(403);
+        die('Acesso negado a este Grupo Familiar.');
+    }
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['salvar_presencas'])) {
     $reuniaoId = (int) ($_POST['reuniao_id'] ?? 0);
@@ -37,6 +46,8 @@ if ($grupoId > 0 && $data !== '') {
         $reuniaoId = $repo->buscarOuCriarReuniaoPorGrupoEData($grupoId, $data);
         $reuniao = $repo->buscarReuniao($reuniaoId);
         $listaPresencas = $repo->listarPresencasPorReuniao($reuniaoId);
+        $resumoGrupo = $repo->buscarResumoGrupo($grupoId);
+        $ultimasReunioes = $repo->listarUltimasReunioesDoGrupo($grupoId, 5);
     } catch (Exception $e) {
         $erro = $e->getMessage();
     }
@@ -48,5 +59,15 @@ if (Auth::isAdmin()) {
     $grupos = $repo->listarGruposFamiliaresPorLider(Auth::id());
 }
 $pageTitle = 'Reuniões e Presenças - JTRO';
+
+if ($grupoId > 0 && empty($resumoGrupo)) {
+    if (!Auth::isAdmin() && !$repo->liderPodeAcessarGrupo(Auth::id(), $grupoId)) {
+        http_response_code(403);
+        die('Acesso negado a este Grupo Familiar.');
+    }
+
+    $resumoGrupo = $repo->buscarResumoGrupo($grupoId);
+    $ultimasReunioes = $repo->listarUltimasReunioesDoGrupo($grupoId, 5);
+}
 
 require_once __DIR__ . '/../src/Views/presencas/index.php';

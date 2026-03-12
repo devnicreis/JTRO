@@ -55,6 +55,27 @@
         </select>
     </div>
 
+    <div class="campo">
+        <label for="nova_senha">Nova senha</label>
+        <input
+            type="password"
+            id="nova_senha"
+            name="nova_senha"
+            minlength="8"
+        >
+        <small>Deixe em branco para não alterar. Mínimo de 8 caracteres, com letra maiúscula, minúscula, número e símbolo.</small>
+    </div>
+
+    <div class="campo">
+        <label for="confirmar_senha">Confirmar nova senha</label>
+        <input
+            type="password"
+            id="confirmar_senha"
+            name="confirmar_senha"
+            minlength="8"
+        >
+    </div>
+
     <button type="submit">Salvar alterações</button>
 </form>
 

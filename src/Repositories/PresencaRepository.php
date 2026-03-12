@@ -272,4 +272,97 @@ class PresencaRepository
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
+    
+    public function liderPodeAcessarGrupo(int $pessoaId, int $grupoId): bool
+    {
+        $stmt = $this->connection->prepare("
+        SELECT COUNT(*)
+        FROM grupo_lideres gl
+        INNER JOIN grupos_familiares gf ON gf.id = gl.grupo_familiar_id
+        WHERE gl.pessoa_id = :pessoa_id
+        AND gl.grupo_familiar_id = :grupo_id
+        AND gf.ativo = 1
+    ");
+
+        $stmt->execute([
+            ':pessoa_id' => $pessoaId,
+            ':grupo_id' => $grupoId
+        ]);
+
+        return (int) $stmt->fetchColumn() > 0;
+    }
+
+    public function buscarResumoGrupo(int $grupoId): array
+    {
+        $stmt = $this->connection->prepare("
+        SELECT
+            gf.id,
+            gf.nome,
+            gf.dia_semana,
+            gf.horario,
+            gf.local_padrao,
+            gf.local_fixo,
+            (
+                SELECT COUNT(*)
+                FROM grupo_membros gm
+                INNER JOIN pessoas p ON p.id = gm.pessoa_id
+                WHERE gm.grupo_familiar_id = gf.id
+                AND p.ativo = 1
+            ) AS total_membros_ativos,
+            (
+                SELECT COUNT(*)
+                FROM reunioes r
+                WHERE r.grupo_familiar_id = gf.id
+            ) AS total_reunioes,
+            (
+                SELECT MAX(r.data)
+                FROM reunioes r
+                WHERE r.grupo_familiar_id = gf.id
+            ) AS ultima_data_reuniao
+        FROM grupos_familiares gf
+        WHERE gf.id = :grupo_id
+        LIMIT 1
+    ");
+
+        $stmt->execute([':grupo_id' => $grupoId]);
+
+        $resultado = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $resultado ?: [];
+    }
+
+    public function listarUltimasReunioesDoGrupo(int $grupoId, int $limite = 5): array
+    {
+        $limite = max(1, $limite);
+
+        $sql = "
+        SELECT
+            r.id,
+            r.data,
+            r.horario,
+            r.local,
+            r.observacoes,
+            (
+                SELECT COUNT(*)
+                FROM presencas p
+                WHERE p.reuniao_id = r.id
+                AND p.status = 'presente'
+            ) AS total_presentes,
+            (
+                SELECT COUNT(*)
+                FROM presencas p
+                WHERE p.reuniao_id = r.id
+                AND p.status = 'ausente'
+            ) AS total_ausentes
+        FROM reunioes r
+        WHERE r.grupo_familiar_id = :grupo_id
+        ORDER BY r.data DESC, r.id DESC
+        LIMIT {$limite}
+    ";
+
+        $stmt = $this->connection->prepare($sql);
+        $stmt->execute([':grupo_id' => $grupoId]);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
 }
