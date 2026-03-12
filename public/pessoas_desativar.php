@@ -1,6 +1,9 @@
 <?php
 
-require_once __DIR__ . '/../src/Core/Database.php';
+require_once __DIR__ . '/../src/Repositories/PessoaRepository.php';
+
+require_once __DIR__ . '/../src/Core/Auth.php';
+Auth::requireAdmin();
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header('Location: /pessoas.php');
@@ -14,12 +17,8 @@ if (!$id) {
     exit;
 }
 
-$db = Database::getConnection();
-
-$stmt = $db->prepare("DELETE FROM pessoas WHERE id = :id");
-$stmt->execute([
-    ':id' => $id
-]);
+$repo = new PessoaRepository();
+$repo->desativar((int) $id);
 
 header('Location: /pessoas.php');
 exit;

@@ -74,9 +74,11 @@ class ReuniaoRepository
             $reuniaoId = (int) $this->connection->lastInsertId();
 
             $stmtMembros = $this->connection->prepare("
-                SELECT pessoa_id
-                FROM grupo_membros
-                WHERE grupo_familiar_id = :grupo_familiar_id
+                SELECT gm.pessoa_id
+                FROM grupo_membros gm
+                INNER JOIN pessoas p ON p.id = gm.pessoa_id
+                WHERE gm.grupo_familiar_id = :grupo_familiar_id
+                AND p.ativo = 1
             ");
 
             $stmtMembros->execute([

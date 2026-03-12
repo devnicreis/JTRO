@@ -10,7 +10,10 @@ CREATE TABLE IF NOT EXISTS grupos_familiares (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     nome TEXT NOT NULL,
     dia_semana TEXT NOT NULL,
-    horario TEXT NOT NULL
+    horario TEXT NOT NULL,
+    local_padrao TEXT,
+    local_fixo INTEGER NOT NULL DEFAULT 0,
+    ativo INTEGER NOT NULL DEFAULT 1
 );
 
 CREATE TABLE IF NOT EXISTS grupo_lideres (

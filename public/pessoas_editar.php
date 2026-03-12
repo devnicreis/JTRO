@@ -1,6 +1,5 @@
 <?php
 
-require_once __DIR__ . '/../src/Models/Pessoa.php';
 require_once __DIR__ . '/../src/Repositories/PessoaRepository.php';
 
 require_once __DIR__ . '/../src/Core/Auth.php';
@@ -10,6 +9,18 @@ $repo = new PessoaRepository();
 
 $mensagem = '';
 $erro = '';
+
+$id = (int) ($_GET['id'] ?? $_POST['id'] ?? 0);
+
+if ($id <= 0) {
+    die('Pessoa inválida.');
+}
+
+$pessoa = $repo->buscarPorId($id);
+
+if (!$pessoa) {
+    die('Pessoa não encontrada.');
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $nome = trim($_POST['nome'] ?? '');
@@ -26,28 +37,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $erro = 'O CPF deve conter somente números, sem pontos e traços.';
     } elseif (strlen($cpf) !== 11) {
         $erro = 'O CPF deve conter exatamente 11 dígitos.';
+    } elseif ($repo->buscarPorCpfExcetoId($cpf, $id) !== null) {
+        $erro = 'Já existe outra pessoa cadastrada com esse CPF.';
     } else {
-        $pessoaExistente = $repo->buscarPorCpf($cpf);
-
-        if ($pessoaExistente !== null) {
-            if ((int)$pessoaExistente['ativo'] === 0) {
-                $erro = 'Usuário desativado. Por favor, contate a administração.';
-            } else {
-                $erro = 'Já existe uma pessoa cadastrada com esse CPF.';
-            }
-        } else {
-            try {
-                $pessoa = new Pessoa($nome, $cpf, $cargo);
-                $repo->salvar($pessoa);
-                $mensagem = 'Pessoa cadastrada com sucesso.';
-            } catch (Exception $e) {
-                $erro = $e->getMessage();
-            }
+        try {
+            $repo->atualizar($id, $nome, $cpf, $cargo);
+            $mensagem = 'Pessoa atualizada com sucesso.';
+            $pessoa = $repo->buscarPorId($id);
+        } catch (Exception $e) {
+            $erro = $e->getMessage();
         }
     }
 }
 
-$pessoas = $repo->listarTodas();
-$pageTitle = 'Cadastro de Pessoas - JTRO';
+$pageTitle = 'Editar Pessoa - JTRO';
 
-require_once __DIR__ . '/../src/Views/pessoas/index.php';
+require_once __DIR__ . '/../src/Views/pessoas/editar.php';

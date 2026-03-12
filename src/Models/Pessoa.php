@@ -1,12 +1,11 @@
 <?php
 
-class Pessoa 
+class Pessoa
 {
     public string $nome;
     public bool $ativo = true;
 
     const CARGO_MEMBRO = 'membro';
-    const CARGO_LIDER = 'lider';
     const CARGO_ADMIN = 'admin';
 
     private string $cargo;
@@ -25,7 +24,6 @@ class Pessoa
     {
         $cargosValidos = [
             self::CARGO_MEMBRO,
-            self::CARGO_LIDER,
             self::CARGO_ADMIN
         ];
 
@@ -46,12 +44,7 @@ class Pessoa
 
     public function getCargo(): string
     {
-        return $this->cargo; 
-    }
-
-    public function isLider(): bool
-    {
-        return $this->cargo === self::CARGO_LIDER;
+        return $this->cargo;
     }
 
     public function isAdmin(): bool
