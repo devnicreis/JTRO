@@ -5,7 +5,7 @@ database/seed_admin.php
 # Arquivos temporários do sistema
 Thumbs.db
 .DS_Store
-
+gi
 # VS Code
 .vscode/
 
