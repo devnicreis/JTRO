@@ -12,6 +12,12 @@ if (Auth::check()) {
 
 $repo = new PessoaRepository();
 $erro = '';
+$mensagem = '';
+$pageTitle = 'Login - JTRO';
+
+if (isset($_GET['senha_redefinida']) && $_GET['senha_redefinida'] === '1') {
+    $mensagem = 'Senha redefinida com sucesso. Faça login com sua nova senha.';
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $cpf = trim($_POST['cpf'] ?? '');
@@ -31,50 +37,57 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 }
-
-$pageTitle = 'Login - JTRO';
 ?>
+
+<?php if ($mensagem !== ''): ?>
+    <div class="mensagem"><?php echo htmlspecialchars($mensagem); ?></div>
+<?php endif; ?>
+
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8">
     <title><?php echo htmlspecialchars($pageTitle); ?></title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="/assets/css/app.css">
 </head>
+
 <body>
 
-<h1>Login</h1>
+    <h1>Login</h1>
 
-<?php if ($erro !== ''): ?>
-    <div class="erro"><?php echo htmlspecialchars($erro); ?></div>
-<?php endif; ?>
+    <?php if ($erro !== ''): ?>
+        <div class="erro"><?php echo htmlspecialchars($erro); ?></div>
+    <?php endif; ?>
 
-<form method="POST" action="/login.php">
-    <div class="campo">
-        <label for="cpf">CPF</label>
-        <input
-            type="text"
-            id="cpf"
-            name="cpf"
-            required
-            inputmode="numeric"
-            maxlength="11"
-        >
-    </div>
+    <form method="POST" action="/login.php">
+        <div class="campo">
+            <label for="cpf">CPF</label>
+            <input
+                type="text"
+                id="cpf"
+                name="cpf"
+                required
+                inputmode="numeric"
+                maxlength="11">
+        </div>
 
-    <div class="campo">
-        <label for="senha">Senha</label>
-        <input
-            type="password"
-            id="senha"
-            name="senha"
-            required
-        >
-    </div>
+        <div class="campo">
+            <label for="senha">Senha</label>
+            <input
+                type="password"
+                id="senha"
+                name="senha"
+                required>
+        </div>
 
-    <button type="submit">Entrar</button>
-</form>
+        <button type="submit">Entrar</button>
+
+        <p><a href="/esqueci_senha.php">Esqueci minha senha</a></p>
+
+    </form>
 
 </body>
+
 </html>

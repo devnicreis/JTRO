@@ -4,6 +4,7 @@ require_once __DIR__ . '/../src/Repositories/PessoaRepository.php';
 require_once __DIR__ . '/../src/Core/Auth.php';
 
 Auth::requireAdmin();
+Auth::requireSenhaAtualizada();
 
 $repo = new PessoaRepository();
 
@@ -25,6 +26,7 @@ if (!$pessoa) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $nome = trim($_POST['nome'] ?? '');
     $cpf = trim($_POST['cpf'] ?? '');
+    $email = trim($_POST['email'] ?? '');
     $cargo = $_POST['cargo'] ?? '';
     $novaSenha = $_POST['nova_senha'] ?? '';
     $confirmarSenha = $_POST['confirmar_senha'] ?? '';
@@ -41,6 +43,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $erro = 'O CPF deve conter exatamente 11 dígitos.';
     } elseif ($repo->buscarPorCpfExcetoId($cpf, $id) !== null) {
         $erro = 'Já existe outra pessoa cadastrada com esse CPF.';
+    } elseif ($email !== '' && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $erro = 'Informe um e-mail válido.';
+    } elseif ($email !== '' && $repo->buscarPorEmailExcetoId($email, $id) !== null) {
+        $erro = 'Já existe outra pessoa cadastrada com esse e-mail.';
     } else {
         if ($novaSenha !== '' || $confirmarSenha !== '') {
             if ($novaSenha !== $confirmarSenha) {
@@ -52,10 +58,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if ($erro === '') {
             try {
-                $repo->atualizar($id, $nome, $cpf, $cargo);
+                $repo->atualizar($id, $nome, $cpf, $email, $cargo);
 
                 if ($novaSenha !== '') {
-                    $repo->atualizarSenha($id, $novaSenha);
+                    $repo->atualizarSenhaEObrigacao($id, $novaSenha, true);
                 }
 
                 $mensagem = 'Pessoa atualizada com sucesso.';

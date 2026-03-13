@@ -2,9 +2,10 @@
 
 require_once __DIR__ . '/../src/Models/Pessoa.php';
 require_once __DIR__ . '/../src/Repositories/PessoaRepository.php';
-
 require_once __DIR__ . '/../src/Core/Auth.php';
+
 Auth::requireAdmin();
+Auth::requireSenhaAtualizada();
 
 $repo = new PessoaRepository();
 
@@ -14,6 +15,7 @@ $erro = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $nome = trim($_POST['nome'] ?? '');
     $cpf = trim($_POST['cpf'] ?? '');
+    $email = trim($_POST['email'] ?? '');
     $cargo = $_POST['cargo'] ?? '';
 
     $nome = preg_replace('/\s+/', ' ', $nome);
@@ -26,6 +28,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $erro = 'O CPF deve conter somente números, sem pontos e traços.';
     } elseif (strlen($cpf) !== 11) {
         $erro = 'O CPF deve conter exatamente 11 dígitos.';
+    } elseif ($email !== '' && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $erro = 'Informe um e-mail válido.';
+    } elseif ($email !== '' && $repo->buscarPorEmail($email) !== null) {
+        $erro = 'Já existe uma pessoa cadastrada com esse e-mail.';
     } else {
         $pessoaExistente = $repo->buscarPorCpf($cpf);
 
@@ -38,7 +44,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             try {
                 $pessoa = new Pessoa($nome, $cpf, $cargo);
-                $repo->salvar($pessoa);
+                $repo->salvar($pessoa, $email);
                 $mensagem = 'Pessoa cadastrada com sucesso.';
             } catch (Exception $e) {
                 $erro = $e->getMessage();

@@ -1,9 +1,10 @@
 <?php
 
 require_once __DIR__ . '/../src/Repositories/GrupoFamiliarRepository.php';
-
 require_once __DIR__ . '/../src/Core/Auth.php';
+
 Auth::requireAdmin();
+Auth::requireSenhaAtualizada();
 
 $repo = new GrupoFamiliarRepository();
 

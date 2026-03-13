@@ -299,3 +299,29 @@ textarea {
         grid-template-columns: 1fr;
     }
 }
+
+.card-perfil {
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 20px;
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.card-perfil h2 {
+    margin-top: 0;
+    margin-bottom: 16px;
+    font-size: 24px;
+}
+
+.grid-perfil {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+@media (max-width: 800px) {
+    .grid-perfil {
+        grid-template-columns: 1fr;
+    }
+}

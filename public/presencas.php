@@ -1,9 +1,10 @@
 <?php
 
 require_once __DIR__ . '/../src/Repositories/PresencaRepository.php';
-
 require_once __DIR__ . '/../src/Core/Auth.php';
+
 Auth::requireLogin();
+Auth::requireSenhaAtualizada();
 
 $repo = new PresencaRepository();
 

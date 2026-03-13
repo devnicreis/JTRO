@@ -2,9 +2,11 @@ CREATE TABLE IF NOT EXISTS pessoas (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     nome TEXT NOT NULL,
     cpf TEXT NOT NULL UNIQUE,
+    email TEXT UNIQUE,
     cargo TEXT NOT NULL,
     ativo INTEGER NOT NULL DEFAULT 1,
-    senha_hash TEXT
+    senha_hash TEXT,
+    precisa_trocar_senha INTEGER NOT NULL DEFAULT 1
 );
 
 CREATE TABLE IF NOT EXISTS grupos_familiares (
@@ -50,5 +52,15 @@ CREATE TABLE IF NOT EXISTS presencas (
     pessoa_id INTEGER NOT NULL,
     status TEXT NOT NULL,
     FOREIGN KEY (reuniao_id) REFERENCES reunioes(id),
+    FOREIGN KEY (pessoa_id) REFERENCES pessoas(id)
+);
+
+CREATE TABLE IF NOT EXISTS password_reset_tokens (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    pessoa_id INTEGER NOT NULL,
+    token TEXT NOT NULL UNIQUE,
+    expira_em TEXT NOT NULL,
+    usado_em TEXT,
+    created_at TEXT NOT NULL,
     FOREIGN KEY (pessoa_id) REFERENCES pessoas(id)
 );

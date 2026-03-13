@@ -24,8 +24,7 @@
             required
             pattern="^[A-Za-zÀ-ÿ\s]+$"
             title="Digite apenas letras e espaços."
-            value="<?php echo htmlspecialchars($_POST['nome'] ?? ''); ?>"
-        >
+            value="<?php echo htmlspecialchars($_POST['nome'] ?? ''); ?>">
         <small>Digite somente letras e espaços.</small>
     </div>
 
@@ -40,10 +39,20 @@
             maxlength="11"
             pattern="\d{11}"
             title="Digite somente números, sem pontos e traços."
-            value="<?php echo htmlspecialchars($_POST['cpf'] ?? ''); ?>"
-        >
+            value="<?php echo htmlspecialchars($_POST['cpf'] ?? ''); ?>">
         <small>Digite somente números, sem pontos e traços.</small>
     </div>
+
+    <div class="campo">
+        <label for="email">E-mail</label>
+        <input
+            type="email"
+            id="email"
+            name="email"
+            value="<?php echo htmlspecialchars($_POST['email'] ?? ''); ?>">
+        <small>Informe o e-mail que será usado para recuperação de senha.</small>
+    </div>
+
 
     <div class="campo">
         <label for="cargo">Perfil do sistema</label>
@@ -68,6 +77,7 @@
                 <th>ID</th>
                 <th>Nome</th>
                 <th>CPF</th>
+                <th>Email</th>
                 <th>Perfil do sistema</th>
                 <th>Status</th>
                 <th>Ações</th>
@@ -79,6 +89,7 @@
                     <td><?php echo htmlspecialchars($registro['id']); ?></td>
                     <td><?php echo htmlspecialchars($registro['nome']); ?></td>
                     <td><?php echo htmlspecialchars($registro['cpf']); ?></td>
+                    <td><?php echo htmlspecialchars($registro['email'] ?? ''); ?></td>
                     <td><?php echo htmlspecialchars($registro['cargo']); ?></td>
                     <td>
                         <?php if ((int)$registro['ativo'] === 1): ?>
@@ -96,8 +107,7 @@
                                     method="POST"
                                     action="/pessoas_desativar.php"
                                     class="form-acao"
-                                    onsubmit="return confirm('Deseja realmente desativar esta pessoa?');"
-                                >
+                                    onsubmit="return confirm('Deseja realmente desativar esta pessoa?');">
                                     <input type="hidden" name="id" value="<?php echo $registro['id']; ?>">
                                     <button type="submit" class="botao-desativar">Desativar</button>
                                 </form>
@@ -106,8 +116,7 @@
                                     method="POST"
                                     action="/pessoas_reativar.php"
                                     class="form-acao"
-                                    onsubmit="return confirm('Deseja realmente reativar esta pessoa?');"
-                                >
+                                    onsubmit="return confirm('Deseja realmente reativar esta pessoa?');">
                                     <input type="hidden" name="id" value="<?php echo $registro['id']; ?>">
                                     <button type="submit" class="botao-reativar">Reativar</button>
                                 </form>

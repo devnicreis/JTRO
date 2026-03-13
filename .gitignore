@@ -1,11 +1,15 @@
-# Banco SQLite local
 storage/database.sqlite
 database/seed_admin.php
+storage/reset_links.log
+config/local.php
+.env
+storage/*.sqlite
+storage/*.log
 
 # Arquivos temporários do sistema
 Thumbs.db
 .DS_Store
-gi
+
 # VS Code
 .vscode/
 

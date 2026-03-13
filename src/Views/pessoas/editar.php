@@ -26,8 +26,7 @@
             required
             pattern="^[A-Za-zÀ-ÿ\s]+$"
             title="Digite apenas letras e espaços."
-            value="<?php echo htmlspecialchars($pessoa['nome']); ?>"
-        >
+            value="<?php echo htmlspecialchars($pessoa['nome']); ?>">
         <small>Digite somente letras e espaços.</small>
     </div>
 
@@ -42,9 +41,18 @@
             maxlength="11"
             pattern="\d{11}"
             title="Digite somente números, sem pontos e traços."
-            value="<?php echo htmlspecialchars($pessoa['cpf']); ?>"
-        >
+            value="<?php echo htmlspecialchars($pessoa['cpf']); ?>">
         <small>Digite somente números, sem pontos e traços.</small>
+    </div>
+
+    <div class="campo">
+        <label for="email">E-mail</label>
+        <input
+            type="email"
+            id="email"
+            name="email"
+            value="<?php echo htmlspecialchars($pessoa['email'] ?? ''); ?>">
+        <small>Esse e-mail será usado para recuperação de senha.</small>
     </div>
 
     <div class="campo">
@@ -61,8 +69,7 @@
             type="password"
             id="nova_senha"
             name="nova_senha"
-            minlength="8"
-        >
+            minlength="8">
         <small>Deixe em branco para não alterar. Mínimo de 8 caracteres, com letra maiúscula, minúscula, número e símbolo.</small>
     </div>
 
@@ -72,8 +79,7 @@
             type="password"
             id="confirmar_senha"
             name="confirmar_senha"
-            minlength="8"
-        >
+            minlength="8">
     </div>
 
     <button type="submit">Salvar alterações</button>

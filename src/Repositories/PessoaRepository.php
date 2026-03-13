@@ -12,10 +12,10 @@ class PessoaRepository
         $this->connection = Database::getConnection();
     }
 
-    public function salvar(Pessoa $pessoa): void
+    public function salvar(Pessoa $pessoa, ?string $email = null): void
     {
-        $sql = "INSERT INTO pessoas (nome, cpf, cargo, ativo)
-                VALUES (:nome, :cpf, :cargo, :ativo)";
+        $sql = "INSERT INTO pessoas (nome, cpf, cargo, ativo, email)
+                VALUES (:nome, :cpf, :cargo, :ativo, :email)";
 
         $stmt = $this->connection->prepare($sql);
 
@@ -23,7 +23,8 @@ class PessoaRepository
             ':nome' => $pessoa->nome,
             ':cpf' => $pessoa->getCpf(),
             ':cargo' => $pessoa->getCargo(),
-            ':ativo' => $pessoa->ativo ? 1 : 0
+            ':ativo' => $pessoa->ativo ? 1 : 0,
+            ':email' => $email !== '' ? $email : null
         ]);
     }
 
@@ -84,13 +85,14 @@ class PessoaRepository
         return $resultado ?: null;
     }
 
-    public function atualizar(int $id, string $nome, string $cpf, string $cargo): void
+    public function atualizar(int $id, string $nome, string $cpf, ?string $email, string $cargo): void
     {
         $sql = "
             UPDATE pessoas
             SET nome = :nome,
                 cpf = :cpf,
-                cargo = :cargo
+                cargo = :cargo,
+                email = :email
             WHERE id = :id
         ";
 
@@ -100,6 +102,7 @@ class PessoaRepository
             ':nome' => $nome,
             ':cpf' => $cpf,
             ':cargo' => $cargo,
+            ':email' => $email !== '' ? $email : null,
             ':id' => $id
         ]);
     }
@@ -195,5 +198,74 @@ class PessoaRepository
             ':ativo' => $pessoa->ativo ? 1 : 0,
             ':senha_hash' => $senhaHash
         ]);
+    }
+
+    public function marcarPrecisaTrocarSenha(int $id, bool $valor): void
+    {
+        $sql = "UPDATE pessoas SET precisa_trocar_senha = :valor WHERE id = :id";
+
+        $stmt = $this->connection->prepare($sql);
+        $stmt->execute([
+            ':valor' => $valor ? 1 : 0,
+            ':id' => $id
+        ]);
+    }
+
+    public function atualizarSenhaEObrigacao(int $id, string $senha, bool $precisaTrocarSenha): void
+    {
+        $senhaHash = password_hash($senha, PASSWORD_DEFAULT);
+
+        $sql = "
+        UPDATE pessoas
+        SET senha_hash = :senha_hash,
+            precisa_trocar_senha = :precisa_trocar_senha
+        WHERE id = :id
+    ";
+
+        $stmt = $this->connection->prepare($sql);
+        $stmt->execute([
+            ':senha_hash' => $senhaHash,
+            ':precisa_trocar_senha' => $precisaTrocarSenha ? 1 : 0,
+            ':id' => $id
+        ]);
+    }
+
+    public function buscarPorEmail(string $email): ?array
+    {
+        $sql = "SELECT * FROM pessoas WHERE email = :email LIMIT 1";
+
+        $stmt = $this->connection->prepare($sql);
+        $stmt->execute([':email' => $email]);
+
+        $resultado = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $resultado ?: null;
+    }
+
+    public function buscarPorEmailAtivo(string $email): ?array
+    {
+        $sql = "SELECT * FROM pessoas WHERE email = :email AND ativo = 1 LIMIT 1";
+
+        $stmt = $this->connection->prepare($sql);
+        $stmt->execute([':email' => $email]);
+
+        $resultado = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $resultado ?: null;
+    }
+
+    public function buscarPorEmailExcetoId(string $email, int $id): ?array
+    {
+        $sql = "SELECT * FROM pessoas WHERE email = :email AND id != :id LIMIT 1";
+
+        $stmt = $this->connection->prepare($sql);
+        $stmt->execute([
+            ':email' => $email,
+            ':id' => $id
+        ]);
+
+        $resultado = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $resultado ?: null;
     }
 }
