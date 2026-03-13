@@ -1,5 +1,6 @@
 # Banco SQLite local
 storage/database.sqlite
+database/seed_admin.php
 
 # Arquivos temporários do sistema
 Thumbs.db

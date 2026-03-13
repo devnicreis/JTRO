@@ -3,7 +3,8 @@ CREATE TABLE IF NOT EXISTS pessoas (
     nome TEXT NOT NULL,
     cpf TEXT NOT NULL UNIQUE,
     cargo TEXT NOT NULL,
-    ativo INTEGER NOT NULL DEFAULT 1
+    ativo INTEGER NOT NULL DEFAULT 1,
+    senha_hash TEXT
 );
 
 CREATE TABLE IF NOT EXISTS grupos_familiares (
