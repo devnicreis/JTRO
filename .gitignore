@@ -5,6 +5,7 @@ config/local.php
 .env
 storage/*.sqlite
 storage/*.log
+database/delete.sql
 
 # Arquivos temporários do sistema
 Thumbs.db

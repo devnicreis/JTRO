@@ -12,6 +12,40 @@ class PresencaRepository
         $this->connection = Database::getConnection();
     }
 
+private function buscarGrupoPorId(int $grupoId): ?array
+{
+    $stmt = $this->connection->prepare("
+        SELECT id, nome, dia_semana, horario, local_padrao, local_fixo
+        FROM grupos_familiares
+        WHERE id = :id
+        LIMIT 1
+    ");
+
+    $stmt->execute([':id' => $grupoId]);
+
+    $grupo = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    return $grupo ?: null;
+}
+
+private function obterDiaSemanaEmPortugues(string $data): string
+{
+    $dias = [
+        'Sunday' => 'domingo',
+        'Monday' => 'segunda-feira',
+        'Tuesday' => 'terça-feira',
+        'Wednesday' => 'quarta-feira',
+        'Thursday' => 'quinta-feira',
+        'Friday' => 'sexta-feira',
+        'Saturday' => 'sábado',
+    ];
+
+    $dateTime = new DateTime($data);
+    $diaIngles = $dateTime->format('l');
+
+    return $dias[$diaIngles] ?? '';
+}
+
     public function listarGruposFamiliares(): array
     {
         $sql = "
@@ -26,8 +60,14 @@ class PresencaRepository
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function buscarOuCriarReuniaoPorGrupoEData(int $grupoId, string $data): int
+    public function buscarReuniaoPorGrupoEData(int $grupoId, string $data): ?int
     {
+        $dateTime = DateTime::createFromFormat('Y-m-d', $data);
+
+        if ($dateTime === false || $dateTime->format('Y-m-d') !== $data) {
+            throw new InvalidArgumentException('Data da reunião inválida.');
+        }
+
         $stmt = $this->connection->prepare("
             SELECT id
             FROM reunioes
@@ -43,90 +83,112 @@ class PresencaRepository
 
         $reuniaoId = $stmt->fetchColumn();
 
-        if ($reuniaoId) {
-            return (int) $reuniaoId;
-        }
+        return $reuniaoId ? (int) $reuniaoId : null;
+    }
+
+   public function criarReuniaoPorGrupoEData(int $grupoId, string $data, ?string $horarioInformado = null): int
+{
+    $dateTime = DateTime::createFromFormat('Y-m-d', $data);
+
+    if ($dateTime === false || $dateTime->format('Y-m-d') !== $data) {
+        throw new InvalidArgumentException('Data da reunião inválida.');
+    }
+
+    $reuniaoExistente = $this->buscarReuniaoPorGrupoEData($grupoId, $data);
+
+    if ($reuniaoExistente !== null) {
+        return $reuniaoExistente;
+    }
+
+    $grupo = $this->buscarGrupoPorId($grupoId);
+
+    if (!$grupo) {
+        throw new InvalidArgumentException('Grupo Familiar não encontrado.');
+    }
+
+    $horarioFinal = trim($horarioInformado ?? '') !== '' ? trim($horarioInformado) : $grupo['horario'];
+
+    $motivos = [];
+
+    $diaSemanaInformado = $this->obterDiaSemanaEmPortugues($data);
+
+    if ($diaSemanaInformado !== '' && $diaSemanaInformado !== $grupo['dia_semana']) {
+        $motivos[] = 'Reunião realizada fora do dia padrão do GF.';
+    }
+
+    if ($horarioFinal !== $grupo['horario']) {
+        $motivos[] = 'Reunião realizada fora do horário padrão do GF.';
+    }
+
+    $motivoAlteracao = count($motivos) > 0 ? implode(' ', $motivos) : null;
+
+    $this->connection->beginTransaction();
+
+    try {
+        $local = ((int) $grupo['local_fixo'] === 1 && !empty($grupo['local_padrao']))
+            ? $grupo['local_padrao']
+            : '';
 
         $stmt = $this->connection->prepare("
-            SELECT horario, local_padrao, local_fixo
-            FROM grupos_familiares
-            WHERE id = :id
-            LIMIT 1
+            INSERT INTO reunioes (
+                grupo_familiar_id,
+                data,
+                horario,
+                local,
+                motivo_alteracao,
+                observacoes
+            ) VALUES (
+                :grupo_familiar_id,
+                :data,
+                :horario,
+                :local,
+                :motivo_alteracao,
+                NULL
+            )
         ");
 
-        $stmt->execute([':id' => $grupoId]);
-        $grupo = $stmt->fetch(PDO::FETCH_ASSOC);
+        $stmt->execute([
+            ':grupo_familiar_id' => $grupoId,
+            ':data' => $data,
+            ':horario' => $horarioFinal,
+            ':local' => $local,
+            ':motivo_alteracao' => $motivoAlteracao
+        ]);
 
-        if (!$grupo) {
-            throw new InvalidArgumentException('Grupo Familiar não encontrado.');
-        }
+        $novoReuniaoId = (int) $this->connection->lastInsertId();
 
-        $this->connection->beginTransaction();
+        $stmtMembros = $this->connection->prepare("
+            SELECT gm.pessoa_id
+            FROM grupo_membros gm
+            INNER JOIN pessoas p ON p.id = gm.pessoa_id
+            WHERE gm.grupo_familiar_id = :grupo_id
+            AND p.ativo = 1
+        ");
 
-        try {
-            $local = ((int)$grupo['local_fixo'] === 1 && !empty($grupo['local_padrao']))
-                ? $grupo['local_padrao']
-                : '';
+        $stmtMembros->execute([':grupo_id' => $grupoId]);
+        $membros = $stmtMembros->fetchAll(PDO::FETCH_COLUMN);
 
-            $stmt = $this->connection->prepare("
-                INSERT INTO reunioes (
-                    grupo_familiar_id,
-                    data,
-                    horario,
-                    local,
-                    motivo_alteracao,
-                    observacoes
-                ) VALUES (
-                    :grupo_familiar_id,
-                    :data,
-                    :horario,
-                    :local,
-                    NULL,
-                    NULL
-                )
-            ");
+        $stmtPresenca = $this->connection->prepare("
+            INSERT INTO presencas (reuniao_id, pessoa_id, status)
+            VALUES (:reuniao_id, :pessoa_id, :status)
+        ");
 
-            $stmt->execute([
-                ':grupo_familiar_id' => $grupoId,
-                ':data' => $data,
-                ':horario' => $grupo['horario'],
-                ':local' => $local
+        foreach ($membros as $pessoaId) {
+            $stmtPresenca->execute([
+                ':reuniao_id' => $novoReuniaoId,
+                ':pessoa_id' => (int) $pessoaId,
+                ':status' => Presenca::STATUS_PRESENTE
             ]);
-
-            $novoReuniaoId = (int) $this->connection->lastInsertId();
-
-            $stmtMembros = $this->connection->prepare("
-                SELECT gm.pessoa_id
-                FROM grupo_membros gm
-                INNER JOIN pessoas p ON p.id = gm.pessoa_id
-                WHERE gm.grupo_familiar_id = :grupo_id
-                AND p.ativo = 1
-            ");
-
-            $stmtMembros->execute([':grupo_id' => $grupoId]);
-            $membros = $stmtMembros->fetchAll(PDO::FETCH_COLUMN);
-
-            $stmtPresenca = $this->connection->prepare("
-                INSERT INTO presencas (reuniao_id, pessoa_id, status)
-                VALUES (:reuniao_id, :pessoa_id, :status)
-            ");
-
-            foreach ($membros as $pessoaId) {
-                $stmtPresenca->execute([
-                    ':reuniao_id' => $novoReuniaoId,
-                    ':pessoa_id' => (int) $pessoaId,
-                    ':status' => Presenca::STATUS_PRESENTE
-                ]);
-            }
-
-            $this->connection->commit();
-
-            return $novoReuniaoId;
-        } catch (Exception $e) {
-            $this->connection->rollBack();
-            throw $e;
         }
+
+        $this->connection->commit();
+
+        return $novoReuniaoId;
+    } catch (Exception $e) {
+        $this->connection->rollBack();
+        throw $e;
     }
+}
 
     public function buscarReuniao(int $reuniaoId): ?array
     {
@@ -182,6 +244,12 @@ class PresencaRepository
 
     public function atualizarReuniao(int $reuniaoId, string $local, string $observacoes): void
     {
+        $limiteObservacoes = 500;
+
+        if (mb_strlen($observacoes) > $limiteObservacoes) {
+            throw new InvalidArgumentException("O campo observações deve ter no máximo {$limiteObservacoes} caracteres.");
+        }
+
         $stmtReuniao = $this->connection->prepare("
             SELECT r.id, r.local, gf.local_fixo
             FROM reunioes r
@@ -197,7 +265,7 @@ class PresencaRepository
             throw new InvalidArgumentException('Reunião não encontrada.');
         }
 
-        if ((int)$reuniao['local_fixo'] === 0 && trim($local) === '') {
+        if ((int) $reuniao['local_fixo'] === 0 && trim($local) === '') {
             throw new InvalidArgumentException('Para GF sem local fixo, o local da reunião é obrigatório.');
         }
 
@@ -256,33 +324,34 @@ class PresencaRepository
             throw $e;
         }
     }
+
     public function listarGruposFamiliaresPorLider(int $pessoaId): array
     {
         $sql = "
-        SELECT gf.id, gf.nome, gf.dia_semana, gf.horario, gf.local_padrao, gf.local_fixo
-        FROM grupos_familiares gf
-        INNER JOIN grupo_lideres gl ON gl.grupo_familiar_id = gf.id
-        WHERE gf.ativo = 1
-        AND gl.pessoa_id = :pessoa_id
-        ORDER BY gf.nome ASC
-    ";
+            SELECT gf.id, gf.nome, gf.dia_semana, gf.horario, gf.local_padrao, gf.local_fixo
+            FROM grupos_familiares gf
+            INNER JOIN grupo_lideres gl ON gl.grupo_familiar_id = gf.id
+            WHERE gf.ativo = 1
+            AND gl.pessoa_id = :pessoa_id
+            ORDER BY gf.nome ASC
+        ";
 
         $stmt = $this->connection->prepare($sql);
         $stmt->execute([':pessoa_id' => $pessoaId]);
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
-    
+
     public function liderPodeAcessarGrupo(int $pessoaId, int $grupoId): bool
     {
         $stmt = $this->connection->prepare("
-        SELECT COUNT(*)
-        FROM grupo_lideres gl
-        INNER JOIN grupos_familiares gf ON gf.id = gl.grupo_familiar_id
-        WHERE gl.pessoa_id = :pessoa_id
-        AND gl.grupo_familiar_id = :grupo_id
-        AND gf.ativo = 1
-    ");
+            SELECT COUNT(*)
+            FROM grupo_lideres gl
+            INNER JOIN grupos_familiares gf ON gf.id = gl.grupo_familiar_id
+            WHERE gl.pessoa_id = :pessoa_id
+            AND gl.grupo_familiar_id = :grupo_id
+            AND gf.ativo = 1
+        ");
 
         $stmt->execute([
             ':pessoa_id' => $pessoaId,
@@ -295,34 +364,34 @@ class PresencaRepository
     public function buscarResumoGrupo(int $grupoId): array
     {
         $stmt = $this->connection->prepare("
-        SELECT
-            gf.id,
-            gf.nome,
-            gf.dia_semana,
-            gf.horario,
-            gf.local_padrao,
-            gf.local_fixo,
-            (
-                SELECT COUNT(*)
-                FROM grupo_membros gm
-                INNER JOIN pessoas p ON p.id = gm.pessoa_id
-                WHERE gm.grupo_familiar_id = gf.id
-                AND p.ativo = 1
-            ) AS total_membros_ativos,
-            (
-                SELECT COUNT(*)
-                FROM reunioes r
-                WHERE r.grupo_familiar_id = gf.id
-            ) AS total_reunioes,
-            (
-                SELECT MAX(r.data)
-                FROM reunioes r
-                WHERE r.grupo_familiar_id = gf.id
-            ) AS ultima_data_reuniao
-        FROM grupos_familiares gf
-        WHERE gf.id = :grupo_id
-        LIMIT 1
-    ");
+            SELECT
+                gf.id,
+                gf.nome,
+                gf.dia_semana,
+                gf.horario,
+                gf.local_padrao,
+                gf.local_fixo,
+                (
+                    SELECT COUNT(*)
+                    FROM grupo_membros gm
+                    INNER JOIN pessoas p ON p.id = gm.pessoa_id
+                    WHERE gm.grupo_familiar_id = gf.id
+                    AND p.ativo = 1
+                ) AS total_membros_ativos,
+                (
+                    SELECT COUNT(*)
+                    FROM reunioes r
+                    WHERE r.grupo_familiar_id = gf.id
+                ) AS total_reunioes,
+                (
+                    SELECT MAX(r.data)
+                    FROM reunioes r
+                    WHERE r.grupo_familiar_id = gf.id
+                ) AS ultima_data_reuniao
+            FROM grupos_familiares gf
+            WHERE gf.id = :grupo_id
+            LIMIT 1
+        ");
 
         $stmt->execute([':grupo_id' => $grupoId]);
 
@@ -336,29 +405,29 @@ class PresencaRepository
         $limite = max(1, $limite);
 
         $sql = "
-        SELECT
-            r.id,
-            r.data,
-            r.horario,
-            r.local,
-            r.observacoes,
-            (
-                SELECT COUNT(*)
-                FROM presencas p
-                WHERE p.reuniao_id = r.id
-                AND p.status = 'presente'
-            ) AS total_presentes,
-            (
-                SELECT COUNT(*)
-                FROM presencas p
-                WHERE p.reuniao_id = r.id
-                AND p.status = 'ausente'
-            ) AS total_ausentes
-        FROM reunioes r
-        WHERE r.grupo_familiar_id = :grupo_id
-        ORDER BY r.data DESC, r.id DESC
-        LIMIT {$limite}
-    ";
+            SELECT
+                r.id,
+                r.data,
+                r.horario,
+                r.local,
+                r.observacoes,
+                (
+                    SELECT COUNT(*)
+                    FROM presencas p
+                    WHERE p.reuniao_id = r.id
+                    AND p.status = 'presente'
+                ) AS total_presentes,
+                (
+                    SELECT COUNT(*)
+                    FROM presencas p
+                    WHERE p.reuniao_id = r.id
+                    AND p.status = 'ausente'
+                ) AS total_ausentes
+            FROM reunioes r
+            WHERE r.grupo_familiar_id = :grupo_id
+            ORDER BY r.data DESC, r.id DESC
+            LIMIT {$limite}
+        ";
 
         $stmt = $this->connection->prepare($sql);
         $stmt->execute([':grupo_id' => $grupoId]);

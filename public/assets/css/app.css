@@ -1,49 +1,24 @@
 body {
     font-family: Arial, sans-serif;
-    max-width: 900px;
+    max-width: 1280px;
     margin: 24px auto;
     padding: 0 16px;
-}
-
-h1, h2 {
-    margin-bottom: 12px;
-}
-
-form {
-    border: 1px solid #ccc;
-    padding: 16px;
-    border-radius: 8px;
-    margin-bottom: 24px;
-}
-
-.campo {
-    margin-bottom: 12px;
-}
-
-label {
-    display: block;
-    margin-bottom: 6px;
-    font-weight: bold;
-}
-
-input,
-select,
-button,
-textarea {
-    width: 100%;
-    padding: 10px;
     box-sizing: border-box;
 }
 
-small {
-    display: block;
-    margin-top: 6px;
-    color: #555;
+* {
+    box-sizing: border-box;
 }
 
-button,
-a.botao-link {
-    cursor: pointer;
+h1,
+h2,
+h3 {
+    margin-top: 0;
+    margin-bottom: 16px;
+}
+
+.menu {
+    margin-bottom: 20px;
 }
 
 .mensagem {
@@ -62,84 +37,145 @@ a.botao-link {
     margin-bottom: 16px;
 }
 
-.menu {
-    margin-bottom: 20px;
-}
-
-.form-acao {
-    margin: 0;
-    padding: 0;
-    border: none;
-}
-
-.botao-desativar {
-    background: #c62828;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    padding: 8px 12px;
-    width: 100%;
-}
-
-.botao-reativar {
-    background: #2e7d32;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    padding: 8px 12px;
-    width: 100%;
-}
-
-.botao-editar {
-    display: block;
-    background: #1565c0;
-    color: white;
-    text-decoration: none;
-    border-radius: 4px;
-    padding: 8px 12px;
-    text-align: center;
-    width: 100%;
-}
-
-.status-ativo {
-    color: #1b5e20;
-    font-weight: bold;
-}
-
-.status-inativo {
-    color: #b71c1c;
-    font-weight: bold;
-}
-
-.acoes {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    align-items: center;
-}
-
-table {
-    width: 100%;
-    border-collapse: collapse;
-}
-
-th, td {
+form {
     border: 1px solid #ccc;
+    padding: 16px;
+    border-radius: 8px;
+    margin-bottom: 24px;
+    background: #fff;
+}
+
+.campo {
+    margin-bottom: 16px;
+}
+
+label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: bold;
+}
+
+input,
+select,
+textarea,
+button {
+    width: 100%;
     padding: 10px;
-    text-align: left;
-    vertical-align: middle;
+    box-sizing: border-box;
+    font: inherit;
 }
 
-th {
-    background: #f3f3f3;
+textarea {
+    min-height: 110px;
+    resize: vertical;
 }
 
+small {
+    display: block;
+    margin-top: 6px;
+    color: #555;
+    line-height: 1.4;
+}
+
+button {
+    cursor: pointer;
+}
+
+/* grids genéricas */
 .grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 16px;
 }
 
+/* cards/resumo */
+.quadro-reunioes {
+    margin-top: 24px;
+    margin-bottom: 24px;
+}
+
+.cards-resumo {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.card-resumo {
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    padding: 16px;
+    background: #fafafa;
+    min-height: 110px;
+}
+
+.card-resumo h3 {
+    margin: 0 0 8px 0;
+    font-size: 15px;
+    line-height: 1.3;
+}
+
+.card-resumo .numero {
+    font-size: 28px;
+    font-weight: bold;
+    line-height: 1.2;
+}
+
+/* bloco criar reunião */
+.bloco-criar-reuniao {
+    margin-top: 24px;
+    margin-bottom: 24px;
+}
+
+.card-formulario {
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    padding: 16px;
+    background: #fff;
+    margin-top: 12px;
+}
+
+/* tabela */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 12px;
+}
+
+th,
+td {
+    border: 1px solid #ccc;
+    padding: 10px;
+    text-align: left;
+    vertical-align: top;
+}
+
+th {
+    background: #f3f3f3;
+}
+
+/* radios presença */
+.status-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.status-group label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: normal;
+    margin: 0;
+}
+
+.status-group input[type="radio"] {
+    width: auto;
+    margin: 0;
+    padding: 0;
+}
+
+/* listas checkbox */
 .checkbox-lista {
     border: 1px solid #ccc;
     border-radius: 6px;
@@ -168,59 +204,34 @@ th {
     display: inline;
 }
 
-.campo-checkbox {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-top: 32px;
-}
-
-.campo-checkbox input {
-    width: auto;
-    margin: 0;
-    padding: 0;
-}
-
-.campo-checkbox label {
-    margin: 0;
-    font-weight: normal;
-    display: inline;
-}
-
-.botao-link {
-    display: inline-block;
-    background: #1565c0;
-    color: white;
-    text-decoration: none;
-    border-radius: 4px;
-    padding: 8px 12px;
-    text-align: center;
-    width: 100%;
-    box-sizing: border-box;
-}
-
-.botao-desativar-gf {
-    background: #c62828;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    padding: 8px 12px;
-    width: 100%;
-}
-
-.botao-reativar-gf {
-    background: #2e7d32;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    padding: 8px 12px;
-    width: 100%;
-}
-
+/* botões/ações */
 .acoes {
     display: flex;
-    flex-direction: column;
     gap: 8px;
+    flex-wrap: wrap;
+}
+
+.botao-editar,
+.botao-reativar,
+.botao-desativar {
+    display: inline-block;
+    padding: 8px 12px;
+    text-decoration: none;
+    border-radius: 4px;
+    color: #fff;
+    border: none;
+}
+
+.botao-editar {
+    background: #1565c0;
+}
+
+.botao-reativar {
+    background: #2e7d32;
+}
+
+.botao-desativar {
+    background: #c62828;
 }
 
 .status-ativo {
@@ -233,79 +244,13 @@ th {
     font-weight: bold;
 }
 
-@media (max-width: 800px) {
-    .grid {
-        grid-template-columns: 1fr;
-    }
-
-    .campo-checkbox {
-        margin-top: 0;
-    }
-}
-
-.status-group {
-    display: flex;
-    gap: 16px;
-    align-items: center;
-}
-
-.status-group label {
-    margin: 0;
-    font-weight: normal;
-    display: inline;
-}
-
-textarea {
-    min-height: 90px;
-    resize: vertical;
-}
-
-.cards-resumo {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 16px;
-    margin-bottom: 24px;
-}
-
-.card-resumo {
-    border: 1px solid #ccc;
-    border-radius: 8px;
-    padding: 16px;
-    background: #fafafa;
-}
-
-.card-resumo h3 {
-    margin: 0 0 8px 0;
-    font-size: 14px;
-}
-
-.card-resumo .numero {
-    font-size: 24px;
-    font-weight: bold;
-}
-
-.quadro-reunioes {
-    margin-bottom: 24px;
-}
-
-@media (max-width: 800px) {
-    .cards-resumo {
-        grid-template-columns: 1fr 1fr;
-    }
-}
-
-@media (max-width: 500px) {
-    .cards-resumo {
-        grid-template-columns: 1fr;
-    }
-}
-
+/* cards de perfil */
 .card-perfil {
     border: 1px solid #ccc;
     border-radius: 10px;
     padding: 20px;
     margin-bottom: 20px;
-    background: rgba(255, 255, 255, 0.02);
+    background: #fff;
 }
 
 .card-perfil h2 {
@@ -320,8 +265,53 @@ textarea {
     gap: 16px;
 }
 
+/* tela de presenças: layout mais largo */
+.presencas-layout {
+    display: grid;
+    grid-template-columns: 1.1fr 0.9fr;
+    gap: 24px;
+    align-items: start;
+    margin-top: 24px;
+}
+
+.presencas-coluna {
+    min-width: 0;
+}
+
+.presencas-card {
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    padding: 16px;
+    background: #fff;
+    margin-bottom: 24px;
+}
+
+/* responsividade */
+@media (max-width: 1100px) {
+    .presencas-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .cards-resumo {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
 @media (max-width: 800px) {
+    .grid,
     .grid-perfil {
         grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 600px) {
+    .cards-resumo {
+        grid-template-columns: 1fr;
+    }
+
+    th,
+    td {
+        padding: 8px;
+        font-size: 14px;
     }
 }

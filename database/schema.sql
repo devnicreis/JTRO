@@ -16,7 +16,8 @@ CREATE TABLE IF NOT EXISTS grupos_familiares (
     horario TEXT NOT NULL,
     local_padrao TEXT,
     local_fixo INTEGER NOT NULL DEFAULT 0,
-    ativo INTEGER NOT NULL DEFAULT 1
+    ativo INTEGER NOT NULL DEFAULT 1,
+    observacoes TEXT CHECK (length(observacoes) <= 255)
 );
 
 CREATE TABLE IF NOT EXISTS grupo_lideres (
