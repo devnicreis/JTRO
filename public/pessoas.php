@@ -53,7 +53,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$pessoas = $repo->listarTodas();
+$pessoas = $repo->listarTodos();
 $pageTitle = 'Cadastro de Pessoas - JTRO';
 
 require_once __DIR__ . '/../src/Views/pessoas/index.php';

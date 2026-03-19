@@ -1,17 +1,3 @@
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const checkboxLocalFixo = document.getElementById('local_fixo');
-        const inputLocalPadrao = document.getElementById('local_padrao');
-
-        function atualizarObrigatoriedadeLocalPadrao() {
-            inputLocalPadrao.required = checkboxLocalFixo.checked;
-        }
-
-        atualizarObrigatoriedadeLocalPadrao();
-        checkboxLocalFixo.addEventListener('change', atualizarObrigatoriedadeLocalPadrao);
-    });
-</script>
-
 <?php require __DIR__ . '/../layouts/header.php'; ?>
 
 <div class="menu">
@@ -193,5 +179,21 @@
         </tbody>
     </table>
 <?php endif; ?>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const checkboxLocalFixo = document.getElementById('local_fixo');
+        const inputLocalPadrao = document.getElementById('local_padrao');
+
+        if (checkboxLocalFixo && inputLocalPadrao) {
+            function atualizarObrigatoriedadeLocalPadrao() {
+                inputLocalPadrao.required = checkboxLocalFixo.checked;
+            }
+
+            atualizarObrigatoriedadeLocalPadrao();
+            checkboxLocalFixo.addEventListener('change', atualizarObrigatoriedadeLocalPadrao);
+        }
+    });
+</script>
 
 <?php require __DIR__ . '/../layouts/footer.php'; ?>

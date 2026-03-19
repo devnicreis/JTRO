@@ -28,7 +28,7 @@ class PessoaRepository
         ]);
     }
 
-    public function listarTodas(): array
+    public function listarTodos(): array
     {
         $sql = "SELECT * FROM pessoas ORDER BY id DESC";
 
@@ -267,5 +267,150 @@ class PessoaRepository
         $resultado = $stmt->fetch(PDO::FETCH_ASSOC);
 
         return $resultado ?: null;
+    }
+
+    public function contarPessoasAtivas(): int
+    {
+        $stmt = $this->connection->query("
+        SELECT COUNT(*)
+        FROM pessoas
+        WHERE ativo = 1
+    ");
+
+        return (int) $stmt->fetchColumn();
+    }
+
+    public function contarLideresAtivos(): int
+    {
+        $stmt = $this->connection->query("
+        SELECT COUNT(DISTINCT gl.pessoa_id)
+        FROM grupo_lideres gl
+        INNER JOIN pessoas p ON p.id = gl.pessoa_id
+        WHERE p.ativo = 1
+    ");
+
+        return (int) $stmt->fetchColumn();
+    }
+
+    public function buscarResumoPresencaPorGrupo(int $grupoId): array
+    {
+        $stmt = $this->connection->prepare("
+        SELECT
+            SUM(CASE WHEN p.status = 'presente' THEN 1 ELSE 0 END) AS total_presencas,
+            SUM(CASE WHEN p.status = 'ausente' THEN 1 ELSE 0 END) AS total_ausencias,
+            COUNT(*) AS total_registros
+        FROM presencas p
+        INNER JOIN reunioes r ON r.id = p.reuniao_id
+        WHERE r.grupo_familiar_id = :grupo_id
+    ");
+
+        $stmt->execute([':grupo_id' => $grupoId]);
+        $resultado = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        $presencas = (int) ($resultado['total_presencas'] ?? 0);
+        $ausencias = (int) ($resultado['total_ausencias'] ?? 0);
+        $total = (int) ($resultado['total_registros'] ?? 0);
+
+        return [
+            'total_presencas' => $presencas,
+            'total_ausencias' => $ausencias,
+            'percentual_presencas' => $total > 0 ? round(($presencas / $total) * 100, 1) : 0,
+            'percentual_ausencias' => $total > 0 ? round(($ausencias / $total) * 100, 1) : 0,
+        ];
+    }
+
+    public function buscarResumoPorMembroDoGrupo(int $grupoId): array
+    {
+        $stmt = $this->connection->prepare("
+        SELECT
+            pe.id AS pessoa_id,
+            pe.nome,
+            SUM(CASE WHEN p.status = 'presente' THEN 1 ELSE 0 END) AS total_presencas,
+            SUM(CASE WHEN p.status = 'ausente' THEN 1 ELSE 0 END) AS total_ausencias,
+            MAX(CASE WHEN p.status = 'presente' THEN r.data ELSE NULL END) AS ultima_presenca
+        FROM grupo_membros gm
+        INNER JOIN pessoas pe ON pe.id = gm.pessoa_id
+        LEFT JOIN reunioes r ON r.grupo_familiar_id = gm.grupo_familiar_id
+        LEFT JOIN presencas p ON p.reuniao_id = r.id AND p.pessoa_id = pe.id
+        WHERE gm.grupo_familiar_id = :grupo_id
+        AND pe.ativo = 1
+        GROUP BY pe.id, pe.nome
+        ORDER BY pe.nome ASC
+    ");
+
+        $stmt->execute([':grupo_id' => $grupoId]);
+        $linhas = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        foreach ($linhas as &$linha) {
+            $presencas = (int) ($linha['total_presencas'] ?? 0);
+            $ausencias = (int) ($linha['total_ausencias'] ?? 0);
+            $total = $presencas + $ausencias;
+
+            $linha['percentual_presenca'] = $total > 0 ? round(($presencas / $total) * 100, 1) : 0;
+        }
+
+        return $linhas;
+    }
+
+    public function buscarMembrosComFaltasConsecutivas(int $grupoId, int $minimo = 2): array
+    {
+        $stmt = $this->connection->prepare("
+        SELECT
+            pe.id AS pessoa_id,
+            pe.nome,
+            r.data,
+            p.status
+        FROM grupo_membros gm
+        INNER JOIN pessoas pe ON pe.id = gm.pessoa_id
+        INNER JOIN reunioes r ON r.grupo_familiar_id = gm.grupo_familiar_id
+        INNER JOIN presencas p ON p.reuniao_id = r.id AND p.pessoa_id = pe.id
+        WHERE gm.grupo_familiar_id = :grupo_id
+        AND pe.ativo = 1
+        ORDER BY pe.id ASC, r.data DESC, r.id DESC
+    ");
+
+        $stmt->execute([':grupo_id' => $grupoId]);
+        $linhas = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $resultado = [];
+        $controle = [];
+
+        foreach ($linhas as $linha) {
+            $pessoaId = (int) $linha['pessoa_id'];
+
+            if (!isset($controle[$pessoaId])) {
+                $controle[$pessoaId] = [
+                    'nome' => $linha['nome'],
+                    'faltas' => 0,
+                    'encerrado' => false
+                ];
+            }
+
+            if ($controle[$pessoaId]['encerrado']) {
+                continue;
+            }
+
+            if ($linha['status'] === 'ausente') {
+                $controle[$pessoaId]['faltas']++;
+            } else {
+                $controle[$pessoaId]['encerrado'] = true;
+            }
+        }
+
+        foreach ($controle as $pessoaId => $info) {
+            if ($info['faltas'] >= $minimo) {
+                $resultado[] = [
+                    'pessoa_id' => $pessoaId,
+                    'nome' => $info['nome'],
+                    'faltas_consecutivas' => $info['faltas']
+                ];
+            }
+        }
+
+        usort($resultado, function ($a, $b) {
+            return $b['faltas_consecutivas'] <=> $a['faltas_consecutivas'];
+        });
+
+        return $resultado;
     }
 }

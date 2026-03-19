@@ -2,11 +2,13 @@
 
 require_once __DIR__ . '/../src/Repositories/PessoaRepository.php';
 require_once __DIR__ . '/../src/Core/Auth.php';
+require_once __DIR__ . '/../src/Services/AuditoriaService.php';
 
 Auth::requireAdmin();
 Auth::requireSenhaAtualizada();
 
 $repo = new PessoaRepository();
+$auditoria = new AuditoriaService();
 
 $mensagem = '';
 $erro = '';
@@ -60,8 +62,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             try {
                 $repo->atualizar($id, $nome, $cpf, $email, $cargo);
 
+                $auditoria->registrar(
+                    'atualizar',
+                    'pessoa',
+                    $id,
+                    "Pessoa atualizada: {$nome}.",
+                    null,
+                    null,
+                    null
+                );
+
                 if ($novaSenha !== '') {
                     $repo->atualizarSenhaEObrigacao($id, $novaSenha, true);
+
+                    $auditoria->registrar(
+                        'redefinir',
+                        'senha',
+                        $id,
+                        "Senha redefinida por administrador para {$nome}.",
+                        null,
+                        null,
+                        null
+                    );
                 }
 
                 $mensagem = 'Pessoa atualizada com sucesso.';

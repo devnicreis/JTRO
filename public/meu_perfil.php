@@ -2,11 +2,13 @@
 
 require_once __DIR__ . '/../src/Core/Auth.php';
 require_once __DIR__ . '/../src/Repositories/PessoaRepository.php';
+require_once __DIR__ . '/../src/Services/AuditoriaService.php';
 
 Auth::requireLogin();
 
 $pageTitle = 'Meu Perfil - JTRO';
 $repo = new PessoaRepository();
+$auditoria = new AuditoriaService();
 $usuarioSessao = Auth::usuario();
 $usuarioId = Auth::id();
 
@@ -62,6 +64,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $repo->atualizarSenhaEObrigacao($usuarioId, $novaSenha, false);
             $pessoa = $repo->buscarPorId($usuarioId);
             Auth::atualizarSessao($pessoa);
+
+            $auditoria->registrar(
+                'alterar',
+                'senha',
+                $usuarioId,
+                "Usuário alterou a própria senha.",
+                null,
+                null,
+                null
+            );
 
             if ($forcarTroca) {
                 header('Location: /index.php?senha_alterada=1');

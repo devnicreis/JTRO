@@ -4,13 +4,14 @@ date_default_timezone_set('America/Sao_Paulo');
 
 require_once __DIR__ . '/../src/Repositories/PresencaRepository.php';
 require_once __DIR__ . '/../src/Core/Auth.php';
+require_once __DIR__ . '/../src/Services/AuditoriaService.php';
 
 Auth::requireLogin();
 Auth::requireSenhaAtualizada();
 
 function dataValida(string $data): bool
 {
-    $dateTime = DateTime::createFromFormat('Y-m-d', $data);
+    $dateTime = DateTime::createFromFormat('!Y-m-d', $data);
 
     return $dateTime !== false
         && $dateTime->format('Y-m-d') === $data;
@@ -18,22 +19,34 @@ function dataValida(string $data): bool
 
 function dataDentroDaJanelaPermitida(string $data): bool
 {
-    $hoje = new DateTime('today');
-    $dataInformada = DateTime::createFromFormat('Y-m-d', $data);
+    $timezone = new DateTimeZone('America/Sao_Paulo');
 
-    if ($dataInformada === false) {
+    $hoje = new DateTimeImmutable('today', $timezone);
+    $dataInformada = DateTimeImmutable::createFromFormat('!Y-m-d', $data, $timezone);
+
+    if ($dataInformada === false || $dataInformada->format('Y-m-d') !== $data) {
         return false;
     }
 
-    $limitePassado = (clone $hoje)->modify('-30 days');
+    $limitePassado = $hoje->modify('-30 days');
 
     return $dataInformada >= $limitePassado && $dataInformada <= $hoje;
 }
 
+function comprimentoTexto(string $texto): int
+{
+    return function_exists('mb_strlen') ? mb_strlen($texto) : strlen($texto);
+}
+
 $repo = new PresencaRepository();
+$auditoria = new AuditoriaService();
 
 $mensagem = '';
 $erro = '';
+
+if (isset($_GET['erro_pedidos']) && $_GET['erro_pedidos'] === '1') {
+    $erro = 'Registre e salve a presença de todos os membros antes de acessar os pedidos de oração.';
+}
 
 $grupoId = (int) ($_GET['grupo_id'] ?? $_POST['grupo_id'] ?? 0);
 $data = trim($_GET['data'] ?? $_POST['data'] ?? '');
@@ -42,6 +55,7 @@ $reuniao = null;
 $listaPresencas = [];
 $resumoGrupo = [];
 $ultimasReunioes = [];
+$presencasPendentes = false;
 
 if ($grupoId > 0 && !Auth::isAdmin()) {
     if (!$repo->liderPodeAcessarGrupo(Auth::id(), $grupoId)) {
@@ -82,6 +96,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['criar_reuniao'])) {
         }
 
         $reuniaoExistente = $repo->buscarReuniaoPorGrupoEData($grupoId, $data);
+        $foiCriadaAgora = false;
 
         if ($reuniaoExistente !== null) {
             $reuniaoId = $reuniaoExistente;
@@ -89,10 +104,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['criar_reuniao'])) {
         } else {
             $reuniaoId = $repo->criarReuniaoPorGrupoEData($grupoId, $data, $horarioCriacao);
             $mensagem = 'Reunião criada com sucesso.';
+            $foiCriadaAgora = true;
         }
 
         $reuniao = $repo->buscarReuniao($reuniaoId);
+
+        if ($foiCriadaAgora && $reuniao) {
+            $auditoria->registrar(
+                'criar',
+                'reuniao',
+                $reuniaoId,
+                "Reunião criada para o GF {$reuniao['grupo_nome']} em " . date('d/m/Y', strtotime($data)) . " às {$horarioCriacao}.",
+                null,
+                $grupoId,
+                $data
+            );
+        }
+
+        if (isset($_GET['erro_pedidos']) && $_GET['erro_pedidos'] === '1') {
+            $erro = 'Registre e salve a presença de todos os membros antes de acessar os pedidos de oração.';
+        }
+
+
         $listaPresencas = $repo->listarPresencasPorReuniao($reuniaoId);
+        $presencasPendentes = $repo->reuniaoTemPresencasPendentes($reuniaoId);
         $resumoGrupo = $repo->buscarResumoGrupo($grupoId);
         $ultimasReunioes = $repo->listarUltimasReunioesDoGrupo($grupoId, 5);
     } catch (Exception $e) {
@@ -110,9 +145,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['salvar_presencas'])) 
 
     $limiteObservacoes = 255;
 
-    if (mb_strlen($observacoes) > $limiteObservacoes) {
+    if (comprimentoTexto($observacoes) > $limiteObservacoes) {
         $erro = "O campo observações deve ter no máximo {$limiteObservacoes} caracteres.";
     } else {
+        $totalPresencasDaReuniao = $repo->contarPresencasDaReuniao($reuniaoId);
+
+        if (count($presencas) !== $totalPresencasDaReuniao) {
+            $erro = 'Marque a presença ou ausência de todos os membros antes de salvar.';
+        }
+    }
+
+    if ($erro === '') {
         try {
             if (!Auth::isAdmin() && !$repo->liderPodeAcessarGrupo(Auth::id(), $grupoId)) {
                 http_response_code(403);
@@ -121,6 +164,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['salvar_presencas'])) 
 
             $repo->atualizarPresencasEReuniao($reuniaoId, $local, $observacoes, $presencas);
             $mensagem = 'Reunião e presenças atualizadas com sucesso.';
+
+            $reuniao = $repo->buscarReuniao($reuniaoId);
+
+            if ($reuniao) {
+                $auditoria->registrar(
+                    'atualizar',
+                    'presencas',
+                    $reuniaoId,
+                    "Presenças atualizadas para a reunião do GF {$reuniao['grupo_nome']} em " . date('d/m/Y', strtotime($data)) . ".",
+                    null,
+                    $grupoId,
+                    $data
+                );
+            }
         } catch (Exception $e) {
             $erro = $e->getMessage();
         }

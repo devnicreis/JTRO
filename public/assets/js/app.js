@@ -1,16 +1,31 @@
 document.addEventListener('DOMContentLoaded', function () {
-    const nomeInput = document.getElementById('nome');
-    const cpfInput = document.getElementById('cpf');
+    const campoData = document.getElementById('data');
+    const erroData = document.getElementById('erro-data');
 
-    if (nomeInput) {
-        nomeInput.addEventListener('input', function () {
-            this.value = this.value.replace(/[^A-Za-zÀ-ÿ\s]/g, '');
-        });
-    }
+    if (!campoData) return;
 
-    if (cpfInput) {
-        cpfInput.addEventListener('input', function () {
-            this.value = this.value.replace(/\D/g, '').slice(0, 11);
-        });
-    }
+    const hoje = new Date();
+    const hojeStr = hoje.toISOString().split('T')[0];
+
+    const limitePassado = new Date();
+    limitePassado.setDate(limitePassado.getDate() - 30);
+    const minStr = limitePassado.toISOString().split('T')[0];
+
+    campoData.min = minStr;
+    campoData.max = hojeStr;
+
+    campoData.addEventListener('change', function () {
+        const valor = this.value;
+
+        if (valor && (valor < minStr || valor > hojeStr)) {
+            if (erroData) {
+                erroData.style.display = 'block';
+            }
+            this.value = '';
+        } else {
+            if (erroData) {
+                erroData.style.display = 'none';
+            }
+        }
+    });
 });

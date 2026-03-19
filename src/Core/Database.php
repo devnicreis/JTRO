@@ -1,5 +1,7 @@
 <?php
 
+date_default_timezone_set('America/Sao_Paulo');
+
 class Database
 {
     private static ?PDO $connection = null;

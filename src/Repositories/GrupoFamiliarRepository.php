@@ -272,4 +272,90 @@ class GrupoFamiliarRepository
 
         return array_map('intval', $stmt->fetchAll(PDO::FETCH_COLUMN));
     }
+
+    public function buscarPorNome(string $nome): ?array
+    {
+        $stmt = $this->connection->prepare("
+        SELECT id, nome
+        FROM grupos_familiares
+        WHERE LOWER(TRIM(nome)) = LOWER(TRIM(:nome))
+        LIMIT 1
+    ");
+
+        $stmt->execute([':nome' => $nome]);
+
+        $grupo = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $grupo ?: null;
+    }
+
+    public function buscarPorNomeExcetoId(string $nome, int $id): ?array
+    {
+        $stmt = $this->connection->prepare("
+        SELECT id, nome
+        FROM grupos_familiares
+        WHERE LOWER(TRIM(nome)) = LOWER(TRIM(:nome))
+        AND id != :id
+        LIMIT 1
+    ");
+
+        $stmt->execute([
+            ':nome' => $nome,
+            ':id' => $id
+        ]);
+
+        $grupo = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $grupo ?: null;
+    }
+
+    public function contarGruposAtivos(): int
+    {
+        $stmt = $this->connection->query("
+        SELECT COUNT(*)
+        FROM grupos_familiares
+        WHERE ativo = 1
+    ");
+
+        return (int) $stmt->fetchColumn();
+    }
+
+    public function listarGruposDoLider(int $pessoaId): array
+    {
+        $stmt = $this->connection->prepare("
+        SELECT
+            gf.id,
+            gf.nome,
+            gf.dia_semana,
+            gf.horario,
+            gf.local_padrao,
+            gf.local_fixo,
+            (
+                SELECT COUNT(*)
+                FROM grupo_membros gm
+                INNER JOIN pessoas p ON p.id = gm.pessoa_id
+                WHERE gm.grupo_familiar_id = gf.id
+                AND p.ativo = 1
+            ) AS total_membros_ativos,
+            (
+                SELECT COUNT(*)
+                FROM reunioes r
+                WHERE r.grupo_familiar_id = gf.id
+            ) AS total_reunioes,
+            (
+                SELECT MAX(r.data)
+                FROM reunioes r
+                WHERE r.grupo_familiar_id = gf.id
+            ) AS ultima_reuniao
+        FROM grupos_familiares gf
+        INNER JOIN grupo_lideres gl ON gl.grupo_familiar_id = gf.id
+        WHERE gf.ativo = 1
+        AND gl.pessoa_id = :pessoa_id
+        ORDER BY gf.nome ASC
+    ");
+
+        $stmt->execute([':pessoa_id' => $pessoaId]);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
 }

@@ -55,7 +55,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <body>
 
-    <h1>Login</h1>
+    <h1>JTRO: seu organizador relacional</h1>
+    <h2>Login</h2>
 
     <?php if ($erro !== ''): ?>
         <div class="erro"><?php echo htmlspecialchars($erro); ?></div>

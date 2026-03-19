@@ -1,17 +1,3 @@
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const checkboxLocalFixo = document.getElementById('local_fixo');
-        const inputLocalPadrao = document.getElementById('local_padrao');
-
-        function atualizarObrigatoriedadeLocalPadrao() {
-            inputLocalPadrao.required = checkboxLocalFixo.checked;
-        }
-
-        atualizarObrigatoriedadeLocalPadrao();
-        checkboxLocalFixo.addEventListener('change', atualizarObrigatoriedadeLocalPadrao);
-    });
-</script>
-
 <?php require __DIR__ . '/../layouts/header.php'; ?>
 
 <div class="menu">
@@ -38,7 +24,8 @@
             id="nome"
             name="nome"
             required
-            value="<?php echo htmlspecialchars($grupo['nome']); ?>">
+            value="<?php echo htmlspecialchars($grupo['nome']); ?>"
+        >
     </div>
 
     <div class="grid">
@@ -61,7 +48,8 @@
                 id="horario"
                 name="horario"
                 required
-                value="<?php echo htmlspecialchars($grupo['horario']); ?>">
+                value="<?php echo htmlspecialchars($grupo['horario']); ?>"
+            >
         </div>
     </div>
 
@@ -72,7 +60,8 @@
                 type="text"
                 id="local_padrao"
                 name="local_padrao"
-                value="<?php echo htmlspecialchars($grupo['local_padrao'] ?? ''); ?>">
+                value="<?php echo htmlspecialchars($grupo['local_padrao'] ?? ''); ?>"
+            >
         </div>
 
         <div class="campo">
@@ -82,7 +71,8 @@
                     id="local_fixo"
                     name="local_fixo"
                     value="1"
-                    <?php echo (int)($grupo['local_fixo'] ?? 0) === 1 ? 'checked' : ''; ?>>
+                    <?php echo (int)($grupo['local_fixo'] ?? 0) === 1 ? 'checked' : ''; ?>
+                >
                 <label for="local_fixo">Este GF possui local fixo</label>
             </div>
         </div>
@@ -99,7 +89,8 @@
                             id="lider_<?php echo $pessoa['id']; ?>"
                             name="lideres[]"
                             value="<?php echo $pessoa['id']; ?>"
-                            <?php echo in_array((int)$pessoa['id'], $lideresSelecionados, true) ? 'checked' : ''; ?>>
+                            <?php echo in_array((int)$pessoa['id'], $lideresSelecionados, true) ? 'checked' : ''; ?>
+                        >
                         <label for="lider_<?php echo $pessoa['id']; ?>">
                             <?php echo htmlspecialchars($pessoa['nome']); ?> (<?php echo htmlspecialchars($pessoa['cargo']); ?>)
                         </label>
@@ -118,7 +109,8 @@
                             id="membro_<?php echo $pessoa['id']; ?>"
                             name="membros[]"
                             value="<?php echo $pessoa['id']; ?>"
-                            <?php echo in_array((int)$pessoa['id'], $membrosSelecionados, true) ? 'checked' : ''; ?>>
+                            <?php echo in_array((int)$pessoa['id'], $membrosSelecionados, true) ? 'checked' : ''; ?>
+                        >
                         <label for="membro_<?php echo $pessoa['id']; ?>">
                             <?php echo htmlspecialchars($pessoa['nome']); ?> (<?php echo htmlspecialchars($pessoa['cargo']); ?>)
                         </label>
@@ -130,5 +122,21 @@
 
     <button type="submit">Salvar alterações</button>
 </form>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const checkboxLocalFixo = document.getElementById('local_fixo');
+    const inputLocalPadrao = document.getElementById('local_padrao');
+
+    if (checkboxLocalFixo && inputLocalPadrao) {
+        function atualizarObrigatoriedadeLocalPadrao() {
+            inputLocalPadrao.required = checkboxLocalFixo.checked;
+        }
+
+        atualizarObrigatoriedadeLocalPadrao();
+        checkboxLocalFixo.addEventListener('change', atualizarObrigatoriedadeLocalPadrao);
+    }
+});
+</script>
 
 <?php require __DIR__ . '/../layouts/footer.php'; ?>
