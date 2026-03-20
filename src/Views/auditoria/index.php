@@ -2,10 +2,12 @@
 <?php require __DIR__ . '/../layouts/header.php'; ?>
 
 <div class="menu">
-    <a href="/index.php">← Voltar para dashboard</a>
+    <a href="/index.php">← Voltar para início</a>
 </div>
 
-<h1>Auditoria</h1>
+<div class="page-header">
+    <h1>Auditoria</h1>
+</div>
 
 <form method="GET" action="/auditoria.php">
     <div class="grid">
@@ -13,9 +15,9 @@
             <label for="usuario_id">Líder / Usuário</label>
             <select id="usuario_id" name="usuario_id">
                 <option value="">Todos</option>
-                <?php foreach ($usuarios as $usuario): ?>
-                    <option value="<?php echo $usuario['id']; ?>" <?php echo $usuarioId === (int)$usuario['id'] ? 'selected' : ''; ?>>
-                        <?php echo htmlspecialchars($usuario['nome']); ?>
+                <?php foreach ($usuarios as $u): ?>
+                    <option value="<?php echo $u['id']; ?>" <?php echo $usuarioId === (int)$u['id'] ? 'selected' : ''; ?>>
+                        <?php echo htmlspecialchars($u['nome']); ?>
                     </option>
                 <?php endforeach; ?>
             </select>
@@ -46,49 +48,69 @@
         </div>
     </div>
 
-    <div class="campo">
-        <label for="data_reuniao">Data da reunião</label>
-        <input type="date" id="data_reuniao" name="data_reuniao" value="<?php echo htmlspecialchars($dataReuniao); ?>">
+    <div class="grid">
+        <div class="campo">
+            <label for="data_reuniao">Data da reunião</label>
+            <input type="date" id="data_reuniao" name="data_reuniao" value="<?php echo htmlspecialchars($dataReuniao); ?>">
+        </div>
+
+        <div class="campo">
+            <label for="limite">Exibir por página</label>
+            <select id="limite" name="limite">
+                <option value="20"  <?php echo $limite === 20  ? 'selected' : ''; ?>>20 linhas</option>
+                <option value="50"  <?php echo $limite === 50  ? 'selected' : ''; ?>>50 linhas</option>
+                <option value="100" <?php echo $limite === 100 ? 'selected' : ''; ?>>100 linhas</option>
+            </select>
+        </div>
     </div>
 
     <div class="acoes">
         <button type="submit">Aplicar filtros</button>
-        <a class="botao-link botao-secundario" href="/auditoria.php">Limpar todos os filtros</a>
+        <a class="botao-link botao-secundario" href="/auditoria.php">Limpar filtros</a>
     </div>
 </form>
 
 <div class="presencas-card">
-    <h2>Resultados</h2>
+    <h2>
+        Resultados
+        <?php if (count($logs) > 0): ?>
+            <span style="font-size: 12px; font-weight: 400; color: var(--color-text-muted); text-transform: none; letter-spacing: 0;">
+                <?php echo count($logs); ?> registro<?php echo count($logs) !== 1 ? 's' : ''; ?>
+            </span>
+        <?php endif; ?>
+    </h2>
 
     <?php if (count($logs) === 0): ?>
-        <p>Nenhum registro encontrado para os filtros informados.</p>
+        <p style="color: var(--color-text-muted); font-size: 13px;">Nenhum registro encontrado para os filtros informados.</p>
     <?php else: ?>
-        <table>
-            <thead>
-                <tr>
-                    <th>Data da alteração</th>
-                    <th>Usuário</th>
-                    <th>Ação</th>
-                    <th>Entidade</th>
-                    <th>GF</th>
-                    <th>Data da reunião</th>
-                    <th>Detalhes</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php foreach ($logs as $log): ?>
+        <div class="auditoria-tabela-wrapper">
+            <table class="auditoria-tabela">
+                <thead>
                     <tr>
-                        <td><?php echo htmlspecialchars(formatarDataHoraBr($log['created_at'])); ?></td>
-                        <td><?php echo htmlspecialchars($log['usuario_nome'] ?? 'Sistema'); ?></td>
-                        <td><?php echo htmlspecialchars($log['acao']); ?></td>
-                        <td><?php echo htmlspecialchars($log['entidade']); ?></td>
-                        <td><?php echo htmlspecialchars($log['grupo_nome'] ?? '—'); ?></td>
-                        <td><?php echo htmlspecialchars(formatarDataBr($log['reuniao_data'] ?? null)); ?></td>
-                        <td><?php echo htmlspecialchars($log['detalhes'] ?? ''); ?></td>
+                        <th>Data da alteração</th>
+                        <th>Usuário</th>
+                        <th>Ação</th>
+                        <th>Entidade</th>
+                        <th>GF</th>
+                        <th>Data da reunião</th>
+                        <th>Detalhes</th>
                     </tr>
-                <?php endforeach; ?>
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    <?php foreach ($logs as $log): ?>
+                        <tr>
+                            <td><?php echo htmlspecialchars(formatarDataHoraBr($log['created_at'])); ?></td>
+                            <td><?php echo htmlspecialchars($log['usuario_nome'] ?? 'Sistema'); ?></td>
+                            <td><?php echo htmlspecialchars($log['acao']); ?></td>
+                            <td><?php echo htmlspecialchars($log['entidade']); ?></td>
+                            <td><?php echo htmlspecialchars($log['grupo_nome'] ?? '—'); ?></td>
+                            <td><?php echo htmlspecialchars(formatarDataBr($log['reuniao_data'] ?? null)); ?></td>
+                            <td><?php echo htmlspecialchars($log['detalhes'] ?? ''); ?></td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
     <?php endif; ?>
 </div>
 

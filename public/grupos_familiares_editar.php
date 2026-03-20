@@ -36,6 +36,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $horario = trim($_POST['horario'] ?? '');
     $localPadrao = trim($_POST['local_padrao'] ?? '');
     $localFixo = isset($_POST['local_fixo']) ? 1 : 0;
+    $itemCeleiro = trim($_POST['item_celeiro'] ?? '');
+    $domingoOracaoCulto = (int) ($_POST['domingo_oracao_culto'] ?? 0);
     $lideresIds = array_map('intval', $_POST['lideres'] ?? []);
     $membrosIds = array_map('intval', $_POST['membros'] ?? []);
 
@@ -53,7 +55,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $erro = 'Selecione ao menos um líder.';
     } else {
         try {
-            $repo->atualizar($grupoId, $nome, $diaSemana, $horario, $localPadrao, $localFixo, $lideresIds, $membrosIds);
+            $repo->atualizar(
+                $grupoId,
+                $nome,
+                $diaSemana,
+                $horario,
+                $localPadrao,
+                $localFixo,
+                $itemCeleiro,
+                $domingoOracaoCulto,
+                $lideresIds,
+                $membrosIds
+            );
             $mensagem = 'Grupo Familiar atualizado com sucesso.';
 
             $auditoria->registrar(
@@ -80,6 +93,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $grupo['horario'] = $horario;
         $grupo['local_padrao'] = $localPadrao;
         $grupo['local_fixo'] = $localFixo;
+        $grupo['item_celeiro'] = $itemCeleiro;
+        $grupo['domingo_oracao_culto'] = $domingoOracaoCulto;
 
         $lideresSelecionados = $lideresIds;
         $membrosSelecionados = $membrosIds;

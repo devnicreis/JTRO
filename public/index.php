@@ -15,154 +15,101 @@ Auth::requireSenhaAtualizada();
 $usuario = Auth::usuario();
 
 $pessoaRepo = new PessoaRepository();
-$grupoRepo = new GrupoFamiliarRepository();
+$grupoRepo  = new GrupoFamiliarRepository();
 $presencaRepo = new PresencaRepository();
-$auditoria = new AuditoriaService();
-$avisoRepo = new AvisoRepository();
+$auditoria  = new AuditoriaService();
+$avisoRepo  = new AvisoRepository();
 
 $mensagem = '';
-
 if (isset($_GET['senha_alterada']) && $_GET['senha_alterada'] === '1') {
     $mensagem = 'Senha alterada com sucesso.';
 }
 
 $pageTitle = 'Dashboard - JTRO';
 
-$chavesLidas = $avisoRepo->listarChavesLidas(Auth::id());
+$chavesLidas    = $avisoRepo->listarChavesLidas(Auth::id());
 $chavesLidasMap = array_fill_keys($chavesLidas, true);
+$totalAvisos    = 0;
+
+// ── Helper para contar avisos não lidos ──────────────────────
+function contarNaoLidos(array $itens, string $prefixo, array $map, string $campoId = 'id'): int {
+    $count = 0;
+    foreach ($itens as $item) {
+        if (!isset($map[$prefixo . $item[$campoId]])) $count++;
+    }
+    return $count;
+}
 
 if (Auth::isAdmin()) {
     $dashboardTipo = 'admin';
 
-    $totalPessoasAtivas = $pessoaRepo->contarPessoasAtivas();
-    $totalLideresAtivos = $pessoaRepo->contarLideresAtivos();
-    $totalGruposAtivos = $grupoRepo->contarGruposAtivos();
-    $totalReunioes = $presencaRepo->contarReunioes();
-    $ultimasReunioes = $presencaRepo->listarUltimasReunioesGerais(5);
+    // Busca base — usada para múltiplas derivações abaixo
+    $todosGrupos    = $grupoRepo->listarTodos();
+    $gruposAtivos   = array_values(array_filter($todosGrupos, fn($g) => (int)($g['ativo'] ?? 0) === 1));
+
+    $totalPessoasAtivas        = $pessoaRepo->contarPessoasAtivas();
+    $totalGruposAtivos         = count($gruposAtivos);
+    $totalReunioes             = $presencaRepo->contarReunioes();
+    $ultimasReunioes           = $presencaRepo->listarUltimasReunioesGerais(10);
     $totalPresencasAtualizadas = $auditoria->contarLogsPorEntidadeEAcao('presencas', 'atualizar');
+    $proximasReunioes          = $gruposAtivos;
 
-    $grupoSelecionadoId = (int) ($_GET['grupo_id'] ?? 0);
-
-    $gruposResumoAdmin = [];
-    $gruposAtivosLista = $grupoRepo->listarTodos();
-
-    if ($grupoSelecionadoId > 0) {
-        foreach ($gruposAtivosLista as $grupo) {
-            if ((int) ($grupo['ativo'] ?? 1) !== 1) {
-                continue;
+    // Líderes únicos de GFs ativos (fonte de verdade: campo lideres do grupo)
+    $listaLideresAtivos = [];
+    foreach ($gruposAtivos as $g) {
+        if (!empty($g['lideres'])) {
+            foreach (explode(', ', $g['lideres']) as $nomeLider) {
+                $nomeLider = trim($nomeLider);
+                if ($nomeLider !== '') $listaLideresAtivos[$nomeLider] = true;
             }
-
-            if ((int) $grupo['id'] !== $grupoSelecionadoId) {
-                continue;
-            }
-
-            $resumoPresenca = $presencaRepo->buscarResumoPresencaPorGrupo((int) $grupo['id']);
-            $resumoMembros = $presencaRepo->buscarResumoPorMembroDoGrupo((int) $grupo['id']);
-            $faltosos = $presencaRepo->buscarMembrosComFaltasConsecutivas((int) $grupo['id'], 2);
-
-            $percentual = (float) $resumoPresenca['percentual_presencas'];
-            $totalRegistros = (int) $resumoPresenca['total_presencas'] + (int) $resumoPresenca['total_ausencias'];
-
-            if ($totalRegistros === 0) {
-                $diagnostico = 'NEUTRO';
-                $diagnosticoClasse = 'diagnostico-neutro';
-            } elseif ($percentual >= 90) {
-                $diagnostico = 'ÓTIMO';
-                $diagnosticoClasse = 'diagnostico-otimo';
-            } elseif ($percentual >= 70) {
-                $diagnostico = 'BOM';
-                $diagnosticoClasse = 'diagnostico-bom';
-            } elseif ($percentual >= 51) {
-                $diagnostico = 'ATENÇÃO';
-                $diagnosticoClasse = 'diagnostico-atencao';
-            } else {
-                $diagnostico = 'ALARMANTE';
-                $diagnosticoClasse = 'diagnostico-alarmante';
-            }
-
-            $gruposResumoAdmin[] = [
-                'grupo' => $grupo,
-                'resumo_presenca' => $resumoPresenca,
-                'resumo_membros' => $resumoMembros,
-                'faltosos' => $faltosos,
-                'diagnostico' => $diagnostico,
-                'diagnostico_classe' => $diagnosticoClasse
-            ];
-
-            break;
         }
     }
+    $listaLideresAtivos = array_keys($listaLideresAtivos);
+    $totalLideresAtivos = count($listaLideresAtivos);
 
-    $gruposAlarmantesAvisos = $presencaRepo->buscarGruposAlarmantes();
-    $membrosFaltososAvisos = $presencaRepo->buscarMembrosComFaltasConsecutivasGerais(2);
-    $reunioesForaDoPadraoAvisos = $presencaRepo->buscarReunioesForaDoPadrao(20);
+    // Listas para tooltips
+    $listaPessoasAtivas = array_column($pessoaRepo->listarAtivas(), 'nome');
+    $listaGruposAtivos  = array_column($gruposAtivos, 'nome');
 
-    $totalAvisos = 0;
+    $gruposAlarmantesAvisos      = $presencaRepo->buscarGruposAlarmantes();
+    $membrosFaltososAvisos       = $presencaRepo->buscarMembrosComFaltasConsecutivasGerais(2);
+    $reunioesForaDoPadraoAvisos  = $presencaRepo->buscarReunioesForaDoPadrao(20);
 
-    foreach ($gruposAlarmantesAvisos as $grupoAviso) {
-        $chave = 'gf_alarmante_' . $grupoAviso['id'];
-
-        if (!isset($chavesLidasMap[$chave])) {
-            $totalAvisos++;
-        }
+    foreach ($gruposAlarmantesAvisos as $i) {
+        if (!isset($chavesLidasMap['gf_alarmante_' . $i['id']])) $totalAvisos++;
+    }
+    foreach ($membrosFaltososAvisos as $i) {
+        if (!isset($chavesLidasMap['faltas_' . $i['grupo_id'] . '_' . $i['pessoa_id']])) $totalAvisos++;
+    }
+    foreach ($reunioesForaDoPadraoAvisos as $i) {
+        if (!isset($chavesLidasMap['reuniao_fora_padrao_' . $i['id']])) $totalAvisos++;
     }
 
-    foreach ($membrosFaltososAvisos as $membroAviso) {
-        $chave = 'faltas_' . $membroAviso['grupo_id'] . '_' . $membroAviso['pessoa_id'];
-
-        if (!isset($chavesLidasMap[$chave])) {
-            $totalAvisos++;
-        }
-    }
-
-    foreach ($reunioesForaDoPadraoAvisos as $reuniaoAviso) {
-        $chave = 'reuniao_fora_padrao_' . $reuniaoAviso['id'];
-
-        if (!isset($chavesLidasMap[$chave])) {
-            $totalAvisos++;
-        }
-    }
 } else {
     $dashboardTipo = 'lider';
 
-    $gruposDoLider = $grupoRepo->listarGruposDoLider(Auth::id());
+    $gruposDoLider   = $grupoRepo->listarGruposDoLider(Auth::id());
     $ultimasReunioes = $presencaRepo->listarUltimasReunioesDoLider(Auth::id(), 5);
 
     foreach ($gruposDoLider as &$grupo) {
         $grupo['resumo_presenca'] = $presencaRepo->buscarResumoPresencaPorGrupo((int) $grupo['id']);
-        $grupo['resumo_membros'] = $presencaRepo->buscarResumoPorMembroDoGrupo((int) $grupo['id']);
-        $grupo['faltosos'] = $presencaRepo->buscarMembrosComFaltasConsecutivas((int) $grupo['id'], 2);
+        $grupo['resumo_membros']  = $presencaRepo->buscarResumoPorMembroDoGrupo((int) $grupo['id']);
+        $grupo['faltosos']        = $presencaRepo->buscarMembrosComFaltasConsecutivas((int) $grupo['id'], 2);
     }
     unset($grupo);
 
-    $gruposAlarmantesAvisos = $presencaRepo->buscarGruposAlarmantesDoLider(Auth::id());
-    $membrosFaltososAvisos = $presencaRepo->buscarMembrosComFaltasConsecutivasDoLider(Auth::id(), 2);
+    $gruposAlarmantesAvisos     = $presencaRepo->buscarGruposAlarmantesDoLider(Auth::id());
+    $membrosFaltososAvisos      = $presencaRepo->buscarMembrosComFaltasConsecutivasDoLider(Auth::id(), 2);
     $reunioesForaDoPadraoAvisos = $presencaRepo->buscarReunioesForaDoPadraoDoLider(Auth::id(), 20);
 
-    $totalAvisos = 0;
-
-    foreach ($gruposAlarmantesAvisos as $grupoAviso) {
-        $chave = 'gf_alarmante_' . $grupoAviso['id'];
-
-        if (!isset($chavesLidasMap[$chave])) {
-            $totalAvisos++;
-        }
+    foreach ($gruposAlarmantesAvisos as $i) {
+        if (!isset($chavesLidasMap['gf_alarmante_' . $i['id']])) $totalAvisos++;
     }
-
-    foreach ($membrosFaltososAvisos as $membroAviso) {
-        $chave = 'faltas_' . $membroAviso['grupo_id'] . '_' . $membroAviso['pessoa_id'];
-
-        if (!isset($chavesLidasMap[$chave])) {
-            $totalAvisos++;
-        }
+    foreach ($membrosFaltososAvisos as $i) {
+        if (!isset($chavesLidasMap['faltas_' . $i['grupo_id'] . '_' . $i['pessoa_id']])) $totalAvisos++;
     }
-
-    foreach ($reunioesForaDoPadraoAvisos as $reuniaoAviso) {
-        $chave = 'reuniao_fora_padrao_' . $reuniaoAviso['id'];
-
-        if (!isset($chavesLidasMap[$chave])) {
-            $totalAvisos++;
-        }
+    foreach ($reunioesForaDoPadraoAvisos as $i) {
+        if (!isset($chavesLidasMap['reuniao_fora_padrao_' . $i['id']])) $totalAvisos++;
     }
 }
 

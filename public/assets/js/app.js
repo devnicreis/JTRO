@@ -1,31 +1,205 @@
+/* ============================================================
+   JTRO — app.js
+   ============================================================ */
+
 document.addEventListener('DOMContentLoaded', function () {
+
+    // ── Validação de campo de data em formulários ──────────────
     const campoData = document.getElementById('data');
-    const erroData = document.getElementById('erro-data');
+    const erroData  = document.getElementById('erro-data');
 
-    if (!campoData) return;
+    if (campoData) {
+        const hoje        = new Date();
+        const hojeStr     = hoje.toISOString().split('T')[0];
+        const limitePassado = new Date();
+        limitePassado.setDate(limitePassado.getDate() - 30);
+        const minStr = limitePassado.toISOString().split('T')[0];
 
-    const hoje = new Date();
-    const hojeStr = hoje.toISOString().split('T')[0];
+        campoData.min = minStr;
+        campoData.max = hojeStr;
 
-    const limitePassado = new Date();
-    limitePassado.setDate(limitePassado.getDate() - 30);
-    const minStr = limitePassado.toISOString().split('T')[0];
-
-    campoData.min = minStr;
-    campoData.max = hojeStr;
-
-    campoData.addEventListener('change', function () {
-        const valor = this.value;
-
-        if (valor && (valor < minStr || valor > hojeStr)) {
-            if (erroData) {
-                erroData.style.display = 'block';
+        campoData.addEventListener('change', function () {
+            if (this.value && (this.value < minStr || this.value > hojeStr)) {
+                if (erroData) erroData.style.display = 'block';
+                this.value = '';
+            } else {
+                if (erroData) erroData.style.display = 'none';
             }
-            this.value = '';
-        } else {
-            if (erroData) {
-                erroData.style.display = 'none';
-            }
+        });
+    }
+
+    // ── Sino de notificações ───────────────────────────────────
+    const notifWrap        = document.getElementById('notifWrap');
+    const notifBtn         = document.getElementById('notifBtn');
+    const notifDropdown    = document.getElementById('notifDropdown');
+    const notifList        = document.getElementById('notifList');
+    const notifBadge       = document.getElementById('notifBadge');
+    const notifMarcarTodos = document.getElementById('notifMarcarTodos');
+    const notifCountEl     = document.getElementById('notifCountNaoLidos');
+
+    if (!notifBtn || !notifDropdown) return;
+
+    let avisosCache  = [];
+    let abaAtiva     = 'nao-lidos';
+    let dropdownOpen = false;
+
+    // Abrir/fechar dropdown
+    notifBtn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        dropdownOpen = !dropdownOpen;
+        notifDropdown.classList.toggle('aberto', dropdownOpen);
+        if (dropdownOpen && avisosCache.length === 0) carregarAvisos();
+    });
+
+    // Fechar ao clicar fora
+    document.addEventListener('click', function (e) {
+        if (notifWrap && !notifWrap.contains(e.target)) {
+            dropdownOpen = false;
+            notifDropdown.classList.remove('aberto');
         }
     });
+
+    // Abas não lidos / lidos
+    notifDropdown.querySelectorAll('.notif-tab').forEach(function (tab) {
+        tab.addEventListener('click', function () {
+            notifDropdown.querySelectorAll('.notif-tab').forEach(t => t.classList.remove('ativo'));
+            this.classList.add('ativo');
+            abaAtiva = this.dataset.tab;
+            renderAvisos();
+        });
+    });
+
+    // Marcar todos como lidos
+    if (notifMarcarTodos) {
+        notifMarcarTodos.addEventListener('click', function () {
+            const naoLidos = avisosCache.filter(a => !a.lido);
+            if (naoLidos.length === 0) return;
+
+            fetch('/avisos_json.php', {
+                method:  'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body:    JSON.stringify({ acao: 'marcar_todos_lidos', chaves: naoLidos.map(a => a.chave), chave: '' })
+            }).then(function () {
+                avisosCache.forEach(a => a.lido = true);
+                atualizarBadge();
+                renderAvisos();
+            });
+        });
+    }
+
+    function carregarAvisos() {
+        if (notifList) notifList.innerHTML = '<div class="notif-carregando">Carregando avisos...</div>';
+
+        fetch('/avisos_json.php')
+            .then(r => r.json())
+            .then(function (data) {
+                avisosCache = data.avisos || [];
+                atualizarBadge();
+                renderAvisos();
+            })
+            .catch(function () {
+                if (notifList) notifList.innerHTML = '<div class="notif-carregando">Erro ao carregar avisos.</div>';
+            });
+    }
+
+    // Expõe globalmente para a página de avisos sincronizar o sino
+    window.jtroRecarregarAvisos = carregarAvisos;
+
+    function atualizarBadge() {
+        const count = avisosCache.filter(a => !a.lido).length;
+
+        // Badge no sino (dropdown)
+        if (notifBadge) {
+            notifBadge.textContent = count > 0 ? count : '';
+            notifBadge.classList.toggle('notif-badge-oculto', count === 0);
+        }
+
+        // Contagem na aba do dropdown
+        if (notifCountEl) {
+            notifCountEl.textContent = count > 0 ? '(' + count + ')' : '';
+        }
+
+        // Badge no item "Notificações" da sidebar
+        const sidebarBadge = document.querySelector('.nav-item[href="/avisos.php"] .nav-badge');
+        if (sidebarBadge) {
+            if (count > 0) {
+                sidebarBadge.textContent = count;
+                sidebarBadge.style.display = '';
+            } else {
+                sidebarBadge.style.display = 'none';
+            }
+        }
+
+        // Dispara evento para a página de avisos sincronizar se estiver aberta
+        document.dispatchEvent(new CustomEvent('notif-badge-atualizado', { detail: { count } }));
+    }
+
+    function tempoRelativo(ts) {
+        if (!ts) return '';
+        const agora   = new Date();
+        const data    = new Date(ts * 1000);
+        const diffMs  = agora - data;
+        const diffDias = Math.floor(diffMs / 86400000);
+        if (diffDias === 0) return 'Hoje';
+        if (diffDias === 1) return 'Ontem';
+        const meses = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+        return data.getDate() + ' ' + meses[data.getMonth()];
+    }
+
+    function renderAvisos() {
+        if (!notifList) return;
+
+        const filtrados = avisosCache.filter(function (a) {
+            return abaAtiva === 'nao-lidos' ? !a.lido : a.lido;
+        });
+
+        if (filtrados.length === 0) {
+            notifList.innerHTML = '<div class="notif-vazio">Nenhum aviso ' + (abaAtiva === 'nao-lidos' ? 'não lido' : 'lido') + '.</div>';
+            return;
+        }
+
+        notifList.innerHTML = filtrados.map(function (aviso) {
+            const tempo = aviso.timestamp ? '<span class="notif-tempo">' + esc(tempoRelativo(aviso.timestamp)) + '</span>' : '';
+            return '<div class="notif-item" data-chave="' + esc(aviso.chave) + '">' +
+                '<div class="notif-dot notif-dot-' + esc(aviso.tipo) + '"></div>' +
+                '<div class="notif-item-corpo">' +
+                    '<div class="notif-texto">' + esc(aviso.texto) + '</div>' +
+                    tempo +
+                    '<button class="notif-acao-btn" data-chave="' + esc(aviso.chave) + '" data-lido="' + aviso.lido + '" type="button">' +
+                        (aviso.lido ? 'Marcar como não lido' : 'Marcar como lido') +
+                    '</button>' +
+                '</div>' +
+            '</div>';
+        }).join('');
+
+        // Botões individuais
+        notifList.querySelectorAll('.notif-acao-btn').forEach(function (btn) {
+            btn.addEventListener('click', function (e) {
+                e.stopPropagation();
+                const chave = this.dataset.chave;
+                const lido  = this.dataset.lido === 'true';
+                const acao  = lido ? 'marcar_nao_lido' : 'marcar_lido';
+
+                fetch('/avisos_json.php', {
+                    method:  'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body:    JSON.stringify({ acao: acao, chave: chave })
+                }).then(function () {
+                    const aviso = avisosCache.find(a => a.chave === chave);
+                    if (aviso) aviso.lido = !lido;
+                    atualizarBadge();
+                    renderAvisos();
+                });
+            });
+        });
+    }
+
+    function esc(str) {
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+    }
+
 });

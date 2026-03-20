@@ -11,193 +11,146 @@ Auth::requireSenhaAtualizada();
 
 function dataValida(string $data): bool
 {
-    $dateTime = DateTime::createFromFormat('!Y-m-d', $data);
-
-    return $dateTime !== false
-        && $dateTime->format('Y-m-d') === $data;
+    $dt = DateTime::createFromFormat('!Y-m-d', $data);
+    return $dt !== false && $dt->format('Y-m-d') === $data;
 }
 
 function dataDentroDaJanelaPermitida(string $data): bool
 {
-    $timezone = new DateTimeZone('America/Sao_Paulo');
-
-    $hoje = new DateTimeImmutable('today', $timezone);
-    $dataInformada = DateTimeImmutable::createFromFormat('!Y-m-d', $data, $timezone);
-
-    if ($dataInformada === false || $dataInformada->format('Y-m-d') !== $data) {
-        return false;
-    }
-
-    $limitePassado = $hoje->modify('-30 days');
-
-    return $dataInformada >= $limitePassado && $dataInformada <= $hoje;
+    $tz   = new DateTimeZone('America/Sao_Paulo');
+    $hoje = new DateTimeImmutable('today', $tz);
+    $dt   = DateTimeImmutable::createFromFormat('!Y-m-d', $data, $tz);
+    if ($dt === false || $dt->format('Y-m-d') !== $data) return false;
+    return $dt >= $hoje->modify('-30 days') && $dt <= $hoje;
 }
 
-function comprimentoTexto(string $texto): int
-{
-    return function_exists('mb_strlen') ? mb_strlen($texto) : strlen($texto);
-}
-
-$repo = new PresencaRepository();
+$repo      = new PresencaRepository();
 $auditoria = new AuditoriaService();
 
 $mensagem = '';
-$erro = '';
-
-if (isset($_GET['erro_pedidos']) && $_GET['erro_pedidos'] === '1') {
-    $erro = 'Registre e salve a presença de todos os membros antes de acessar os pedidos de oração.';
-}
-
-$grupoId = (int) ($_GET['grupo_id'] ?? $_POST['grupo_id'] ?? 0);
-$data = trim($_GET['data'] ?? $_POST['data'] ?? '');
-$reuniaoId = 0;
-$reuniao = null;
-$listaPresencas = [];
-$resumoGrupo = [];
-$ultimasReunioes = [];
+$erro     = '';
+$grupoId  = 0;
+$data     = '';
+$reuniao  = null;
+$listaPresencas  = [];
+$membrosGrupo    = [];  // membros para formulário de nova reunião
 $presencasPendentes = false;
+$modoNovaReuniao = false; // true = reunião ainda não existe no banco
 
-if ($grupoId > 0 && !Auth::isAdmin()) {
-    if (!$repo->liderPodeAcessarGrupo(Auth::id(), $grupoId)) {
-        http_response_code(403);
-        die('Acesso negado a este Grupo Familiar.');
-    }
-}
-
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['criar_reuniao'])) {
-    $grupoId = (int) ($_POST['grupo_id'] ?? 0);
-    $data = trim($_POST['data'] ?? '');
-    $horarioCriacao = trim($_POST['horario_criacao'] ?? '');
-
-    try {
-        if ($grupoId <= 0 || $data === '') {
-            throw new InvalidArgumentException('Grupo Familiar e data são obrigatórios.');
-        }
-
-        if (!dataValida($data)) {
-            throw new InvalidArgumentException('Data da reunião inválida.');
-        }
-
-        if (!dataDentroDaJanelaPermitida($data)) {
-            throw new InvalidArgumentException('A reunião só pode ser criada para hoje ou até 30 dias atrás.');
-        }
-
-        if ($horarioCriacao === '') {
-            throw new InvalidArgumentException('Informe o horário da reunião.');
-        }
-
-        if (!preg_match('/^\d{2}:\d{2}$/', $horarioCriacao)) {
-            throw new InvalidArgumentException('Horário da reunião inválido.');
-        }
-
-        if (!Auth::isAdmin() && !$repo->liderPodeAcessarGrupo(Auth::id(), $grupoId)) {
+// ── Verificação de acesso ──────────────────────────────────
+function verificarAcesso(PresencaRepository $repo, int $grupoId): void {
+    if ($grupoId > 0 && !Auth::isAdmin()) {
+        if (!$repo->liderPodeAcessarGrupo(Auth::id(), $grupoId)) {
             http_response_code(403);
             die('Acesso negado a este Grupo Familiar.');
         }
-
-        $reuniaoExistente = $repo->buscarReuniaoPorGrupoEData($grupoId, $data);
-        $foiCriadaAgora = false;
-
-        if ($reuniaoExistente !== null) {
-            $reuniaoId = $reuniaoExistente;
-            $mensagem = 'A reunião desta data já existia e foi carregada.';
-        } else {
-            $reuniaoId = $repo->criarReuniaoPorGrupoEData($grupoId, $data, $horarioCriacao);
-            $mensagem = 'Reunião criada com sucesso.';
-            $foiCriadaAgora = true;
-        }
-
-        $reuniao = $repo->buscarReuniao($reuniaoId);
-
-        if ($foiCriadaAgora && $reuniao) {
-            $auditoria->registrar(
-                'criar',
-                'reuniao',
-                $reuniaoId,
-                "Reunião criada para o GF {$reuniao['grupo_nome']} em " . date('d/m/Y', strtotime($data)) . " às {$horarioCriacao}.",
-                null,
-                $grupoId,
-                $data
-            );
-        }
-
-        if (isset($_GET['erro_pedidos']) && $_GET['erro_pedidos'] === '1') {
-            $erro = 'Registre e salve a presença de todos os membros antes de acessar os pedidos de oração.';
-        }
-
-
-        $listaPresencas = $repo->listarPresencasPorReuniao($reuniaoId);
-        $presencasPendentes = $repo->reuniaoTemPresencasPendentes($reuniaoId);
-        $resumoGrupo = $repo->buscarResumoGrupo($grupoId);
-        $ultimasReunioes = $repo->listarUltimasReunioesDoGrupo($grupoId, 5);
-    } catch (Exception $e) {
-        $erro = $e->getMessage();
     }
 }
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['salvar_presencas'])) {
-    $reuniaoId = (int) ($_POST['reuniao_id'] ?? 0);
-    $grupoId = (int) ($_POST['grupo_id'] ?? 0);
-    $data = trim($_POST['data'] ?? '');
-    $local = trim($_POST['local'] ?? '');
+// ── POST: Salvar reunião nova (criar + presenças atomicamente) ──
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['salvar_reuniao_nova'])) {
+    $grupoId     = (int) ($_POST['grupo_id'] ?? 0);
+    $data        = trim($_POST['data'] ?? '');
+    $horario     = trim($_POST['horario_criacao'] ?? '');
+    $local       = trim($_POST['local'] ?? '');
     $observacoes = trim($_POST['observacoes'] ?? '');
-    $presencas = $_POST['presencas'] ?? [];
+    $presencas   = $_POST['presencas'] ?? [];
 
-    $limiteObservacoes = 255;
+    verificarAcesso($repo, $grupoId);
 
-    if (comprimentoTexto($observacoes) > $limiteObservacoes) {
-        $erro = "O campo observações deve ter no máximo {$limiteObservacoes} caracteres.";
-    } else {
-        $totalPresencasDaReuniao = $repo->contarPresencasDaReuniao($reuniaoId);
+    try {
+        if ($grupoId <= 0 || $data === '') throw new InvalidArgumentException('Grupo Familiar e data são obrigatórios.');
+        if (!dataValida($data))             throw new InvalidArgumentException('Data inválida.');
+        if (!dataDentroDaJanelaPermitida($data)) throw new InvalidArgumentException('A reunião só pode ser criada para hoje ou até 30 dias atrás.');
+        if ($horario === '')                throw new InvalidArgumentException('Informe o horário da reunião.');
+        if ($local === '')                  throw new InvalidArgumentException('Informe o local da reunião.');
 
-        if (count($presencas) !== $totalPresencasDaReuniao) {
-            $erro = 'Marque a presença ou ausência de todos os membros antes de salvar.';
+        // Valida que todas as presenças foram marcadas
+        $membros = $repo->listarMembrosPorGrupo($grupoId);
+        if (count($presencas) !== count($membros)) {
+            throw new InvalidArgumentException('Marque a presença ou ausência de todos os membros antes de salvar.');
         }
+
+        $reuniaoId = $repo->criarReuniaoComPresencas($grupoId, $data, $horario, $local, $observacoes, $presencas);
+        $mensagem  = 'Reunião salva com sucesso.';
+
+        $reuniao        = $repo->buscarReuniao($reuniaoId);
+        $listaPresencas = $repo->listarPresencasPorReuniao($reuniaoId);
+        $presencasPendentes = false;
+
+        $auditoria->registrar('criar', 'reuniao', $reuniaoId,
+            "Reunião criada para o GF {$reuniao['grupo_nome']} em " . date('d/m/Y', strtotime($data)) . " às {$horario}.",
+            null, $grupoId, $data);
+        $auditoria->registrar('atualizar', 'presencas', $reuniaoId,
+            "Presenças atualizadas para a reunião do GF {$reuniao['grupo_nome']} em " . date('d/m/Y', strtotime($data)) . ".",
+            null, $grupoId, $data);
+
+    } catch (Exception $e) {
+        $erro = $e->getMessage();
+        // Mantém o formulário de nova reunião visível com os dados preenchidos
+        $modoNovaReuniao = true;
+        $membrosGrupo    = $repo->listarMembrosPorGrupo($grupoId);
     }
+}
 
-    if ($erro === '') {
+// ── POST: Atualizar presenças de reunião já existente ──────
+elseif ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['salvar_presencas'])) {
+    $reuniaoId   = (int) ($_POST['reuniao_id'] ?? 0);
+    $grupoId     = (int) ($_POST['grupo_id'] ?? 0);
+    $data        = trim($_POST['data'] ?? '');
+    $local       = trim($_POST['local'] ?? '');
+    $observacoes = trim($_POST['observacoes'] ?? '');
+    $presencas   = $_POST['presencas'] ?? [];
+
+    verificarAcesso($repo, $grupoId);
+
+    $totalEsperado = $repo->contarPresencasDaReuniao($reuniaoId);
+    if (count($presencas) !== $totalEsperado) {
+        $erro = 'Marque a presença ou ausência de todos os membros antes de salvar.';
+    } elseif (mb_strlen($observacoes) > 255) {
+        $erro = 'Observações devem ter no máximo 255 caracteres.';
+    } else {
         try {
-            if (!Auth::isAdmin() && !$repo->liderPodeAcessarGrupo(Auth::id(), $grupoId)) {
-                http_response_code(403);
-                die('Acesso negado a este Grupo Familiar.');
-            }
-
             $repo->atualizarPresencasEReuniao($reuniaoId, $local, $observacoes, $presencas);
             $mensagem = 'Reunião e presenças atualizadas com sucesso.';
-
-            $reuniao = $repo->buscarReuniao($reuniaoId);
-
+            $reuniao  = $repo->buscarReuniao($reuniaoId);
             if ($reuniao) {
-                $auditoria->registrar(
-                    'atualizar',
-                    'presencas',
-                    $reuniaoId,
+                $auditoria->registrar('atualizar', 'presencas', $reuniaoId,
                     "Presenças atualizadas para a reunião do GF {$reuniao['grupo_nome']} em " . date('d/m/Y', strtotime($data)) . ".",
-                    null,
-                    $grupoId,
-                    $data
-                );
+                    null, $grupoId, $data);
             }
         } catch (Exception $e) {
             $erro = $e->getMessage();
         }
     }
+    if ($reuniaoId > 0) {
+        $reuniao        = $reuniao ?? $repo->buscarReuniao($reuniaoId);
+        $listaPresencas = $repo->listarPresencasPorReuniao($reuniaoId);
+        $presencasPendentes = $repo->reuniaoTemPresencasPendentes($reuniaoId);
+    }
 }
 
-if ($grupoId > 0 && $data !== '') {
+// ── GET: Carregar reunião existente ou preparar nova ────────
+$grupoId = $grupoId ?: (int) ($_GET['grupo_id'] ?? 0);
+$data    = $data    ?: trim($_GET['data'] ?? '');
+
+if ($grupoId > 0 && $data !== '' && $reuniao === null) {
+    verificarAcesso($repo, $grupoId);
     if (!dataValida($data)) {
-        $erro = 'Data da reunião inválida.';
+        $erro = 'Data inválida.';
     } else {
         try {
             $reuniaoId = $repo->buscarReuniaoPorGrupoEData($grupoId, $data);
-
             if ($reuniaoId !== null) {
-                $reuniao = $repo->buscarReuniao($reuniaoId);
+                $reuniao        = $repo->buscarReuniao($reuniaoId);
                 $listaPresencas = $repo->listarPresencasPorReuniao($reuniaoId);
+                $presencasPendentes = $repo->reuniaoTemPresencasPendentes($reuniaoId);
+            } else {
+                // Reunião não existe: prepara modo de criação
+                $modoNovaReuniao = true;
+                $membrosGrupo    = $repo->listarMembrosPorGrupo($grupoId);
+                $resumoGrupoHorario = $repo->buscarResumoGrupo($grupoId);
             }
-
-            $resumoGrupo = $repo->buscarResumoGrupo($grupoId);
-            $ultimasReunioes = $repo->listarUltimasReunioesDoGrupo($grupoId, 5);
         } catch (Exception $e) {
             $erro = $e->getMessage();
         }
@@ -211,5 +164,4 @@ if (Auth::isAdmin()) {
 }
 
 $pageTitle = 'Reuniões e Presenças - JTRO';
-
 require_once __DIR__ . '/../src/Views/presencas/index.php';

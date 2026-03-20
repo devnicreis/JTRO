@@ -20,6 +20,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $horario = trim($_POST['horario'] ?? '');
     $localPadrao = trim($_POST['local_padrao'] ?? '');
     $localFixo = isset($_POST['local_fixo']) ? 1 : 0;
+    $itemCeleiro = trim($_POST['item_celeiro'] ?? '');
+    $domingoOracaoCulto = (int) ($_POST['domingo_oracao_culto'] ?? 0);
     $lideresIds = array_map('intval', $_POST['lideres'] ?? []);
     $membrosIds = array_map('intval', $_POST['membros'] ?? []);
 
@@ -37,7 +39,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $erro = 'Selecione ao menos um líder.';
     } else {
         try {
-            $repo->salvar($nome, $diaSemana, $horario, $localPadrao, $localFixo, $lideresIds, $membrosIds);
+            $repo->salvar(
+                $nome,
+                $diaSemana,
+                $horario,
+                $localPadrao,
+                $localFixo,
+                $itemCeleiro,
+                $domingoOracaoCulto,
+                $lideresIds,
+                $membrosIds
+            );
             $mensagem = 'Grupo Familiar cadastrado com sucesso.';
 
             $grupoCriado = $repo->buscarPorNome($nome);

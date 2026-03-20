@@ -1,185 +1,141 @@
 <?php require_once __DIR__ . '/../helpers.php'; ?>
 <?php require __DIR__ . '/../layouts/header.php'; ?>
 
-<div class="topo-dashboard">
-    <div class="menu-esquerda">
-        <a href="/meu_perfil.php">Meu Perfil</a> |
-        <a href="/logout.php">Sair</a>
+<?php
+// Data em pt-BR sem extensão externa
+$diasSemana = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
+$meses      = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+$diaSemana  = $diasSemana[(int) date('w')];
+$dia        = date('j');
+$mes        = $meses[(int) date('n') - 1];
+$ano        = date('Y');
+$dataFormatada = "$diaSemana, $dia de $mes de $ano";
+$primeiroNome  = htmlspecialchars(explode(' ', trim($usuario['nome']))[0]);
+?>
+
+<!-- ── Topbar do dashboard ── -->
+<div class="dash-topbar">
+    <div class="dash-topbar-esq">
+        <h1 class="dash-titulo">Visão geral</h1>
+        <p class="dash-data"><?php echo $dataFormatada; ?></p>
+        <p class="dash-saudacao">Olá, <?php echo $primeiroNome; ?>!</p>
     </div>
 
-    <div class="menu-direita">
-        <a href="/avisos.php" class="atalho-avisos">
-            Avisos
-            <?php if (($totalAvisos ?? 0) > 0): ?>
-                <span class="badge-aviso"><?php echo $totalAvisos; ?></span>
+    <!-- Sino de notificações -->
+    <div class="notif-wrap" id="notifWrap">
+        <button class="notif-btn" id="notifBtn" type="button" aria-label="Avisos">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M8 1a5 5 0 015 5c0 3 1 4 1.5 5h-13C2 10 3 9 3 6a5 5 0 015-5z" />
+                <path d="M6.5 13a1.5 1.5 0 003 0" />
+            </svg>
+            <?php if ($totalAvisos > 0): ?>
+                <span class="notif-badge" id="notifBadge"><?php echo $totalAvisos; ?></span>
+            <?php else: ?>
+                <span class="notif-badge notif-badge-oculto" id="notifBadge"></span>
             <?php endif; ?>
-        </a>
+        </button>
+
+        <div class="notif-dropdown" id="notifDropdown" aria-hidden="true">
+            <div class="notif-header">
+                <span class="notif-header-titulo">Avisos</span>
+                <button class="notif-marcar-todos" id="notifMarcarTodos" type="button">
+                    Marcar todos como lidos
+                </button>
+            </div>
+            <div class="notif-tabs">
+                <button class="notif-tab ativo" data-tab="nao-lidos" type="button">
+                    Não lidos <span id="notifCountNaoLidos">(<?php echo $totalAvisos; ?>)</span>
+                </button>
+                <button class="notif-tab" data-tab="lidos" type="button">Lidos</button>
+            </div>
+            <div class="notif-list" id="notifList">
+                <div class="notif-carregando">Carregando avisos...</div>
+            </div>
+        </div>
     </div>
 </div>
-
-<h1>COMUNHÃO CRISTÃ ABBA FAZENDA RIO GRANDE</h1>
-<h3>JTRO: seu organizador relacional</h3>
-
-<p>Olá, <?php echo htmlspecialchars($usuario['nome']); ?>.</p>
 
 <?php if ($mensagem !== ''): ?>
     <div class="mensagem"><?php echo htmlspecialchars($mensagem); ?></div>
 <?php endif; ?>
 
+
 <?php if ($dashboardTipo === 'admin'): ?>
+
+    <!-- ═══════════════════════════════════════════
+         DASHBOARD ADMIN
+    ════════════════════════════════════════════ -->
+
+    <!-- Cards de métricas -->
     <div class="cards-resumo">
-        <div class="card-resumo">
-            <h3>Pessoas ativas</h3>
+        <div class="card-resumo card-resumo-tooltip">
+            <div class="card-resumo-label">
+                <div class="card-resumo-dot" style="background:#378ADD;"></div>
+                Pessoas ativas
+            </div>
             <div class="numero"><?php echo $totalPessoasAtivas; ?></div>
+            <?php if (!empty($listaPessoasAtivas)): ?>
+                <div class="card-tooltip">
+                    <?php foreach ($listaPessoasAtivas as $nome): ?>
+                        <div class="card-tooltip-item"><?php echo htmlspecialchars($nome); ?></div>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
         </div>
-
-        <div class="card-resumo">
-            <h3>Líderes ativos</h3>
+        <div class="card-resumo card-resumo-tooltip">
+            <div class="card-resumo-label">
+                <div class="card-resumo-dot" style="background:#1D9E75;"></div>
+                Líderes ativos
+            </div>
             <div class="numero"><?php echo $totalLideresAtivos; ?></div>
+            <?php if (!empty($listaLideresAtivos)): ?>
+                <div class="card-tooltip">
+                    <?php foreach ($listaLideresAtivos as $nome): ?>
+                        <div class="card-tooltip-item"><?php echo htmlspecialchars($nome); ?></div>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
         </div>
-
-        <div class="card-resumo">
-            <h3>GFs ativos</h3>
+        <div class="card-resumo card-resumo-tooltip">
+            <div class="card-resumo-label">
+                <div class="card-resumo-dot" style="background:#7F77DD;"></div>
+                GFs ativos
+            </div>
             <div class="numero"><?php echo $totalGruposAtivos; ?></div>
+            <?php if (!empty($listaGruposAtivos)): ?>
+                <div class="card-tooltip">
+                    <?php foreach ($listaGruposAtivos as $nome): ?>
+                        <div class="card-tooltip-item"><?php echo htmlspecialchars($nome); ?></div>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
         </div>
-
         <div class="card-resumo">
-            <h3>Reuniões registradas</h3>
+            <div class="card-resumo-label">
+                <div class="card-resumo-dot" style="background:#EF9F27;"></div>
+                Reuniões registradas
+            </div>
             <div class="numero"><?php echo $totalReunioes; ?></div>
         </div>
-
         <div class="card-resumo">
-            <h3>Presenças atualizadas</h3>
+            <div class="card-resumo-label">
+                <div class="card-resumo-dot" style="background:#0F6E56;"></div>
+                Presenças atualizadas
+            </div>
             <div class="numero"><?php echo $totalPresencasAtualizadas; ?></div>
         </div>
     </div>
 
+    <!-- Layout principal -->
     <div class="presencas-layout">
-        <div class="presencas-coluna">
-            <div class="presencas-card">
-                <h2>Acessos rápidos</h2>
-                <div class="acoes">
-                    <a class="botao-link" href="/pessoas.php">Pessoas</a>
-                    <a class="botao-link" href="/grupos_familiares.php">Grupos Familiares</a>
-                    <a class="botao-link" href="/presencas.php">Reuniões e Presenças</a>
-                    <a class="botao-link" href="/auditoria.php">Auditoria</a>
-                </div>
-            </div>
 
-            <div class="presencas-card" style="margin-top: 24px;">
-                <h2>Diagnóstico de GFs</h2>
-
-                <form method="GET" action="/index.php" style="margin-bottom: 20px;">
-                    <div class="campo">
-                        <label for="grupo_id">Escolha um Grupo Familiar</label>
-                        <select id="grupo_id" name="grupo_id">
-                            <option value="">Selecione um GF</option>
-                            <?php foreach ($gruposAtivosLista as $grupoFiltro): ?>
-                                <?php if ((int) ($grupoFiltro['ativo'] ?? 1) !== 1) continue; ?>
-                                <option value="<?php echo (int) $grupoFiltro['id']; ?>" <?php echo isset($grupoSelecionadoId) && $grupoSelecionadoId === (int) $grupoFiltro['id'] ? 'selected' : ''; ?>>
-                                    <?php echo htmlspecialchars($grupoFiltro['nome']); ?>
-                                    <?php if (!empty($grupoFiltro['lideres'])): ?>
-                                        — <?php echo htmlspecialchars($grupoFiltro['lideres']); ?>
-                                    <?php endif; ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-
-                    <div class="acoes">
-                        <button type="submit">Ver diagnóstico</button>
-                        <a class="botao-link botao-secundario" href="/index.php">Limpar seleção</a>
-                    </div>
-                </form>
-
-                <?php if (empty($gruposResumoAdmin)): ?>
-                    <p>Selecione um Grupo Familiar para visualizar o diagnóstico.</p>
-                <?php else: ?>
-                    <?php foreach ($gruposResumoAdmin as $item): ?>
-                        <div class="card-perfil" style="margin-bottom: 20px;">
-                            <div class="diagnostico-faixa <?php echo htmlspecialchars($item['diagnostico_classe']); ?>">
-                                Diagnóstico: <?php echo htmlspecialchars($item['diagnostico']); ?>
-                            </div>
-
-                            <h3><?php echo htmlspecialchars($item['grupo']['nome']); ?></h3>
-
-                            <p><strong>Líder(es):</strong> <?php echo htmlspecialchars($item['grupo']['lideres'] ?? '—'); ?></p>
-                            <p><strong>Dia:</strong> <?php echo htmlspecialchars($item['grupo']['dia_semana']); ?></p>
-                            <p><strong>Horário:</strong> <?php echo htmlspecialchars($item['grupo']['horario']); ?></p>
-                            <p><strong>Membros ativos:</strong> <?php echo htmlspecialchars($item['grupo']['total_membros'] ?? '—'); ?></p>
-                            <p><strong>Total de reuniões:</strong> <?php echo htmlspecialchars($item['grupo']['total_reunioes'] ?? '—'); ?></p>
-                            <p><strong>Última reunião:</strong> <?php echo !empty($item['grupo']['ultima_reuniao']) ? htmlspecialchars(formatarDataBr($item['grupo']['ultima_reuniao'])) : '—'; ?></p>
-
-                            <hr style="margin: 16px 0;">
-
-                            <?php
-                            $presencas = (int) $item['resumo_presenca']['total_presencas'];
-                            $ausencias = (int) $item['resumo_presenca']['total_ausencias'];
-                            $percentualPresenca = (float) $item['resumo_presenca']['percentual_presencas'];
-                            $percentualAusencia = (float) $item['resumo_presenca']['percentual_ausencias'];
-                            ?>
-
-                            <p>
-                                <strong>Presenças:</strong> <?php echo $presencas; ?> |
-                                <strong>Ausências:</strong> <?php echo $ausencias; ?>
-                            </p>
-
-                            <div class="barra-percentual">
-                                <div class="barra-presenca" style="width: <?php echo $percentualPresenca; ?>%;"></div>
-                                <div class="barra-ausencia" style="width: <?php echo $percentualAusencia; ?>%;"></div>
-                            </div>
-
-                            <div class="resumo-percentual">
-                                <span class="legenda-presenca">Presença: <?php echo $percentualPresenca; ?>%</span>
-                                <span class="legenda-ausencia">Ausência: <?php echo $percentualAusencia; ?>%</span>
-                            </div>
-
-                            <?php if (!empty($item['faltosos'])): ?>
-                                <div class="erro" style="margin-top: 12px;">
-                                    <strong>Avisos:</strong><br>
-                                    <?php foreach ($item['faltosos'] as $faltoso): ?>
-                                        <?php echo htmlspecialchars($faltoso['nome']); ?> — <?php echo htmlspecialchars($faltoso['faltas_consecutivas']); ?> faltas consecutivas<br>
-                                    <?php endforeach; ?>
-                                </div>
-                            <?php endif; ?>
-
-                            <?php if (!empty($item['resumo_membros'])): ?>
-                                <table style="margin-top: 16px;">
-                                    <thead>
-                                        <tr>
-                                            <th>Membro</th>
-                                            <th>Última presença</th>
-                                            <th>Presenças</th>
-                                            <th>Ausências</th>
-                                            <th>% Presença</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <?php foreach ($item['resumo_membros'] as $membro): ?>
-                                            <tr>
-                                                <td><?php echo htmlspecialchars($membro['nome']); ?></td>
-                                                <td><?php echo htmlspecialchars(formatarDataBr($membro['ultima_presenca'] ?? null)); ?></td>
-                                                <td><?php echo htmlspecialchars($membro['total_presencas']); ?></td>
-                                                <td><?php echo htmlspecialchars($membro['total_ausencias']); ?></td>
-                                                <td><?php echo htmlspecialchars($membro['percentual_presenca']); ?>%</td>
-                                            </tr>
-                                        <?php endforeach; ?>
-                                    </tbody>
-                                </table>
-                            <?php endif; ?>
-                        </div>
-                    <?php endforeach; ?>
-                <?php endif; ?>
-            </div>
-        </div>
-
+        <!-- Coluna esquerda: últimas reuniões -->
         <div class="presencas-coluna">
             <div class="presencas-card quadro-ultimas-reunioes">
                 <h2>Últimas reuniões</h2>
 
-
                 <?php if (count($ultimasReunioes) === 0): ?>
-                    <p>Nenhuma reunião registrada ainda.</p>
+                    <p style="color: var(--color-text-muted); font-size: 13px;">Nenhuma reunião registrada ainda.</p>
                 <?php else: ?>
                     <div class="tabela-wrapper">
                         <table>
@@ -188,8 +144,8 @@
                                     <th>GF</th>
                                     <th>Data</th>
                                     <th>Horário</th>
-                                    <th>Presentes</th>
-                                    <th>Ausentes</th>
+                                    <th>Pres.</th>
+                                    <th>Aus.</th>
                                     <th class="tabela-acoes">Ação</th>
                                 </tr>
                             </thead>
@@ -214,109 +170,200 @@
                 <?php endif; ?>
             </div>
         </div>
+
+        <!-- Coluna direita: alertas + próximas reuniões -->
+        <div class="presencas-coluna">
+
+            <!-- Alertas prioritários -->
+            <?php
+            $temAlertas = !empty($gruposAlarmantesAvisos) || !empty($membrosFaltososAvisos);
+            ?>
+            <div class="presencas-card" style="margin-bottom: 20px;">
+                <h2>Atenção agora</h2>
+
+                <?php if (!$temAlertas): ?>
+                    <p style="color: var(--color-text-muted); font-size: 13px;">Nenhum alerta no momento.</p>
+                <?php else: ?>
+                    <?php foreach ($gruposAlarmantesAvisos as $grupoAviso): ?>
+                        <div class="dash-alerta dash-alerta-danger">
+                            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <circle cx="8" cy="8" r="6" />
+                                <path d="M8 5v3M8 11h.01" />
+                            </svg>
+                            GF <?php echo htmlspecialchars($grupoAviso['nome']); ?> — presença alarmante
+                        </div>
+                    <?php endforeach; ?>
+
+                    <?php foreach ($membrosFaltososAvisos as $membro): ?>
+                        <div class="dash-alerta dash-alerta-warn">
+                            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <path d="M8 2l5.5 10h-11z" />
+                                <path d="M8 7v2M8 11h.01" />
+                            </svg>
+                            <?php echo htmlspecialchars($membro['nome']); ?> — <?php echo (int)$membro['faltas_consecutivas']; ?> faltas consecutivas
+                        </div>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+            </div>
+
+            <!-- Próximas reuniões -->
+            <?php if (!empty($proximasReunioes ?? [])): ?>
+                <div class="presencas-card">
+                    <h2>Próximas reuniões</h2>
+                    <?php foreach ($proximasReunioes as $pr): ?>
+                        <div class="dash-proxima-reuniao">
+                            <div>
+                                <div class="dash-proxima-gf"><?php echo htmlspecialchars($pr['nome']); ?></div>
+                                <div class="dash-proxima-info">
+                                    Líder: <?php echo htmlspecialchars($pr['lideres'] ?? '—'); ?>
+                                    · <?php echo htmlspecialchars($pr['total_membros'] ?? '—'); ?> membros
+                                </div>
+                            </div>
+                            <div class="dash-proxima-dia">
+                                <?php echo htmlspecialchars($pr['dia_semana']); ?><br>
+                                <span><?php echo htmlspecialchars($pr['horario']); ?></span>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
+
+        </div>
     </div>
 
+
 <?php else: ?>
+
+    <!-- ═══════════════════════════════════════════
+         DASHBOARD LÍDER
+    ════════════════════════════════════════════ -->
+
     <div class="presencas-layout">
+
         <div class="presencas-coluna">
             <div class="presencas-card">
                 <h2>Meus Grupos Familiares</h2>
 
                 <?php if (count($gruposDoLider) === 0): ?>
-                    <p>Você ainda não está vinculado como líder de nenhum Grupo Familiar.</p>
+                    <p style="color: var(--color-text-muted); font-size: 13px;">
+                        Você ainda não está vinculado como líder de nenhum Grupo Familiar.
+                    </p>
                 <?php else: ?>
                     <?php foreach ($gruposDoLider as $grupo): ?>
-                        <div class="card-perfil" style="margin-bottom: 20px;">
+                        <div class="card-perfil">
                             <h3><?php echo htmlspecialchars($grupo['nome']); ?></h3>
-                            <p><strong>Dia:</strong> <?php echo htmlspecialchars($grupo['dia_semana']); ?></p>
-                            <p><strong>Horário:</strong> <?php echo htmlspecialchars($grupo['horario']); ?></p>
-                            <p><strong>Membros ativos:</strong> <?php echo htmlspecialchars($grupo['total_membros_ativos']); ?></p>
-                            <p><strong>Total de reuniões:</strong> <?php echo htmlspecialchars($grupo['total_reunioes']); ?></p>
-                            <p><strong>Última reunião:</strong> <?php echo !empty($grupo['ultima_reuniao']) ? htmlspecialchars(formatarDataBr($grupo['ultima_reuniao'])) : '—'; ?></p>
+                            <div class="grupo-meta-badges">
+                                <span class="grupo-meta-badge">
+                                    <strong>📅 Dia:</strong> <?php echo htmlspecialchars($grupo['dia_semana']); ?>
+                                </span>
 
-                            <hr style="margin: 16px 0;">
+                                <span class="grupo-meta-badge">
+                                    <strong>⏰ Horário:</strong> <?php echo htmlspecialchars($grupo['horario']); ?>
+                                </span>
 
+                                <span class="grupo-meta-badge">
+                                    <strong>👥 Membros:</strong> <?php echo htmlspecialchars($grupo['total_membros_ativos']); ?>
+                                </span>
+
+                                <span class="grupo-meta-badge">
+                                    <strong>🗪 Reuniões:</strong> <?php echo htmlspecialchars($grupo['total_reunioes']); ?>
+                                </span>
+
+                                <span class="grupo-meta-badge">
+                                    <strong>⏳ Última reunião:</strong>
+                                    <?php echo !empty($grupo['ultima_reuniao']) ? htmlspecialchars(formatarDataBr($grupo['ultima_reuniao'])) : '—'; ?>
+                                </span>
+                            </div>
+
+                            <?php if (!empty($grupo['item_celeiro']) || !empty($grupo['domingo_oracao_culto'])): ?>
+                                <div class="escala-badges">
+                                    <?php if (!empty($grupo['item_celeiro'])): ?>
+                                        <span class="escala-badge escala-badge-celeiro">
+                                            🌾 Celeiro: <?php echo htmlspecialchars($grupo['item_celeiro']); ?>
+                                        </span>
+                                    <?php endif; ?>
+                                    <?php if (!empty($grupo['domingo_oracao_culto'])): ?>
+                                        <?php
+                                        $doms = [1 => '1º Domingo', 2 => '2º Domingo', 3 => '3º Domingo', 4 => '4º Domingo', 5 => '5º Domingo'];
+                                        ?>
+                                        <span class="escala-badge escala-badge-oracao">
+                                            ✝ Oração: <?php echo htmlspecialchars($doms[(int)$grupo['domingo_oracao_culto']] ?? '—'); ?>
+                                        </span>
+                                    <?php endif; ?>
+                                </div>
+                            <?php endif; ?>
+                            <hr>
                             <?php
-                            $presencas = (int) $grupo['resumo_presenca']['total_presencas'];
-                            $ausencias = (int) $grupo['resumo_presenca']['total_ausencias'];
+                            $presencas        = (int) $grupo['resumo_presenca']['total_presencas'];
+                            $ausencias        = (int) $grupo['resumo_presenca']['total_ausencias'];
                             $percentualPresenca = (float) $grupo['resumo_presenca']['percentual_presencas'];
                             $percentualAusencia = (float) $grupo['resumo_presenca']['percentual_ausencias'];
                             ?>
-
-                            <p>
-                                <strong>Presenças:</strong> <?php echo $presencas; ?> |
-                                <strong>Ausências:</strong> <?php echo $ausencias; ?>
-                            </p>
-
                             <div class="barra-percentual">
                                 <div class="barra-presenca" style="width: <?php echo $percentualPresenca; ?>%;"></div>
                                 <div class="barra-ausencia" style="width: <?php echo $percentualAusencia; ?>%;"></div>
                             </div>
-
                             <div class="resumo-percentual">
                                 <span class="legenda-presenca">Presença: <?php echo $percentualPresenca; ?>%</span>
                                 <span class="legenda-ausencia">Ausência: <?php echo $percentualAusencia; ?>%</span>
+                                <span style="color: var(--color-text-muted); font-size: 12px;"><?php echo $presencas; ?> · <?php echo $ausencias; ?></span>
                             </div>
-
                             <?php if (!empty($grupo['faltosos'])): ?>
                                 <div class="erro" style="margin-top: 12px;">
-                                    <strong>Avisos:</strong><br>
+                                    <strong>Membros com faltas consecutivas:</strong><br>
                                     <?php foreach ($grupo['faltosos'] as $faltoso): ?>
-                                        <?php echo htmlspecialchars($faltoso['nome']); ?> — <?php echo htmlspecialchars($faltoso['faltas_consecutivas']); ?> faltas consecutivas<br>
+                                        <?php echo htmlspecialchars($faltoso['nome']); ?> — <?php echo htmlspecialchars($faltoso['faltas_consecutivas']); ?> faltas<br>
                                     <?php endforeach; ?>
                                 </div>
                             <?php endif; ?>
-
                             <?php if (!empty($grupo['resumo_membros'])): ?>
-                                <table style="margin-top: 16px;">
-                                    <thead>
-                                        <tr>
-                                            <th>Membro</th>
-                                            <th>Última presença</th>
-                                            <th>Presenças</th>
-                                            <th>Ausências</th>
-                                            <th>% Presença</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <?php foreach ($grupo['resumo_membros'] as $membro): ?>
+                                <div class="tabela-wrapper" style="margin-top: 16px;">
+                                    <table>
+                                        <thead>
                                             <tr>
-                                                <td><?php echo htmlspecialchars($membro['nome']); ?></td>
-                                                <td><?php echo htmlspecialchars(formatarDataBr($membro['ultima_presenca'] ?? null)); ?></td>
-                                                <td><?php echo htmlspecialchars($membro['total_presencas']); ?></td>
-                                                <td><?php echo htmlspecialchars($membro['total_ausencias']); ?></td>
-                                                <td><?php echo htmlspecialchars($membro['percentual_presenca']); ?>%</td>
+                                                <th>Membro</th>
+                                                <th>Última presença</th>
+                                                <th>Pres.</th>
+                                                <th>Aus.</th>
+                                                <th>%</th>
                                             </tr>
-                                        <?php endforeach; ?>
-                                    </tbody>
-                                </table>
+                                        </thead>
+                                        <tbody>
+                                            <?php foreach ($grupo['resumo_membros'] as $membro): ?>
+                                                <tr>
+                                                    <td><?php echo htmlspecialchars($membro['nome']); ?></td>
+                                                    <td><?php echo htmlspecialchars(formatarDataBr($membro['ultima_presenca'] ?? null)); ?></td>
+                                                    <td><?php echo htmlspecialchars($membro['total_presencas']); ?></td>
+                                                    <td><?php echo htmlspecialchars($membro['total_ausencias']); ?></td>
+                                                    <td><?php echo htmlspecialchars($membro['percentual_presenca']); ?>%</td>
+                                                </tr>
+                                            <?php endforeach; ?>
+                                        </tbody>
+                                    </table>
+                                </div>
                             <?php endif; ?>
                         </div>
                     <?php endforeach; ?>
+                    <div class="acoes" style="margin-top: 8px;">
+                        <a class="botao-link" href="/presencas.php">Ir para Reuniões e Presenças</a>
+                    </div>
                 <?php endif; ?>
-
-                <div class="acoes" style="margin-top: 16px;">
-                    <a class="botao-link" href="/presencas.php">Ir para Reuniões e Presenças</a>
-                </div>
             </div>
         </div>
 
         <div class="presencas-coluna">
-            <div class="presencas-card quadro-ultimas-reunioes">
+            <div class="presencas-card quadro-ultimas-reunioes quadro-ultimas-reunioes-lider">
                 <h2>Últimas reuniões dos meus GFs</h2>
-
                 <?php if (count($ultimasReunioes) === 0): ?>
-                    <p>Nenhuma reunião registrada ainda.</p>
+                    <p style="color: var(--color-text-muted); font-size: 13px;">Nenhuma reunião registrada ainda.</p>
                 <?php else: ?>
-                    <div class="tabela-wrapper">
-                        <table>
+                    <div class="tabela-wrapper tabela-wrapper-lider">
+                        <table class="tabela-reunioes-lider">
                             <thead>
                                 <tr>
                                     <th>GF</th>
                                     <th>Data</th>
                                     <th>Horário</th>
-                                    <th>Presentes</th>
-                                    <th>Ausentes</th>
                                     <th class="tabela-acoes">Ações</th>
                                 </tr>
                             </thead>
@@ -326,12 +373,14 @@
                                         <td><?php echo htmlspecialchars($reuniao['grupo_nome']); ?></td>
                                         <td><?php echo htmlspecialchars(formatarDataBr($reuniao['data'])); ?></td>
                                         <td><?php echo htmlspecialchars($reuniao['horario']); ?></td>
-                                        <td><?php echo htmlspecialchars($reuniao['total_presentes']); ?></td>
-                                        <td><?php echo htmlspecialchars($reuniao['total_ausentes']); ?></td>
                                         <td class="tabela-acoes">
-                                            <div class="acoes">
-                                                <a class="botao-link" href="/reuniao_visualizar.php?id=<?php echo (int) $reuniao['id']; ?>">Visualizar</a>
-                                                <a class="botao-link" href="/pedidos_oracao.php?reuniao_id=<?php echo (int) $reuniao['id']; ?>">Pedidos de Oração</a>
+                                            <div class="acoes-reuniao-lider">
+                                                <a class="botao-link" href="/reuniao_visualizar.php?id=<?php echo (int) $reuniao['id']; ?>">
+                                                    Visualizar
+                                                </a>
+                                                <a class="botao-link btn-presenca-oracao" href="/pedidos_oracao.php?reuniao_id=<?php echo (int) $reuniao['id']; ?>">
+                                                    Oração
+                                                </a>
                                             </div>
                                         </td>
                                     </tr>
@@ -342,7 +391,9 @@
                 <?php endif; ?>
             </div>
         </div>
+
     </div>
+
 <?php endif; ?>
 
 <?php require __DIR__ . '/../layouts/footer.php'; ?>

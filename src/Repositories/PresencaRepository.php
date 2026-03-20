@@ -1106,4 +1106,97 @@ class PresencaRepository
 
         return (int) $stmt->fetchColumn();
     }
+
+    // Adicionar este método ao PresencaRepository.php
+// Cria a reunião e salva presenças em uma única transação atômica
+
+public function criarReuniaoComPresencas(
+    int $grupoId,
+    string $data,
+    string $horario,
+    string $local,
+    ?string $observacoes,
+    array $presencas // [presenca_id_temporario => status] — na verdade [pessoa_id => status]
+): int {
+    $dateTime = DateTime::createFromFormat('Y-m-d', $data);
+    if ($dateTime === false || $dateTime->format('Y-m-d') !== $data) {
+        throw new InvalidArgumentException('Data da reunião inválida.');
+    }
+
+    $existente = $this->buscarReuniaoPorGrupoEData($grupoId, $data);
+    if ($existente !== null) {
+        throw new InvalidArgumentException('Já existe uma reunião registrada para este GF nessa data.');
+    }
+
+    $grupo = $this->buscarGrupoPorId($grupoId);
+    if (!$grupo) {
+        throw new InvalidArgumentException('Grupo Familiar não encontrado.');
+    }
+
+    $motivos = [];
+    $diaSemanaInformado = $this->obterDiaSemanaEmPortugues($data);
+    if ($diaSemanaInformado !== '' && $diaSemanaInformado !== $grupo['dia_semana']) {
+        $motivos[] = 'Reunião realizada fora do dia padrão do GF.';
+    }
+    if ($horario !== $grupo['horario']) {
+        $motivos[] = 'Reunião realizada fora do horário padrão do GF.';
+    }
+    if (!empty($grupo['local_padrao']) && trim($local) !== trim($grupo['local_padrao'])) {
+        $motivos[] = 'Reunião realizada em local fora do padrão do GF.';
+    }
+    $motivoAlteracao = count($motivos) > 0 ? implode(' ', $motivos) : null;
+
+    $this->connection->beginTransaction();
+    try {
+        $stmt = $this->connection->prepare("
+            INSERT INTO reunioes (grupo_familiar_id, data, horario, local, motivo_alteracao, observacoes)
+            VALUES (:grupo_familiar_id, :data, :horario, :local, :motivo_alteracao, :observacoes)
+        ");
+        $stmt->execute([
+            ':grupo_familiar_id' => $grupoId,
+            ':data'              => $data,
+            ':horario'           => $horario,
+            ':local'             => $local,
+            ':motivo_alteracao'  => $motivoAlteracao,
+            ':observacoes'       => $observacoes !== '' ? $observacoes : null,
+        ]);
+        $reuniaoId = (int) $this->connection->lastInsertId();
+
+        $stmtP = $this->connection->prepare("
+            INSERT INTO presencas (reuniao_id, pessoa_id, status)
+            VALUES (:reuniao_id, :pessoa_id, :status)
+        ");
+        foreach ($presencas as $pessoaId => $status) {
+            if (!in_array($status, ['presente', 'ausente'], true)) {
+                throw new InvalidArgumentException('Status inválido para o membro ' . $pessoaId);
+            }
+            $stmtP->execute([
+                ':reuniao_id' => $reuniaoId,
+                ':pessoa_id'  => (int) $pessoaId,
+                ':status'     => $status,
+            ]);
+        }
+
+        $this->connection->commit();
+        return $reuniaoId;
+    } catch (Exception $e) {
+        $this->connection->rollBack();
+        throw $e;
+    }
+}
+
+// Buscar membros ativos de um grupo (para pré-carregar o formulário antes de criar a reunião)
+public function listarMembrosPorGrupo(int $grupoId): array
+{
+    $stmt = $this->connection->prepare("
+        SELECT gm.pessoa_id AS id, p.nome, p.cargo
+        FROM grupo_membros gm
+        INNER JOIN pessoas p ON p.id = gm.pessoa_id
+        WHERE gm.grupo_familiar_id = :grupo_id
+        AND p.ativo = 1
+        ORDER BY p.nome ASC
+    ");
+    $stmt->execute([':grupo_id' => $grupoId]);
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
 }
