@@ -17,7 +17,7 @@
             </h2>
 
             <div class="acoes" style="margin-bottom: 20px;">
-                <a class="btn-visualizar" href="/pedidos_oracao.php?reuniao_id=<?php echo (int) $reuniao['id']; ?>">
+                <a class="btn-presenca-oracao" href="/pedidos_oracao.php?reuniao_id=<?php echo (int) $reuniao['id']; ?>">
                     <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 2v12M2 8h12"/></svg>
                     Pedidos de Oração
                 </a>

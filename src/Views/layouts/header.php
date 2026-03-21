@@ -72,7 +72,65 @@ $primeiraInicial = !empty($partes[0]) ? mb_substr($partes[0], 0, 1) : 'U';
 $segundaInicial = isset($partes[1]) ? mb_substr($partes[1], 0, 1) : '';
 $iniciais = strtoupper($primeiraInicial . $segundaInicial);
 
-$totalAvisosNav = $totalAvisos ?? 0;
+/*
+|------------------------------------------------------------
+| Badge de notificações da sidebar
+|------------------------------------------------------------
+| Se a página já fornecer $totalAvisos, usa esse valor.
+| Caso contrário, calcula aqui o TOTAL DE NÃO LIDAS.
+*/
+if (!isset($totalAvisos)) {
+    require_once __DIR__ . '/../../Repositories/PresencaRepository.php';
+    require_once __DIR__ . '/../../Repositories/AvisoRepository.php';
+
+    $presencaRepoHeader = new PresencaRepository();
+    $avisoRepoHeader = new AvisoRepository();
+
+    $usuarioIdHeader = (int) ($usuario['id'] ?? 0);
+    $chavesLidasHeader = $usuarioIdHeader > 0
+        ? $avisoRepoHeader->listarChavesLidas($usuarioIdHeader)
+        : [];
+
+    $chavesLidasMapHeader = array_fill_keys($chavesLidasHeader, true);
+    $totalAvisos = 0;
+
+    if ($isAdmin) {
+        $gruposAlarmantesHeader = $presencaRepoHeader->buscarGruposAlarmantes();
+        $membrosFaltososHeader = $presencaRepoHeader->buscarMembrosComFaltasConsecutivasGerais();
+        $reunioesForaDoPadraoHeader = $presencaRepoHeader->buscarReunioesForaDoPadrao();
+    } else {
+        $gruposAlarmantesHeader = $presencaRepoHeader->buscarGruposAlarmantesDoLider($usuarioIdHeader);
+        $membrosFaltososHeader = $presencaRepoHeader->buscarMembrosComFaltasConsecutivasDoLider($usuarioIdHeader);
+        $reunioesForaDoPadraoHeader = $presencaRepoHeader->buscarReunioesForaDoPadraoDoLider($usuarioIdHeader);
+    }
+
+    foreach ($gruposAlarmantesHeader as $g) {
+        $chave = 'gf_alarmante_' . (int) $g['id'];
+        if (!isset($chavesLidasMapHeader[$chave])) {
+            $totalAvisos++;
+        }
+    }
+
+    foreach ($membrosFaltososHeader as $m) {
+        $grupoId = (int) ($m['grupo_id'] ?? 0);
+        $pessoaId = (int) ($m['pessoa_id'] ?? 0);
+        $chave = 'faltas_' . $grupoId . '_' . $pessoaId;
+
+        if (!isset($chavesLidasMapHeader[$chave])) {
+            $totalAvisos++;
+        }
+    }
+
+    foreach ($reunioesForaDoPadraoHeader as $r) {
+        $chave = 'reuniao_fora_padrao_' . (int) $r['id'];
+
+        if (!isset($chavesLidasMapHeader[$chave])) {
+            $totalAvisos++;
+        }
+    }
+}
+
+$totalAvisosNav = (int) ($totalAvisos ?? 0);
 ?>
 
 <div class="jtro-layout">

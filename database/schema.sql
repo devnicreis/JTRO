@@ -46,6 +46,7 @@ CREATE TABLE IF NOT EXISTS reunioes (
     local TEXT NOT NULL,
     motivo_alteracao TEXT,
     observacoes TEXT,
+    finalizada INTEGER NOT NULL DEFAULT 1,
     FOREIGN KEY (grupo_familiar_id) REFERENCES grupos_familiares(id)
 );
 

@@ -70,7 +70,8 @@ foreach ($membrosFaltosos as $m) {
     $avisos[] = [
         'chave'     => $chave,
         'tipo'      => 'warn',
-        'texto'     => $m['nome'] . ' — ' . (int)$m['faltas_consecutivas'] . ' faltas consecutivas no GF ' . $m['grupo_nome'],
+        'texto'     => 'Faltas consecutivas',
+        'detalhe'   => $m['nome'] . ' · GF ' . $m['grupo_nome'],
         'lido'      => isset($chavesLidasMap[$chave]),
         'timestamp' => strtotime('yesterday'),
     ];
@@ -78,10 +79,14 @@ foreach ($membrosFaltosos as $m) {
 
 foreach ($reunioesForaPadrao as $r) {
     $chave = 'reuniao_fora_padrao_' . $r['id'];
+    $dataFormatada = !empty($r['data']) ? date('d/m/Y', strtotime($r['data'])) : '';
+
     $avisos[] = [
         'chave'     => $chave,
         'tipo'      => 'info',
-        'texto'     => 'Reunião do GF ' . $r['grupo_nome'] . ' com presença abaixo do padrão',
+        'texto'     => 'Reunião fora do padrão',
+        'detalhe'   => trim(($r['grupo_nome'] ?? 'GF') . ($dataFormatada !== '' ? ' · ' . $dataFormatada : '')),
+        'motivo'    => !empty($r['motivo_alteracao']) ? 'Motivo: ' . $r['motivo_alteracao'] : '',
         'lido'      => isset($chavesLidasMap[$chave]),
         'timestamp' => isset($r['data']) ? strtotime($r['data']) : strtotime('-3 days'),
     ];

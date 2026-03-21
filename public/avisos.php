@@ -81,6 +81,6 @@ foreach ($avisos as $aviso) {
     }
 }
 
-$pageTitle = 'Avisos - JTRO';
+$pageTitle = 'Notificações';
 
 require_once __DIR__ . '/../src/Views/avisos/index.php';

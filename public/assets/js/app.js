@@ -6,11 +6,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // ── Validação de campo de data em formulários ──────────────
     const campoData = document.getElementById('data');
-    const erroData  = document.getElementById('erro-data');
+    const erroData = document.getElementById('erro-data');
 
     if (campoData) {
-        const hoje        = new Date();
-        const hojeStr     = hoje.toISOString().split('T')[0];
+        const hoje = new Date();
+        const hojeStr = hoje.toISOString().split('T')[0];
         const limitePassado = new Date();
         limitePassado.setDate(limitePassado.getDate() - 30);
         const minStr = limitePassado.toISOString().split('T')[0];
@@ -29,18 +29,18 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // ── Sino de notificações ───────────────────────────────────
-    const notifWrap        = document.getElementById('notifWrap');
-    const notifBtn         = document.getElementById('notifBtn');
-    const notifDropdown    = document.getElementById('notifDropdown');
-    const notifList        = document.getElementById('notifList');
-    const notifBadge       = document.getElementById('notifBadge');
+    const notifWrap = document.getElementById('notifWrap');
+    const notifBtn = document.getElementById('notifBtn');
+    const notifDropdown = document.getElementById('notifDropdown');
+    const notifList = document.getElementById('notifList');
+    const notifBadge = document.getElementById('notifBadge');
     const notifMarcarTodos = document.getElementById('notifMarcarTodos');
-    const notifCountEl     = document.getElementById('notifCountNaoLidos');
+    const notifCountEl = document.getElementById('notifCountNaoLidos');
 
     if (!notifBtn || !notifDropdown) return;
 
-    let avisosCache  = [];
-    let abaAtiva     = 'nao-lidos';
+    let avisosCache = [];
+    let abaAtiva = 'nao-lidos';
     let dropdownOpen = false;
 
     // Abrir/fechar dropdown
@@ -76,9 +76,9 @@ document.addEventListener('DOMContentLoaded', function () {
             if (naoLidos.length === 0) return;
 
             fetch('/avisos_json.php', {
-                method:  'POST',
+                method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body:    JSON.stringify({ acao: 'marcar_todos_lidos', chaves: naoLidos.map(a => a.chave), chave: '' })
+                body: JSON.stringify({ acao: 'marcar_todos_lidos', chaves: naoLidos.map(a => a.chave), chave: '' })
             }).then(function () {
                 avisosCache.forEach(a => a.lido = true);
                 atualizarBadge();
@@ -104,6 +104,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Expõe globalmente para a página de avisos sincronizar o sino
     window.jtroRecarregarAvisos = carregarAvisos;
+    carregarAvisos();
 
     function atualizarBadge() {
         const count = avisosCache.filter(a => !a.lido).length;
@@ -136,13 +137,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function tempoRelativo(ts) {
         if (!ts) return '';
-        const agora   = new Date();
-        const data    = new Date(ts * 1000);
-        const diffMs  = agora - data;
+        const agora = new Date();
+        const data = new Date(ts * 1000);
+        const diffMs = agora - data;
         const diffDias = Math.floor(diffMs / 86400000);
         if (diffDias === 0) return 'Hoje';
         if (diffDias === 1) return 'Ontem';
-        const meses = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+        const meses = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
         return data.getDate() + ' ' + meses[data.getMonth()];
     }
 
@@ -160,16 +161,25 @@ document.addEventListener('DOMContentLoaded', function () {
 
         notifList.innerHTML = filtrados.map(function (aviso) {
             const tempo = aviso.timestamp ? '<span class="notif-tempo">' + esc(tempoRelativo(aviso.timestamp)) + '</span>' : '';
+            const detalhe = aviso.detalhe
+                ? '<div class="notif-detalhe">' + esc(aviso.detalhe) + '</div>'
+                : '';
+            const motivo = aviso.motivo
+                ? '<div class="notif-motivo">' + esc(aviso.motivo) + '</div>'
+                : '';
+
             return '<div class="notif-item" data-chave="' + esc(aviso.chave) + '">' +
                 '<div class="notif-dot notif-dot-' + esc(aviso.tipo) + '"></div>' +
                 '<div class="notif-item-corpo">' +
-                    '<div class="notif-texto">' + esc(aviso.texto) + '</div>' +
-                    tempo +
-                    '<button class="notif-acao-btn" data-chave="' + esc(aviso.chave) + '" data-lido="' + aviso.lido + '" type="button">' +
-                        (aviso.lido ? 'Marcar como não lido' : 'Marcar como lido') +
-                    '</button>' +
+                '<div class="notif-texto">' + esc(aviso.texto) + '</div>' +
+                detalhe +
+                motivo +
+                tempo +
+                '<button class="notif-acao-btn" data-chave="' + esc(aviso.chave) + '" data-lido="' + aviso.lido + '" type="button">' +
+                (aviso.lido ? 'Marcar como não lido' : 'Marcar como lido') +
+                '</button>' +
                 '</div>' +
-            '</div>';
+                '</div>';
         }).join('');
 
         // Botões individuais
@@ -177,13 +187,13 @@ document.addEventListener('DOMContentLoaded', function () {
             btn.addEventListener('click', function (e) {
                 e.stopPropagation();
                 const chave = this.dataset.chave;
-                const lido  = this.dataset.lido === 'true';
-                const acao  = lido ? 'marcar_nao_lido' : 'marcar_lido';
+                const lido = this.dataset.lido === 'true';
+                const acao = lido ? 'marcar_nao_lido' : 'marcar_lido';
 
                 fetch('/avisos_json.php', {
-                    method:  'POST',
+                    method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body:    JSON.stringify({ acao: acao, chave: chave })
+                    body: JSON.stringify({ acao: acao, chave: chave })
                 }).then(function () {
                     const aviso = avisosCache.find(a => a.chave === chave);
                     if (aviso) aviso.lido = !lido;
