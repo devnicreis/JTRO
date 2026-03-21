@@ -24,7 +24,18 @@
                     <?php foreach ($avisosNaoLidos as $aviso): ?>
                         <div class="aviso-item aviso-nao-lido" data-chave="<?php echo htmlspecialchars($aviso['chave']); ?>">
 
-                            <?php if ($aviso['tipo'] === 'grupo_alarmante'): ?>
+                            <?php if ($aviso['tipo'] === 'carta_nova'): ?>
+                                <?php $carta = $aviso['carta']; ?>
+                                <div class="aviso-item-topo">
+                                    <span class="diagnostico-faixa diagnostico-bom">Nova Carta Semanal</span>
+                                </div>
+                                <div class="aviso-item-titulo"><?php echo htmlspecialchars($carta['pregacao_titulo'] ?? 'Carta do Pastor'); ?></div>
+                                <div class="aviso-item-detalhe">
+                                    <span><strong>Data:</strong> <?php echo htmlspecialchars(formatarDataBr($carta['data_carta'])); ?></span>
+                                    <span><a href="/carta_visualizar.php?id=<?php echo (int)$carta['id']; ?>" style="color:var(--color-blue); font-size:12px;">Ler carta completa →</a></span>
+                                </div>
+
+                            <?php elseif ($aviso['tipo'] === 'grupo_alarmante'): ?>
                                 <?php $grupo = $aviso['grupo']; ?>
                                 <div class="aviso-item-topo">
                                     <span class="diagnostico-faixa diagnostico-alarmante">Diagnóstico alarmante</span>
@@ -87,7 +98,14 @@
                     <?php foreach ($avisosLidos as $aviso): ?>
                         <div class="aviso-item aviso-lido" data-chave="<?php echo htmlspecialchars($aviso['chave']); ?>">
 
-                            <?php if ($aviso['tipo'] === 'grupo_alarmante'): ?>
+                            <?php if ($aviso['tipo'] === 'carta_nova'): ?>
+                                <?php $carta = $aviso['carta']; ?>
+                                <div class="aviso-item-titulo aviso-titulo-lido"><?php echo htmlspecialchars($carta['pregacao_titulo'] ?? 'Carta do Pastor'); ?></div>
+                                <div class="aviso-item-detalhe">
+                                    <span>Carta Semanal · <?php echo htmlspecialchars(formatarDataBr($carta['data_carta'])); ?></span>
+                                </div>
+
+                            <?php elseif ($aviso['tipo'] === 'grupo_alarmante'): ?>
                                 <?php $grupo = $aviso['grupo']; ?>
                                 <div class="aviso-item-titulo aviso-titulo-lido"><?php echo htmlspecialchars($grupo['nome']); ?></div>
                                 <div class="aviso-item-detalhe">

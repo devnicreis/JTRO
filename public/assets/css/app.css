@@ -1474,3 +1474,214 @@ tbody tr:hover td { background: var(--color-bg); }
     line-height: 1.4;
     margin-bottom: 4px;
 }
+
+/* ============================================================
+   Carta Semanal — formulário e visualização
+   ============================================================ */
+ 
+/* Seções do formulário */
+.carta-secao {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: 18px 20px;
+    margin-bottom: 16px;
+}
+ 
+.carta-secao-titulo {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--color-text-muted);
+    margin-bottom: 14px;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+}
+ 
+/* Row de aviso no formulário */
+.carta-aviso-row {
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: 14px;
+    margin-bottom: 10px;
+}
+ 
+/* Lista de cartas */
+.carta-item-ant {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--color-border);
+}
+ 
+.carta-item-ant:last-child { border-bottom: none; }
+ 
+.carta-item-data {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--color-text-primary);
+    margin-bottom: 2px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+ 
+.carta-item-pregacao {
+    font-size: 12px;
+    color: var(--color-text-muted);
+}
+ 
+.carta-badge-rascunho {
+    display: inline-flex;
+    padding: 2px 8px;
+    background: var(--color-amber-light);
+    color: var(--color-amber);
+    border-radius: var(--radius-full);
+    font-size: 10px;
+    font-weight: 500;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+}
+ 
+/* Preview na listagem */
+.carta-preview { }
+.carta-preview-data { font-size: 18px; font-weight: 600; font-family: 'Outfit', sans-serif; color: var(--color-text-primary); margin-bottom: 6px; }
+.carta-preview-pregacao { font-size: 13px; color: var(--color-text-secondary); margin-bottom: 16px; }
+.carta-preview-acoes { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+ 
+/* Visualização da carta */
+.carta-visualizar-wrap {
+    max-width: 680px;
+    margin: 0 auto;
+}
+ 
+.carta-vis-header {
+    margin-bottom: 24px;
+}
+ 
+.carta-vis-imagem {
+    margin-bottom: 16px;
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+}
+ 
+.carta-vis-imagem img {
+    width: 100%;
+    max-height: 280px;
+    object-fit: cover;
+    display: block;
+}
+ 
+.carta-vis-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+ 
+.carta-vis-local { font-size: 14px; color: var(--color-text-secondary); }
+.carta-vis-graça  { font-size: 14px; color: var(--color-text-secondary); }
+ 
+.carta-vis-conteudo {
+    font-size: 15px;
+    line-height: 1.8;
+    color: var(--color-text-primary);
+    margin-bottom: 28px;
+    padding: 0;
+    border: none;
+}
+ 
+/* Remove bordas do Quill no modo visualização */
+.carta-vis-conteudo.ql-editor { padding: 0; }
+ 
+.carta-vis-secao {
+    border-top: 1px solid var(--color-border);
+    padding-top: 20px;
+    margin-top: 20px;
+    margin-bottom: 20px;
+}
+ 
+.carta-vis-secao-titulo {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: var(--color-blue);
+    margin-bottom: 12px;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+}
+ 
+.carta-vis-pregacao-titulo { font-size: 15px; margin-bottom: 10px; }
+ 
+.carta-link-externo {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    color: var(--color-blue);
+    text-decoration: none;
+    margin-left: 4px;
+}
+ 
+.carta-vis-pergunta {
+    font-size: 14px;
+    color: var(--color-text-secondary);
+    background: var(--color-bg);
+    border-left: 3px solid var(--color-blue-mid);
+    padding: 10px 14px;
+    border-radius: 0 var(--radius-md) var(--radius-md) 0;
+    line-height: 1.6;
+}
+ 
+.carta-vis-aviso {
+    margin-bottom: 14px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--color-border);
+}
+ 
+.carta-vis-aviso:last-child { border-bottom: none; margin-bottom: 0; }
+ 
+.carta-vis-aviso-nome {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--color-text-primary);
+    margin-bottom: 4px;
+}
+ 
+.carta-vis-aviso-data { font-weight: 400; color: var(--color-text-muted); font-size: 13px; }
+.carta-vis-aviso-body { font-size: 13px; color: var(--color-text-secondary); line-height: 1.6; }
+ 
+.carta-vis-assinatura {
+    border-top: 1px solid var(--color-border);
+    padding-top: 20px;
+    margin-top: 20px;
+    font-size: 14px;
+    color: var(--color-text-secondary);
+    line-height: 1.8;
+}
+ 
+/* ── Reset botões Quill (evita herdar estilos globais de button) ── */
+.ql-toolbar button,
+.ql-toolbar button:hover,
+.ql-toolbar button.ql-active,
+.ql-toolbar button:focus {
+    background: transparent !important;
+    color: inherit !important;
+    border: none !important;
+    padding: 3px 5px !important;
+    min-height: unset !important;
+    width: 28px !important;
+    height: 28px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    opacity: 1 !important;
+}
+ 
+.ql-toolbar { border-radius: var(--radius-md) var(--radius-md) 0 0 !important; }
+.ql-container { border-radius: 0 0 var(--radius-md) var(--radius-md) !important; font-family: 'Plus Jakarta Sans', sans-serif !important; font-size: 14px !important; }
+.ql-editor { min-height: 200px; }

@@ -23,32 +23,21 @@ function navItem(string $href, string $label, string $pagina, string $paginaAtua
 {
     $ativo = $pagina === $paginaAtual ? ' ativo' : '';
     $badgeHtml = $badge > 0 ? '<span class="nav-badge">' . $badge . '</span>' : '';
-
     return '<a href="' . $href . '" class="nav-item' . $ativo . '">' . $icon . '<span>' . $label . '</span>' . $badgeHtml . '</a>';
 }
 
 /* Ícones */
-$iconDashboard = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="6" height="6" rx="1.5"/><rect x="9" y="1" width="6" height="6" rx="1.5"/><rect x="1" y="9" width="6" height="6" rx="1.5"/><rect x="9" y="9" width="6" height="6" rx="1.5"/></svg>';
-
-$iconPessoas = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="5" r="3"/><path d="M2 15c0-3.3 2.7-6 6-6s6 2.7 6 6"/></svg>';
-
-$iconGrupos = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="5" cy="5" r="2.5"/><circle cx="11" cy="5" r="2.5"/><path d="M1 14c0-2.8 1.8-5 4-5M15 14c0-2.8-1.8-5-4-5M5 14c0-2.2 1.3-4 3-4s3 1.8 3 4"/></svg>';
-
-$iconPresencas = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="12" height="11" rx="2"/><path d="M5 1v4M11 1v4M2 7h12"/><path d="M5.5 10.5l1.5 1.5 3-3"/></svg>';
-
+$iconDashboard    = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="6" height="6" rx="1.5"/><rect x="9" y="1" width="6" height="6" rx="1.5"/><rect x="1" y="9" width="6" height="6" rx="1.5"/><rect x="9" y="9" width="6" height="6" rx="1.5"/></svg>';
+$iconPessoas      = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="5" r="3"/><path d="M2 15c0-3.3 2.7-6 6-6s6 2.7 6 6"/></svg>';
+$iconGrupos       = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="5" cy="5" r="2.5"/><circle cx="11" cy="5" r="2.5"/><path d="M1 14c0-2.8 1.8-5 4-5M15 14c0-2.8-1.8-5-4-5M5 14c0-2.2 1.3-4 3-4s3 1.8 3 4"/></svg>';
+$iconPresencas    = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="12" height="11" rx="2"/><path d="M5 1v4M11 1v4M2 7h12"/><path d="M5.5 10.5l1.5 1.5 3-3"/></svg>';
 $iconNotificacoes = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 1a5 5 0 015 5c0 3 1 4 1.5 5h-13C2 10 3 9 3 6a5 5 0 015-5z"/><path d="M6.5 13a1.5 1.5 0 003 0"/></svg>';
+$iconAuditoria    = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 4h10M3 8h7M3 12h5"/></svg>';
+$iconCarta        = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="3" width="14" height="10" rx="2"/><path d="M1 5l7 5 7-5"/></svg>';
+$iconChevron      = '<svg class="nav-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 7l3 3 3-3"/></svg>';
+$iconSair         = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 8H2M6 5l-3 3 3 3"/><path d="M6 2h6a1 1 0 011 1v10a1 1 0 01-1 1H6"/></svg>';
 
-$iconAuditoria = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 4h10M3 8h7M3 12h5"/></svg>';
-
-$iconChevron = '<svg class="nav-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 7l3 3 3-3"/></svg>';
-
-$iconSair = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 8H2M6 5l-3 3 3 3"/><path d="M6 2h6a1 1 0 011 1v10a1 1 0 01-1 1H6"/></svg>';
-
-/*
-|------------------------------------------------------------
-| Páginas que deixam o submenu de Grupos Familiares aberto
-|------------------------------------------------------------
-*/
+/* Páginas que deixam o submenu de Grupos Familiares aberto */
 $gruposPaginas = [
     'grupos_familiares',
     'grupos_familiares_editar',
@@ -59,34 +48,28 @@ $gruposPaginas = [
 
 $gruposAberto = in_array($paginaAtual, $gruposPaginas, true);
 
-/*
-|------------------------------------------------------------
-| Dados do usuário logado
-|------------------------------------------------------------
-*/
-$nomeUsuario = $usuario['nome'] ?? 'Usuário';
+/* Dados do usuário logado */
+$nomeUsuario   = $usuario['nome'] ?? 'Usuário';
 $perfilUsuario = $isAdmin ? 'Administrador' : 'Líder';
 
-$partes = preg_split('/\s+/', trim($nomeUsuario));
+$partes          = preg_split('/\s+/', trim($nomeUsuario));
 $primeiraInicial = !empty($partes[0]) ? mb_substr($partes[0], 0, 1) : 'U';
-$segundaInicial = isset($partes[1]) ? mb_substr($partes[1], 0, 1) : '';
-$iniciais = strtoupper($primeiraInicial . $segundaInicial);
+$segundaInicial  = isset($partes[1]) ? mb_substr($partes[1], 0, 1) : '';
+$iniciais        = strtoupper($primeiraInicial . $segundaInicial);
 
 /*
 |------------------------------------------------------------
-| Badge de notificações da sidebar
+| Badge de notificações + cartas não lidas (só líderes)
 |------------------------------------------------------------
-| Se a página já fornecer $totalAvisos, usa esse valor.
-| Caso contrário, calcula aqui o TOTAL DE NÃO LIDAS.
 */
 if (!isset($totalAvisos)) {
     require_once __DIR__ . '/../../Repositories/PresencaRepository.php';
     require_once __DIR__ . '/../../Repositories/AvisoRepository.php';
 
     $presencaRepoHeader = new PresencaRepository();
-    $avisoRepoHeader = new AvisoRepository();
+    $avisoRepoHeader    = new AvisoRepository();
 
-    $usuarioIdHeader = (int) ($usuario['id'] ?? 0);
+    $usuarioIdHeader   = (int) ($usuario['id'] ?? 0);
     $chavesLidasHeader = $usuarioIdHeader > 0
         ? $avisoRepoHeader->listarChavesLidas($usuarioIdHeader)
         : [];
@@ -95,42 +78,43 @@ if (!isset($totalAvisos)) {
     $totalAvisos = 0;
 
     if ($isAdmin) {
-        $gruposAlarmantesHeader = $presencaRepoHeader->buscarGruposAlarmantes();
-        $membrosFaltososHeader = $presencaRepoHeader->buscarMembrosComFaltasConsecutivasGerais();
+        $gruposAlarmantesHeader    = $presencaRepoHeader->buscarGruposAlarmantes();
+        $membrosFaltososHeader     = $presencaRepoHeader->buscarMembrosComFaltasConsecutivasGerais();
         $reunioesForaDoPadraoHeader = $presencaRepoHeader->buscarReunioesForaDoPadrao();
     } else {
-        $gruposAlarmantesHeader = $presencaRepoHeader->buscarGruposAlarmantesDoLider($usuarioIdHeader);
-        $membrosFaltososHeader = $presencaRepoHeader->buscarMembrosComFaltasConsecutivasDoLider($usuarioIdHeader);
+        $gruposAlarmantesHeader    = $presencaRepoHeader->buscarGruposAlarmantesDoLider($usuarioIdHeader);
+        $membrosFaltososHeader     = $presencaRepoHeader->buscarMembrosComFaltasConsecutivasDoLider($usuarioIdHeader);
         $reunioesForaDoPadraoHeader = $presencaRepoHeader->buscarReunioesForaDoPadraoDoLider($usuarioIdHeader);
     }
 
     foreach ($gruposAlarmantesHeader as $g) {
         $chave = 'gf_alarmante_' . (int) $g['id'];
-        if (!isset($chavesLidasMapHeader[$chave])) {
-            $totalAvisos++;
-        }
+        if (!isset($chavesLidasMapHeader[$chave])) $totalAvisos++;
     }
-
     foreach ($membrosFaltososHeader as $m) {
-        $grupoId = (int) ($m['grupo_id'] ?? 0);
-        $pessoaId = (int) ($m['pessoa_id'] ?? 0);
-        $chave = 'faltas_' . $grupoId . '_' . $pessoaId;
-
-        if (!isset($chavesLidasMapHeader[$chave])) {
-            $totalAvisos++;
-        }
+        $chave = 'faltas_' . (int)($m['grupo_id'] ?? 0) . '_' . (int)($m['pessoa_id'] ?? 0);
+        if (!isset($chavesLidasMapHeader[$chave])) $totalAvisos++;
     }
-
     foreach ($reunioesForaDoPadraoHeader as $r) {
         $chave = 'reuniao_fora_padrao_' . (int) $r['id'];
-
-        if (!isset($chavesLidasMapHeader[$chave])) {
-            $totalAvisos++;
-        }
+        if (!isset($chavesLidasMapHeader[$chave])) $totalAvisos++;
     }
 }
 
-$totalAvisosNav = (int) ($totalAvisos ?? 0);
+// Cartas não lidas — apenas para líderes
+$totalCartasNaoLidas = 0;
+if (!$isAdmin) {
+    require_once __DIR__ . '/../../Repositories/CartaRepository.php';
+    $cartaRepoHdr    = new CartaRepository();
+    $usuarioIdHdr    = (int)($usuario['id'] ?? 0);
+    $chavesMapParaCarta = $chavesLidasMapHeader ?? array_fill_keys(
+        (new AvisoRepository())->listarChavesLidas($usuarioIdHdr), true
+    );
+    $totalCartasNaoLidas = $cartaRepoHdr->contarNaoLidasPorUsuario($usuarioIdHdr, $chavesMapParaCarta);
+}
+
+$totalAvisosNav  = (int)($totalAvisos ?? 0);
+$totalCartasBadge = $totalCartasNaoLidas;
 ?>
 
 <div class="jtro-layout">
@@ -185,6 +169,7 @@ $totalAvisosNav = (int) ($totalAvisos ?? 0);
         </div>
 
         <?php echo navItem('/presencas.php', 'Reuniões e Presenças', 'presencas', $paginaAtual, $iconPresencas); ?>
+        <?php echo navItem('/cartas.php', 'Carta Semanal', 'cartas', $paginaAtual, $iconCarta, $totalCartasBadge); ?>
 
         <div class="nav-secao">Sistema</div>
         <?php echo navItem('/avisos.php', 'Notificações', 'avisos', $paginaAtual, $iconNotificacoes, $totalAvisosNav); ?>
@@ -214,20 +199,15 @@ $totalAvisosNav = (int) ($totalAvisos ?? 0);
         <script>
             function toggleSubmenu(btn) {
                 const grupo = btn.closest('.nav-item-grupo');
-                if (grupo) {
-                    grupo.classList.toggle('aberto');
-                }
+                if (grupo) grupo.classList.toggle('aberto');
             }
 
             document.addEventListener('DOMContentLoaded', function () {
-                const paginaAtual = <?php echo json_encode($paginaAtual); ?>;
+                const paginaAtual   = <?php echo json_encode($paginaAtual); ?>;
                 const gruposPaginas = <?php echo json_encode($gruposPaginas); ?>;
-
                 if (gruposPaginas.includes(paginaAtual)) {
                     const grupo = document.querySelector('.nav-item-grupo');
-                    if (grupo) {
-                        grupo.classList.add('aberto');
-                    }
+                    if (grupo) grupo.classList.add('aberto');
                 }
             });
         </script>
