@@ -53,29 +53,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         <!-- Painel esquerdo -->
         <div class="login-painel-esq">
-            <!-- Nome JTRO acima -->
             <div class="login-logo-topo">
-                <span class="login-logo-nome">JTRO</span>
-                <span class="login-logo-sub">The Relational Organizer</span>
+                <span class="login-logo-nome">Comunhão Cristã Abba</span>
+                <span class="login-logo-sub">Fazenda Rio Grande</span>
             </div>
 
-            <!-- Logo no centro -->
-            <img src="\assets\icons\logo-jtro.png" class="login-logo-img" alt="Logo JTRO">
-                <circle cx="40" cy="28" r="22" fill="white" fill-opacity="0.2"/>
-                <circle cx="26" cy="52" r="22" fill="white" fill-opacity="0.2"/>
-                <circle cx="54" cy="52" r="22" fill="white" fill-opacity="0.2"/>
-                <circle cx="40" cy="28" r="22" stroke="white" stroke-opacity="0.5" stroke-width="1.5" fill="none"/>
-                <circle cx="26" cy="52" r="22" stroke="white" stroke-opacity="0.5" stroke-width="1.5" fill="none"/>
-                <circle cx="54" cy="52" r="22" stroke="white" stroke-opacity="0.5" stroke-width="1.5" fill="none"/>
-                <circle cx="40" cy="38" r="5" fill="white"/>
-                <path d="M29 54c0-6 5-10 11-10s11 4 11 10" stroke="white" stroke-width="2" stroke-linecap="round" fill="none"/>
-            </svg>
-
-            <!-- Nome da igreja abaixo -->
-            <div class="login-logo-rodape">
-                <span class="login-logo-igreja">Comunhão Cristã Abba<br>Fazenda Rio Grande</span>
-            </div>
+            <img src="/assets/icons/logo-com-nome-abaixo.png"
+                 class="login-logo-img"
+                 alt="Logo JTRO"
+                 onerror="this.style.display='none'">
         </div>
+        <!-- /painel esquerdo -->
 
         <!-- Painel direito -->
         <div class="login-painel-dir">
@@ -120,6 +108,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             <a href="/esqueci_senha.php" class="login-link-esqueci">Esqueci minha senha</a>
         </div>
+        <!-- /painel direito -->
 
     </div>
 </div>

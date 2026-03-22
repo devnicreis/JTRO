@@ -46,28 +46,6 @@
 </div>
 
 <div class="card-perfil">
-    <h2>E-mail de recuperação</h2>
-
-    <form method="POST" action="/meu_perfil.php<?php echo $forcarTroca ? '?forcar_troca=1' : ''; ?>">
-        <input type="hidden" name="acao" value="atualizar_email">
-
-        <div class="campo">
-            <label for="email">E-mail</label>
-            <input
-                type="email"
-                id="email"
-                name="email"
-                value="<?php echo htmlspecialchars($pessoa['email'] ?? ''); ?>"
-                required
-            >
-            <small>Esse e-mail será usado para recuperação de senha.</small>
-        </div>
-
-        <button type="submit">Atualizar e-mail</button>
-    </form>
-</div>
-
-<div class="card-perfil">
     <h2>Segurança da conta</h2>
 
     <form method="POST" action="/meu_perfil.php<?php echo $forcarTroca ? '?forcar_troca=1' : ''; ?>">
@@ -92,6 +70,28 @@
         </div>
 
         <button type="submit">Alterar senha</button>
+    </form>
+</div>
+
+<div class="card-perfil">
+    <h2>E-mail de recuperação</h2>
+
+    <form method="POST" action="/meu_perfil.php<?php echo $forcarTroca ? '?forcar_troca=1' : ''; ?>">
+        <input type="hidden" name="acao" value="atualizar_email">
+
+        <div class="campo">
+            <label for="email">E-mail</label>
+            <input
+                type="email"
+                id="email"
+                name="email"
+                value="<?php echo htmlspecialchars($pessoa['email'] ?? ''); ?>"
+                required
+            >
+            <small>Esse e-mail será usado para recuperação de senha.</small>
+        </div>
+
+        <button type="submit">Atualizar e-mail</button>
     </form>
 </div>
 

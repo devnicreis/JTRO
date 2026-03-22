@@ -5,10 +5,14 @@
 document.addEventListener('DOMContentLoaded', function () {
 
     // ── Validação de campo de data em formulários ──────────────
-    const campoData = document.getElementById('data');
-    const erroData = document.getElementById('erro-data');
+    // Só aplica restrição de data passada em páginas que NÃO sejam da agenda
+    const paginaAtual = window.location.pathname;
+    const ehPaginaAgenda = paginaAtual.includes('agenda');
 
-    if (campoData) {
+    const campoData = document.getElementById('data');
+    const erroData  = document.getElementById('erro-data');
+
+    if (campoData && !ehPaginaAgenda) {
         const hoje = new Date();
         const hojeStr = hoje.toISOString().split('T')[0];
         const limitePassado = new Date();
@@ -29,18 +33,18 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // ── Sino de notificações ───────────────────────────────────
-    const notifWrap = document.getElementById('notifWrap');
-    const notifBtn = document.getElementById('notifBtn');
-    const notifDropdown = document.getElementById('notifDropdown');
-    const notifList = document.getElementById('notifList');
-    const notifBadge = document.getElementById('notifBadge');
+    const notifWrap       = document.getElementById('notifWrap');
+    const notifBtn        = document.getElementById('notifBtn');
+    const notifDropdown   = document.getElementById('notifDropdown');
+    const notifList       = document.getElementById('notifList');
+    const notifBadge      = document.getElementById('notifBadge');
     const notifMarcarTodos = document.getElementById('notifMarcarTodos');
-    const notifCountEl = document.getElementById('notifCountNaoLidos');
+    const notifCountEl    = document.getElementById('notifCountNaoLidos');
 
     if (!notifBtn || !notifDropdown) return;
 
-    let avisosCache = [];
-    let abaAtiva = 'nao-lidos';
+    let avisosCache  = [];
+    let abaAtiva     = 'nao-lidos';
     let dropdownOpen = false;
 
     // Abrir/fechar dropdown
@@ -109,18 +113,15 @@ document.addEventListener('DOMContentLoaded', function () {
     function atualizarBadge() {
         const count = avisosCache.filter(a => !a.lido).length;
 
-        // Badge no sino (dropdown)
         if (notifBadge) {
             notifBadge.textContent = count > 0 ? count : '';
             notifBadge.classList.toggle('notif-badge-oculto', count === 0);
         }
 
-        // Contagem na aba do dropdown
         if (notifCountEl) {
             notifCountEl.textContent = count > 0 ? '(' + count + ')' : '';
         }
 
-        // Badge no item "Notificações" da sidebar
         const sidebarBadge = document.querySelector('.nav-item[href="/avisos.php"] .nav-badge');
         if (sidebarBadge) {
             if (count > 0) {
@@ -131,19 +132,17 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         }
 
-        // Dispara evento para a página de avisos sincronizar se estiver aberta
         document.dispatchEvent(new CustomEvent('notif-badge-atualizado', { detail: { count } }));
     }
 
     function tempoRelativo(ts) {
         if (!ts) return '';
         const agora = new Date();
-        const data = new Date(ts * 1000);
-        const diffMs = agora - data;
-        const diffDias = Math.floor(diffMs / 86400000);
+        const data  = new Date(ts * 1000);
+        const diffDias = Math.floor((agora - data) / 86400000);
         if (diffDias === 0) return 'Hoje';
         if (diffDias === 1) return 'Ontem';
-        const meses = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+        const meses = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
         return data.getDate() + ' ' + meses[data.getMonth()];
     }
 
@@ -160,35 +159,27 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         notifList.innerHTML = filtrados.map(function (aviso) {
-            const tempo = aviso.timestamp ? '<span class="notif-tempo">' + esc(tempoRelativo(aviso.timestamp)) + '</span>' : '';
-            const detalhe = aviso.detalhe
-                ? '<div class="notif-detalhe">' + esc(aviso.detalhe) + '</div>'
-                : '';
-            const motivo = aviso.motivo
-                ? '<div class="notif-motivo">' + esc(aviso.motivo) + '</div>'
-                : '';
+            const tempo   = aviso.timestamp ? '<span class="notif-tempo">' + esc(tempoRelativo(aviso.timestamp)) + '</span>' : '';
+            const detalhe = aviso.detalhe   ? '<div class="notif-detalhe">' + esc(aviso.detalhe) + '</div>' : '';
+            const motivo  = aviso.motivo    ? '<div class="notif-motivo">'  + esc(aviso.motivo)  + '</div>' : '';
 
             return '<div class="notif-item" data-chave="' + esc(aviso.chave) + '">' +
                 '<div class="notif-dot notif-dot-' + esc(aviso.tipo) + '"></div>' +
                 '<div class="notif-item-corpo">' +
                 '<div class="notif-texto">' + esc(aviso.texto) + '</div>' +
-                detalhe +
-                motivo +
-                tempo +
+                detalhe + motivo + tempo +
                 '<button class="notif-acao-btn" data-chave="' + esc(aviso.chave) + '" data-lido="' + aviso.lido + '" type="button">' +
                 (aviso.lido ? 'Marcar como não lido' : 'Marcar como lido') +
                 '</button>' +
-                '</div>' +
-                '</div>';
+                '</div></div>';
         }).join('');
 
-        // Botões individuais
         notifList.querySelectorAll('.notif-acao-btn').forEach(function (btn) {
             btn.addEventListener('click', function (e) {
                 e.stopPropagation();
                 const chave = this.dataset.chave;
-                const lido = this.dataset.lido === 'true';
-                const acao = lido ? 'marcar_nao_lido' : 'marcar_lido';
+                const lido  = this.dataset.lido === 'true';
+                const acao  = lido ? 'marcar_nao_lido' : 'marcar_lido';
 
                 fetch('/avisos_json.php', {
                     method: 'POST',
