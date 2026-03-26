@@ -298,6 +298,22 @@ $telasSuporteChamado = opcoesTelasSuporte();
     </div>
 <?php endif; ?>
 
+<div class="presencas-card">
+    <h2>Contatos</h2>
+
+    <div class="campo">
+        <label>Secretaria C. C. Abba Fazenda Rio Grande</label>
+        <p>Telefone: <a href="https://wa.me/5541998640484" target="_blank" rel="noopener noreferrer">41 9 9864-0484</a></p>
+        <p>E-mail: <a href="mailto:secretariaabbafazenda@gmail.com">secretariaabbafazenda@gmail.com</a></p>
+    </div>
+
+    <div class="campo">
+        <label>Suporte Técnico</label>
+        <p>Telefone: <a href="https://wa.me/554187288953" target="_blank" rel="noopener noreferrer">41 9 8728-8953</a></p>
+        <p>E-mail: <a href="mailto:suporte@jtro.com.br">suporte@jtro.com.br</a></p>
+    </div>
+</div>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const destino = document.getElementById('destino');

@@ -191,4 +191,46 @@ CREATE TABLE IF NOT EXISTS chamados (
     FOREIGN KEY (grupo_familiar_id) REFERENCES grupos_familiares(id),
     FOREIGN KEY (admin_responsavel_id) REFERENCES pessoas(id)
 );
- 
+
+CREATE TABLE IF NOT EXISTS eventos (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    titulo TEXT NOT NULL,
+    data TEXT NOT NULL,
+    hora_inicio TEXT NOT NULL,
+    hora_fim TEXT,
+    departamento TEXT NOT NULL,
+    descricao TEXT,
+    recorrente INTEGER NOT NULL DEFAULT 0,
+    regra_recorrencia TEXT,
+    criado_por INTEGER NOT NULL,
+    created_at TEXT NOT NULL,
+    updated_at TEXT,
+    FOREIGN KEY (criado_por) REFERENCES pessoas(id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_eventos_data
+    ON eventos(data);
+
+CREATE INDEX IF NOT EXISTS idx_eventos_departamento_data
+    ON eventos(departamento, data);
+
+CREATE TABLE IF NOT EXISTS cartas_semanais (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    data_carta TEXT NOT NULL,
+    conteudo TEXT,
+    pregacao_titulo TEXT,
+    pregacao_link TEXT,
+    avisos TEXT,
+    imagem_url TEXT,
+    publicada INTEGER NOT NULL DEFAULT 0,
+    criado_por INTEGER NOT NULL,
+    created_at TEXT NOT NULL,
+    updated_at TEXT,
+    FOREIGN KEY (criado_por) REFERENCES pessoas(id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_cartas_semanais_data
+    ON cartas_semanais(data_carta DESC);
+
+CREATE INDEX IF NOT EXISTS idx_cartas_semanais_publicada_data
+    ON cartas_semanais(publicada, data_carta DESC);

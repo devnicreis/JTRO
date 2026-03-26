@@ -45,7 +45,7 @@ database/    -> schema e setup
 ## Como rodar o projeto
 
 ## 1. Clonar
-```bash
+bash
 git clone https://github.com/seu-usuario/jtro.git
 cd jtro
 
