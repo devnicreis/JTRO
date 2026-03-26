@@ -40,6 +40,19 @@ if ($isAdmin) {
 
 $avisos = [];
 
+foreach ($avisoRepo->listarAvisosSistema($usuarioId) as $avisoSistema) {
+    $avisos[] = [
+        'chave' => $avisoSistema['chave_aviso'],
+        'tipo' => 'aviso_sistema',
+        'subtipo' => $avisoSistema['tipo'],
+        'titulo' => $avisoSistema['titulo'],
+        'mensagem' => $avisoSistema['mensagem'],
+        'link' => $avisoSistema['link'],
+        'created_at' => $avisoSistema['created_at'],
+        'ts' => strtotime($avisoSistema['created_at'] ?? 'now'),
+    ];
+}
+
 // Cartas publicadas — apenas para líderes
 if (!$isAdmin) {
     foreach ($cartaRepo->listarPublicadas() as $carta) {
@@ -60,6 +73,7 @@ foreach ($gruposAlarmantes as $grupo) {
         'tipo'  => 'grupo_alarmante',
         'titulo'=> 'Grupo Familiar em nível alarmante',
         'grupo' => $grupo,
+        'ts' => time(),
     ];
 }
 
@@ -68,6 +82,7 @@ foreach ($membrosFaltosos as $membro) {
         'chave'  => 'faltas_' . $membro['grupo_id'] . '_' . $membro['pessoa_id'],
         'tipo'   => 'faltas_consecutivas',
         'membro' => $membro,
+        'ts' => strtotime('yesterday'),
     ];
 }
 
@@ -76,6 +91,7 @@ foreach ($reunioesForaPadrao as $reuniao) {
         'chave'   => 'reuniao_fora_padrao_' . $reuniao['id'],
         'tipo'    => 'reuniao_fora_padrao',
         'reuniao' => $reuniao,
+        'ts' => isset($reuniao['data']) ? strtotime($reuniao['data']) : strtotime('-3 days'),
     ];
 }
 
@@ -92,6 +108,14 @@ foreach ($avisos as $aviso) {
         $avisosNaoLidos[] = $aviso;
     }
 }
+
+usort($avisosNaoLidos, function ($a, $b) {
+    return ($b['ts'] ?? 0) <=> ($a['ts'] ?? 0);
+});
+
+usort($avisosLidos, function ($a, $b) {
+    return ($b['ts'] ?? 0) <=> ($a['ts'] ?? 0);
+});
 
 $pageTitle = 'Notificações';
 require_once __DIR__ . '/../src/Views/avisos/index.php';

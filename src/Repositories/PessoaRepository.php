@@ -12,34 +12,168 @@ class PessoaRepository
         $this->connection = Database::getConnection();
     }
 
-    public function salvar(Pessoa $pessoa, ?string $email = null): void
+    public function salvar(Pessoa $pessoa, array $dados = []): int
     {
-        $sql = "INSERT INTO pessoas (nome, cpf, cargo, ativo, email)
-                VALUES (:nome, :cpf, :cargo, :ativo, :email)";
+        $this->connection->beginTransaction();
 
-        $stmt = $this->connection->prepare($sql);
+        try {
+            $sql = "INSERT INTO pessoas (
+                        nome, cpf, cargo, ativo, email, data_nascimento, estado_civil, nome_conjuge,
+                        eh_lider, lider_grupo_familiar, lider_departamento, telefone_fixo, telefone_movel,
+                        concluiu_integracao, integracao_conclusao_manual, participou_retiro_integracao
+                    ) VALUES (
+                        :nome, :cpf, :cargo, :ativo, :email, :data_nascimento, :estado_civil, :nome_conjuge,
+                        :eh_lider, :lider_grupo_familiar, :lider_departamento, :telefone_fixo, :telefone_movel,
+                        :concluiu_integracao, :integracao_conclusao_manual, :participou_retiro_integracao
+                    )";
 
-        $stmt->execute([
-            ':nome' => $pessoa->nome,
-            ':cpf' => $pessoa->getCpf(),
-            ':cargo' => $pessoa->getCargo(),
-            ':ativo' => $pessoa->ativo ? 1 : 0,
-            ':email' => $email !== '' ? $email : null
-        ]);
+            $stmt = $this->connection->prepare($sql);
+
+            $stmt->execute([
+                ':nome' => $pessoa->nome,
+                ':cpf' => $pessoa->getCpf(),
+                ':cargo' => $pessoa->getCargo(),
+                ':ativo' => $pessoa->ativo ? 1 : 0,
+                ':email' => $this->normalizarTextoOpcional($dados['email'] ?? null),
+                ':data_nascimento' => $this->normalizarTextoOpcional($dados['data_nascimento'] ?? null),
+                ':estado_civil' => $dados['estado_civil'] ?? 'solteiro',
+                ':nome_conjuge' => $this->normalizarTextoOpcional($dados['nome_conjuge'] ?? null),
+                ':eh_lider' => !empty($dados['eh_lider']) ? 1 : 0,
+                ':lider_grupo_familiar' => !empty($dados['lider_grupo_familiar']) ? 1 : 0,
+                ':lider_departamento' => !empty($dados['lider_departamento']) ? 1 : 0,
+                ':telefone_fixo' => $this->normalizarTextoOpcional($dados['telefone_fixo'] ?? null),
+                ':telefone_movel' => $this->normalizarTextoOpcional($dados['telefone_movel'] ?? null),
+                ':concluiu_integracao' => !empty($dados['concluiu_integracao']) ? 1 : 0,
+                ':integracao_conclusao_manual' => array_key_exists('integracao_conclusao_manual', $dados)
+                    ? (!empty($dados['integracao_conclusao_manual']) ? 1 : 0)
+                    : (!empty($dados['concluiu_integracao']) ? 1 : 0),
+                ':participou_retiro_integracao' => !empty($dados['participou_retiro_integracao']) ? 1 : 0,
+            ]);
+
+            $pessoaId = (int) $this->connection->lastInsertId();
+            $this->atualizarGrupoPrincipalInterno($pessoaId, $this->normalizarInteiroOpcional($dados['grupo_familiar_id'] ?? null));
+
+            $this->connection->commit();
+
+            return $pessoaId;
+        } catch (Exception $e) {
+            $this->connection->rollBack();
+            throw $e;
+        }
     }
 
-    public function listarTodos(): array
+    public function listarTodos(array $filtros = []): array
     {
-        $sql = "SELECT * FROM pessoas ORDER BY id DESC";
+        $sql = "
+            SELECT
+                p.*,
+                gf.nome AS grupo_familiar_nome
+            FROM pessoas p
+            LEFT JOIN grupos_familiares gf ON gf.id = p.grupo_familiar_id
+        ";
 
-        $stmt = $this->connection->query($sql);
+        $where = [];
+        $params = [];
+
+        if (($filtros['id'] ?? '') !== '') {
+            $where[] = 'p.id = :id';
+            $params[':id'] = (int) $filtros['id'];
+        }
+
+        if (($filtros['nome'] ?? '') !== '') {
+            $where[] = 'LOWER(p.nome) LIKE :nome';
+            $params[':nome'] = '%' . mb_strtolower(trim($filtros['nome'])) . '%';
+        }
+
+        if (($filtros['cpf'] ?? '') !== '') {
+            $where[] = 'p.cpf LIKE :cpf';
+            $params[':cpf'] = '%' . preg_replace('/\D+/', '', (string) $filtros['cpf']) . '%';
+        }
+
+        if (($filtros['email'] ?? '') !== '') {
+            $where[] = 'LOWER(COALESCE(p.email, \'\')) LIKE :email';
+            $params[':email'] = '%' . mb_strtolower(trim($filtros['email'])) . '%';
+        }
+
+        if (($filtros['cargo'] ?? '') !== '') {
+            $where[] = 'p.cargo = :cargo';
+            $params[':cargo'] = $filtros['cargo'];
+        }
+
+        if (($filtros['status'] ?? '') !== '') {
+            $where[] = 'p.ativo = :ativo';
+            $params[':ativo'] = (int) $filtros['status'];
+        }
+
+        if (($filtros['data_nascimento'] ?? '') !== '') {
+            $where[] = 'p.data_nascimento = :data_nascimento';
+            $params[':data_nascimento'] = $filtros['data_nascimento'];
+        }
+
+        if (($filtros['telefone'] ?? '') !== '') {
+            $where[] = "(COALESCE(p.telefone_fixo, '') LIKE :telefone OR COALESCE(p.telefone_movel, '') LIKE :telefone)";
+            $params[':telefone'] = '%' . preg_replace('/\D+/', '', (string) $filtros['telefone']) . '%';
+        }
+
+        if (($filtros['contato'] ?? '') !== '') {
+            $where[] = "LOWER(COALESCE(p.email, '')) LIKE :contato";
+            $params[':contato'] = '%' . mb_strtolower(trim((string) $filtros['contato'])) . '%';
+        }
+
+        if (($filtros['estado_civil'] ?? '') !== '') {
+            $where[] = 'p.estado_civil = :estado_civil';
+            $params[':estado_civil'] = $filtros['estado_civil'];
+        }
+
+        if (($filtros['eh_lider'] ?? '') !== '') {
+            $where[] = 'p.eh_lider = :eh_lider';
+            $params[':eh_lider'] = (int) $filtros['eh_lider'];
+        }
+
+        if (($filtros['lideranca'] ?? '') !== '') {
+            if ($filtros['lideranca'] === 'gf') {
+                $where[] = 'p.lider_grupo_familiar = 1';
+            } elseif ($filtros['lideranca'] === 'dpto') {
+                $where[] = 'p.lider_departamento = 1';
+            } elseif ($filtros['lideranca'] === 'gf_e_dpto') {
+                $where[] = '(p.lider_grupo_familiar = 1 AND p.lider_departamento = 1)';
+            } elseif ($filtros['lideranca'] === 'gf_ou_dpto') {
+                $where[] = '(p.lider_grupo_familiar = 1 OR p.lider_departamento = 1)';
+            } elseif ($filtros['lideranca'] === 'nao') {
+                $where[] = '(p.lider_grupo_familiar = 0 AND p.lider_departamento = 0)';
+            }
+        }
+
+        if (($filtros['grupo_familiar_id'] ?? '') !== '') {
+            $where[] = 'p.grupo_familiar_id = :grupo_familiar_id';
+            $params[':grupo_familiar_id'] = (int) $filtros['grupo_familiar_id'];
+        }
+
+        if (($filtros['concluiu_integracao'] ?? '') !== '') {
+            $where[] = 'p.concluiu_integracao = :concluiu_integracao';
+            $params[':concluiu_integracao'] = (int) $filtros['concluiu_integracao'];
+        }
+
+        if (($filtros['participou_retiro_integracao'] ?? '') !== '') {
+            $where[] = 'p.participou_retiro_integracao = :participou_retiro_integracao';
+            $params[':participou_retiro_integracao'] = (int) $filtros['participou_retiro_integracao'];
+        }
+
+        if (count($where) > 0) {
+            $sql .= ' WHERE ' . implode(' AND ', $where);
+        }
+
+        $sql .= ' ORDER BY p.id DESC';
+
+        $stmt = $this->connection->prepare($sql);
+        $stmt->execute($params);
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     public function listarAtivas(): array
     {
-        $sql = "SELECT * FROM pessoas WHERE ativo = 1 ORDER BY id DESC";
+        $sql = "SELECT * FROM pessoas WHERE ativo = 1 ORDER BY nome ASC";
 
         $stmt = $this->connection->query($sql);
 
@@ -60,7 +194,15 @@ class PessoaRepository
 
     public function buscarPorId(int $id): ?array
     {
-        $sql = "SELECT * FROM pessoas WHERE id = :id LIMIT 1";
+        $sql = "
+            SELECT
+                p.*,
+                gf.nome AS grupo_familiar_nome
+            FROM pessoas p
+            LEFT JOIN grupos_familiares gf ON gf.id = p.grupo_familiar_id
+            WHERE p.id = :id
+            LIMIT 1
+        ";
 
         $stmt = $this->connection->prepare($sql);
         $stmt->execute([':id' => $id]);
@@ -85,34 +227,79 @@ class PessoaRepository
         return $resultado ?: null;
     }
 
-    public function atualizar(int $id, string $nome, string $cpf, ?string $email, string $cargo): void
+    public function atualizar(int $id, array $dados): void
+    {
+        $this->connection->beginTransaction();
+
+        try {
+            $sql = "
+                UPDATE pessoas
+                SET nome = :nome,
+                    cpf = :cpf,
+                    cargo = :cargo,
+                    email = :email,
+                    data_nascimento = :data_nascimento,
+                    estado_civil = :estado_civil,
+                    nome_conjuge = :nome_conjuge,
+                    eh_lider = :eh_lider,
+                    lider_grupo_familiar = :lider_grupo_familiar,
+                    lider_departamento = :lider_departamento,
+                    telefone_fixo = :telefone_fixo,
+                    telefone_movel = :telefone_movel,
+                    concluiu_integracao = :concluiu_integracao,
+                    integracao_conclusao_manual = :integracao_conclusao_manual,
+                    participou_retiro_integracao = :participou_retiro_integracao
+                WHERE id = :id
+            ";
+
+            $stmt = $this->connection->prepare($sql);
+
+            $stmt->execute([
+                ':nome' => $dados['nome'],
+                ':cpf' => $dados['cpf'],
+                ':cargo' => $dados['cargo'],
+                ':email' => $this->normalizarTextoOpcional($dados['email'] ?? null),
+                ':data_nascimento' => $this->normalizarTextoOpcional($dados['data_nascimento'] ?? null),
+                ':estado_civil' => $dados['estado_civil'] ?? 'solteiro',
+                ':nome_conjuge' => $this->normalizarTextoOpcional($dados['nome_conjuge'] ?? null),
+                ':eh_lider' => !empty($dados['eh_lider']) ? 1 : 0,
+                ':lider_grupo_familiar' => !empty($dados['lider_grupo_familiar']) ? 1 : 0,
+                ':lider_departamento' => !empty($dados['lider_departamento']) ? 1 : 0,
+                ':telefone_fixo' => $this->normalizarTextoOpcional($dados['telefone_fixo'] ?? null),
+                ':telefone_movel' => $this->normalizarTextoOpcional($dados['telefone_movel'] ?? null),
+                ':concluiu_integracao' => !empty($dados['concluiu_integracao']) ? 1 : 0,
+                ':integracao_conclusao_manual' => array_key_exists('integracao_conclusao_manual', $dados)
+                    ? (!empty($dados['integracao_conclusao_manual']) ? 1 : 0)
+                    : (!empty($dados['concluiu_integracao']) ? 1 : 0),
+                ':participou_retiro_integracao' => !empty($dados['participou_retiro_integracao']) ? 1 : 0,
+                ':id' => $id
+            ]);
+
+            $this->atualizarGrupoPrincipalInterno($id, $this->normalizarInteiroOpcional($dados['grupo_familiar_id'] ?? null));
+
+            $this->connection->commit();
+        } catch (Exception $e) {
+            $this->connection->rollBack();
+            throw $e;
+        }
+    }
+
+    public function desativar(int $id, array $motivo): void
     {
         $sql = "
             UPDATE pessoas
-            SET nome = :nome,
-                cpf = :cpf,
-                cargo = :cargo,
-                email = :email
+            SET ativo = 0,
+                motivo_desativacao_tipo = :tipo,
+                motivo_desativacao_detalhe = :detalhe,
+                motivo_desativacao_texto = :texto
             WHERE id = :id
         ";
 
         $stmt = $this->connection->prepare($sql);
-
         $stmt->execute([
-            ':nome' => $nome,
-            ':cpf' => $cpf,
-            ':cargo' => $cargo,
-            ':email' => $email !== '' ? $email : null,
-            ':id' => $id
-        ]);
-    }
-
-    public function desativar(int $id): void
-    {
-        $sql = "UPDATE pessoas SET ativo = 0 WHERE id = :id";
-
-        $stmt = $this->connection->prepare($sql);
-        $stmt->execute([
+            ':tipo' => $this->normalizarTextoOpcional($motivo['tipo'] ?? null),
+            ':detalhe' => $this->normalizarTextoOpcional($motivo['detalhe'] ?? null),
+            ':texto' => $this->normalizarTextoOpcional($motivo['texto'] ?? null),
             ':id' => $id
         ]);
     }
@@ -124,7 +311,11 @@ class PessoaRepository
         try {
             $stmt = $this->connection->prepare("
                 UPDATE pessoas
-                SET ativo = 1
+                SET ativo = 1,
+                    grupo_familiar_id = NULL,
+                    motivo_desativacao_tipo = NULL,
+                    motivo_desativacao_detalhe = NULL,
+                    motivo_desativacao_texto = NULL
                 WHERE id = :id
             ");
 
@@ -412,5 +603,82 @@ class PessoaRepository
         });
 
         return $resultado;
+    }
+
+    private function normalizarTextoOpcional(?string $valor): ?string
+    {
+        $valor = trim((string) $valor);
+        return $valor !== '' ? $valor : null;
+    }
+
+    private function normalizarInteiroOpcional($valor): ?int
+    {
+        if ($valor === null || $valor === '' || (int) $valor <= 0) {
+            return null;
+        }
+
+        return (int) $valor;
+    }
+
+    private function atualizarGrupoPrincipalInterno(int $pessoaId, ?int $grupoId): void
+    {
+        $stmtAtual = $this->connection->prepare("
+            SELECT grupo_familiar_id
+            FROM pessoas
+            WHERE id = :id
+            LIMIT 1
+        ");
+        $stmtAtual->execute([':id' => $pessoaId]);
+        $grupoAtual = $stmtAtual->fetchColumn();
+        $grupoAtual = $grupoAtual !== false ? (int) $grupoAtual : null;
+        $grupoAtual = $grupoAtual > 0 ? $grupoAtual : null;
+
+        $stmtPessoa = $this->connection->prepare("
+            UPDATE pessoas
+            SET grupo_familiar_id = :grupo_familiar_id
+            WHERE id = :id
+        ");
+        $stmtPessoa->bindValue(':grupo_familiar_id', $grupoId, $grupoId === null ? PDO::PARAM_NULL : PDO::PARAM_INT);
+        $stmtPessoa->bindValue(':id', $pessoaId, PDO::PARAM_INT);
+        $stmtPessoa->execute();
+
+        if ($grupoAtual !== null && $grupoAtual !== $grupoId) {
+            $stmtRemover = $this->connection->prepare("
+                DELETE FROM grupo_membros
+                WHERE pessoa_id = :pessoa_id
+                  AND grupo_familiar_id = :grupo_id
+                  AND NOT EXISTS (
+                      SELECT 1
+                      FROM grupo_lideres gl
+                      WHERE gl.pessoa_id = :pessoa_id_lider
+                        AND gl.grupo_familiar_id = :grupo_id_lider
+                  )
+            ");
+            $stmtRemover->execute([
+                ':pessoa_id' => $pessoaId,
+                ':grupo_id' => $grupoAtual,
+                ':pessoa_id_lider' => $pessoaId,
+                ':grupo_id_lider' => $grupoAtual,
+            ]);
+        }
+
+        if ($grupoId !== null) {
+            $stmtInserir = $this->connection->prepare("
+                INSERT INTO grupo_membros (grupo_familiar_id, pessoa_id)
+                SELECT :grupo_id, :pessoa_id
+                WHERE NOT EXISTS (
+                    SELECT 1
+                    FROM grupo_membros
+                    WHERE grupo_familiar_id = :grupo_id_existente
+                      AND pessoa_id = :pessoa_id_existente
+                )
+            ");
+            $stmtInserir->execute([
+                ':grupo_id' => $grupoId,
+                ':pessoa_id' => $pessoaId,
+                ':grupo_id_existente' => $grupoId,
+                ':pessoa_id_existente' => $pessoaId,
+            ]);
+        }
     }
 }

@@ -552,6 +552,12 @@ a.btn-gf-reativar, button.btn-gf-reativar {
     border: 1px solid #9fe1cb !important;
 }
 
+a.btn-gf-integracao, button.btn-gf-integracao {
+    background: var(--color-amber-light) !important;
+    color: #b5651d !important;
+    border: 1px solid #f3c27d !important;
+}
+
 /* Botão discreto "Ver" */
 .btn-visualizar {
     display: inline-flex;
@@ -621,17 +627,205 @@ tbody td {
 
 tbody tr:last-child td { border-bottom: none; }
 tbody tr:hover td { background: var(--color-bg); }
+.tabela-vazia {
+    text-align: center;
+    color: var(--color-text-muted);
+    padding: 22px 14px;
+    font-size: 14px;
+}
 
 .tabela-wrapper {
     width: 100%;
     overflow-x: auto;
     border-radius: var(--radius-md);
     border: 1px solid var(--color-border);
+    background: #fff;
 }
 
 .tabela-wrapper table { min-width: 600px; }
+.tabela-wrapper tbody td { line-height: 1.45; }
 .tabela-wrapper thead th:first-child { border-radius: var(--radius-md) 0 0 0; }
 .tabela-wrapper thead th:last-child  { border-radius: 0 var(--radius-md) 0 0; }
+.tabela-wrapper thead tr.filtros-linha th {
+    background: var(--color-surface);
+    padding: 10px 12px 12px;
+    text-transform: none;
+    letter-spacing: 0;
+    font-size: 13px;
+    border-bottom: 1px solid var(--color-border);
+}
+.tabela-filtro-campo {
+    width: 100%;
+    min-width: 90px;
+    padding: 7px 9px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: #fff;
+    color: var(--color-text-primary);
+    font-size: 13px;
+}
+.tabela-filtro-campo:focus {
+    outline: none;
+    border-color: var(--color-blue-mid);
+    box-shadow: 0 0 0 3px rgba(112, 163, 212, 0.14);
+}
+.tabela-filtro-acoes {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: stretch;
+}
+.tabela-filtro-acoes .botao-link,
+.tabela-filtro-acoes button {
+    width: 100%;
+    justify-content: center;
+}
+.tabela-filtro-input-curto { min-width: 72px; }
+.tabela-filtro-select-curto { min-width: 96px; }
+.tabela-tooltip {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+}
+.tabela-tooltip-acionador {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--color-blue);
+    font-size: 12px;
+    font-weight: 500;
+    cursor: default;
+}
+.tabela-tooltip-conteudo {
+    position: absolute;
+    left: 0;
+    top: calc(100% + 8px);
+    z-index: 12;
+    min-width: 220px;
+    max-width: 320px;
+    padding: 10px 12px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-border);
+    background: #fff;
+    box-shadow: var(--shadow-md);
+    display: none;
+    white-space: normal;
+    color: var(--color-text-primary);
+}
+.tabela-tooltip:hover .tabela-tooltip-conteudo,
+.tabela-tooltip:focus-within .tabela-tooltip-conteudo {
+    display: block;
+}
+.tabela-tooltip-lista {
+    margin: 0;
+    padding-left: 16px;
+}
+.tabela-tooltip-lista li + li {
+    margin-top: 4px;
+}
+.tabela-coluna-principal {
+    color: var(--color-text-primary);
+    font-weight: 500;
+    line-height: 1.35;
+}
+.tabela-meta {
+    margin-top: 4px;
+    color: var(--color-text-muted);
+    font-size: 12px;
+    line-height: 1.35;
+}
+.tabela-pilha {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    align-items: flex-start;
+}
+.tabela-suave {
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+}
+.tabela-suave-grid thead th {
+    background: #f7f4ef;
+    font-size: 11px;
+    letter-spacing: 0.6px;
+}
+.tabela-suave-grid tbody td {
+    padding-top: 16px;
+    padding-bottom: 16px;
+}
+.tabela-suave-grid .filtros-linha th {
+    background: #fcfaf6;
+    padding-top: 14px;
+    padding-bottom: 14px;
+}
+.tabela-suave-grid .tabela-filtro-campo {
+    min-width: 0;
+    border-radius: 12px;
+    padding: 9px 11px;
+    background: #fffdfa;
+}
+.tabela-filtro-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.tabela-suave-grid .tabela-filtro-acoes {
+    gap: 10px;
+}
+.tabela-cadastro-completa .filtros-linha th {
+    font-size: 11px;
+    padding: 9px 8px 11px;
+}
+.tabela-cadastro-completa .filtros-linha .tabela-filtro-campo {
+    font-size: 12px;
+    min-width: 112px;
+    padding: 7px 9px;
+}
+.tabela-cadastro-grid {
+    table-layout: fixed;
+}
+.tabela-pessoas {
+    min-width: 1980px;
+}
+.tabela-gfs {
+    min-width: 1840px;
+}
+.tabela-pessoas th:nth-child(1), .tabela-pessoas td:nth-child(1) { width: 70px; }
+.tabela-pessoas th:nth-child(2), .tabela-pessoas td:nth-child(2) { width: 220px; }
+.tabela-pessoas th:nth-child(3), .tabela-pessoas td:nth-child(3) { width: 150px; }
+.tabela-pessoas th:nth-child(4), .tabela-pessoas td:nth-child(4) { width: 220px; }
+.tabela-pessoas th:nth-child(5), .tabela-pessoas td:nth-child(5) { width: 120px; }
+.tabela-pessoas th:nth-child(6), .tabela-pessoas td:nth-child(6) { width: 150px; }
+.tabela-pessoas th:nth-child(7), .tabela-pessoas td:nth-child(7) { width: 170px; }
+.tabela-pessoas th:nth-child(8), .tabela-pessoas td:nth-child(8) { width: 190px; }
+.tabela-pessoas th:nth-child(9), .tabela-pessoas td:nth-child(9) { width: 150px; }
+.tabela-pessoas th:nth-child(10), .tabela-pessoas td:nth-child(10) { width: 170px; }
+.tabela-pessoas th:nth-child(11), .tabela-pessoas td:nth-child(11) { width: 140px; }
+.tabela-pessoas th:nth-child(12), .tabela-pessoas td:nth-child(12) { width: 130px; }
+.tabela-pessoas th:nth-child(13), .tabela-pessoas td:nth-child(13) { width: 170px; }
+.tabela-pessoas th:nth-child(14), .tabela-pessoas td:nth-child(14) { width: 180px; }
+.tabela-gfs th:nth-child(1), .tabela-gfs td:nth-child(1) { width: 70px; }
+.tabela-gfs th:nth-child(2), .tabela-gfs td:nth-child(2) { width: 220px; }
+.tabela-gfs th:nth-child(3), .tabela-gfs td:nth-child(3) { width: 150px; }
+.tabela-gfs th:nth-child(4), .tabela-gfs td:nth-child(4) { width: 120px; }
+.tabela-gfs th:nth-child(5), .tabela-gfs td:nth-child(5) { width: 220px; }
+.tabela-gfs th:nth-child(6), .tabela-gfs td:nth-child(6) { width: 170px; }
+.tabela-gfs th:nth-child(7), .tabela-gfs td:nth-child(7) { width: 140px; }
+.tabela-gfs th:nth-child(8), .tabela-gfs td:nth-child(8) { width: 190px; }
+.tabela-gfs th:nth-child(9), .tabela-gfs td:nth-child(9) { width: 130px; }
+.tabela-gfs th:nth-child(10), .tabela-gfs td:nth-child(10) { width: 160px; }
+.tabela-gfs th:nth-child(11), .tabela-gfs td:nth-child(11) { width: 150px; }
+.tabela-gfs th:nth-child(12), .tabela-gfs td:nth-child(12) { width: 180px; }
+.tabela-gfs th:nth-child(13), .tabela-gfs td:nth-child(13) { width: 180px; }
+.tabela-pessoas td,
+.tabela-gfs td {
+    overflow-wrap: anywhere;
+    vertical-align: top;
+}
+.tabela-pessoas td:last-child,
+.tabela-gfs td:last-child {
+    white-space: normal;
+}
 
 .tabela-acoes { width: 200px; min-width: 200px; }
 .tabela-acoes .acoes { flex-direction: column; gap: 6px; align-items: stretch; }
@@ -720,11 +914,13 @@ tbody tr:hover td { background: var(--color-bg); }
 .card-resumo-verde { background: var(--color-green-light); }
 .card-resumo-roxo  { background: var(--color-purple-light); }
 .card-resumo-amber { background: var(--color-amber-light); }
+.card-resumo-terracota { background: #f7e4d3; }
 
 .card-resumo-azul  .card-resumo-label, .card-resumo-azul  .numero { color: var(--color-blue); }
 .card-resumo-verde .card-resumo-label, .card-resumo-verde .numero { color: var(--color-teal); }
 .card-resumo-roxo  .card-resumo-label, .card-resumo-roxo  .numero { color: var(--color-purple); }
 .card-resumo-amber .card-resumo-label, .card-resumo-amber .numero { color: var(--color-amber); }
+.card-resumo-terracota .card-resumo-label, .card-resumo-terracota .numero { color: #9b5628; }
 
 /* Tooltip nos cards */
 .card-resumo-tooltip { position: relative; cursor: default; }
@@ -799,14 +995,17 @@ tbody tr:hover td { background: var(--color-bg); }
 .diag-barra-legendas { display: flex; align-items: center; gap: 12px; font-size: 13px; flex-wrap: wrap; }
 
 .diag-grid-layout { display: grid; grid-template-columns: 1.6fr 1fr; gap: 20px; align-items: start; }
+.diag-cards-resumo { grid-template-columns: repeat(5, minmax(0,1fr)); margin-bottom: 20px; }
 
 .diag-membros-wrapper { width: 100%; overflow-x: hidden; }
 .diag-membros-wrapper table { width: 100%; table-layout: fixed; }
-.diag-membros-wrapper th:nth-child(1), .diag-membros-wrapper td:nth-child(1) { width: 36%; }
-.diag-membros-wrapper th:nth-child(2), .diag-membros-wrapper td:nth-child(2) { width: 20%; }
-.diag-membros-wrapper th:nth-child(3), .diag-membros-wrapper td:nth-child(3) { width: 10%; text-align: center; }
-.diag-membros-wrapper th:nth-child(4), .diag-membros-wrapper td:nth-child(4) { width: 10%; text-align: center; }
-.diag-membros-wrapper th:nth-child(5), .diag-membros-wrapper td:nth-child(5) { width: 24%; }
+.diag-membros-wrapper th:nth-child(1), .diag-membros-wrapper td:nth-child(1) { width: 27%; }
+.diag-membros-wrapper th:nth-child(2), .diag-membros-wrapper td:nth-child(2) { width: 12%; text-align: center; }
+.diag-membros-wrapper th:nth-child(3), .diag-membros-wrapper td:nth-child(3) { width: 18%; }
+.diag-membros-wrapper th:nth-child(4), .diag-membros-wrapper td:nth-child(4) { width: 9%; text-align: center; }
+.diag-membros-wrapper th:nth-child(5), .diag-membros-wrapper td:nth-child(5) { width: 9%; text-align: center; }
+.diag-membros-wrapper th:nth-child(6), .diag-membros-wrapper td:nth-child(6) { width: 25%; }
+.diag-membros-wrapper td { vertical-align: middle; }
 
 /* ============================================================
    Últimas reuniões — tabela com scroll vertical e zebra
@@ -835,6 +1034,11 @@ tbody tr:hover td { background: var(--color-bg); }
 .quadro-ultimas-reunioes tbody tr:hover td { background: var(--color-blue-light) !important; }
 .quadro-ultimas-reunioes .tabela-acoes { width: auto; min-width: unset; }
 .quadro-ultimas-reunioes .tabela-acoes .botao-link { width: 100%; min-height: 30px; font-size: 12px; padding: 0 10px; }
+
+@media (max-width: 1100px) {
+    .diag-cards-resumo { grid-template-columns: repeat(2, minmax(0,1fr)); }
+    .diag-grid-layout { grid-template-columns: 1fr; }
+}
 
 /* ============================================================
    Auditoria

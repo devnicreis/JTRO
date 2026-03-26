@@ -19,6 +19,7 @@ $grupoRepo  = new GrupoFamiliarRepository();
 $presencaRepo = new PresencaRepository();
 $auditoria  = new AuditoriaService();
 $avisoRepo  = new AvisoRepository();
+$avisoRepo->sincronizarAvisosAniversarioDoDia();
 
 $mensagem = '';
 if (isset($_GET['senha_alterada']) && $_GET['senha_alterada'] === '1') {
@@ -84,6 +85,10 @@ if (Auth::isAdmin()) {
     foreach ($reunioesForaDoPadraoAvisos as $i) {
         if (!isset($chavesLidasMap['reuniao_fora_padrao_' . $i['id']])) $totalAvisos++;
     }
+    foreach ($avisoRepo->listarAvisosSistema(Auth::id()) as $avisoSistema) {
+        $chaveAviso = $avisoSistema['chave_aviso'] ?? '';
+        if ($chaveAviso !== '' && !isset($chavesLidasMap[$chaveAviso])) $totalAvisos++;
+    }
 
 } else {
     $dashboardTipo = 'lider';
@@ -110,6 +115,10 @@ if (Auth::isAdmin()) {
     }
     foreach ($reunioesForaDoPadraoAvisos as $i) {
         if (!isset($chavesLidasMap['reuniao_fora_padrao_' . $i['id']])) $totalAvisos++;
+    }
+    foreach ($avisoRepo->listarAvisosSistema(Auth::id()) as $avisoSistema) {
+        $chaveAviso = $avisoSistema['chave_aviso'] ?? '';
+        if ($chaveAviso !== '' && !isset($chavesLidasMap[$chaveAviso])) $totalAvisos++;
     }
 }
 

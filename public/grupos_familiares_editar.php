@@ -34,12 +34,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $nome = trim($_POST['nome'] ?? '');
     $diaSemana = trim($_POST['dia_semana'] ?? '');
     $horario = trim($_POST['horario'] ?? '');
+    $perfilGrupo = trim($_POST['perfil_grupo'] ?? '');
     $localPadrao = trim($_POST['local_padrao'] ?? '');
     $localFixo = isset($_POST['local_fixo']) ? 1 : 0;
     $itemCeleiro = trim($_POST['item_celeiro'] ?? '');
     $domingoOracaoCulto = (int) ($_POST['domingo_oracao_culto'] ?? 0);
     $lideresIds = array_map('intval', $_POST['lideres'] ?? []);
     $membrosIds = array_map('intval', $_POST['membros'] ?? []);
+
+    $perfisValidos = ['casais', 'jovens', 'teen', 'mulheres', 'integracao'];
 
     if ($nome === '') {
         $erro = 'Informe o nome do Grupo Familiar.';
@@ -49,6 +52,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $erro = 'Selecione o dia da semana.';
     } elseif ($horario === '') {
         $erro = 'Informe o horário.';
+    } elseif (!in_array($perfilGrupo, $perfisValidos, true)) {
+        $erro = 'Selecione um perfil de grupo válido.';
     } elseif ($localFixo === 1 && $localPadrao === '') {
         $erro = 'Para GF com local fixo, informe o local padrão.';
     } elseif (count($lideresIds) === 0) {
@@ -60,6 +65,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $nome,
                 $diaSemana,
                 $horario,
+                $perfilGrupo,
                 $localPadrao,
                 $localFixo,
                 $itemCeleiro,
@@ -91,6 +97,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $grupo['nome'] = $nome;
         $grupo['dia_semana'] = $diaSemana;
         $grupo['horario'] = $horario;
+        $grupo['perfil_grupo'] = $perfilGrupo;
         $grupo['local_padrao'] = $localPadrao;
         $grupo['local_fixo'] = $localFixo;
         $grupo['item_celeiro'] = $itemCeleiro;

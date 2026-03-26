@@ -70,6 +70,22 @@
                                     <span><strong>Data:</strong> <?php echo htmlspecialchars(formatarDataBr($reuniao['data'])); ?> às <?php echo htmlspecialchars($reuniao['horario']); ?></span>
                                     <span><strong>Motivo:</strong> <?php echo htmlspecialchars($reuniao['motivo_alteracao']); ?></span>
                                 </div>
+                            <?php elseif ($aviso['tipo'] === 'aviso_sistema'): ?>
+                                <div class="aviso-item-topo">
+                                    <span class="diagnostico-faixa diagnostico-bom">
+                                        <?php echo htmlspecialchars(($aviso['subtipo'] ?? '') === 'integracao_concluida' ? 'Integração concluída' : 'Aviso do sistema'); ?>
+                                    </span>
+                                </div>
+                                <div class="aviso-item-titulo"><?php echo htmlspecialchars($aviso['titulo'] ?? 'Aviso'); ?></div>
+                                <div class="aviso-item-detalhe">
+                                    <span><?php echo htmlspecialchars($aviso['mensagem'] ?? ''); ?></span>
+                                    <?php if (!empty($aviso['created_at'])): ?>
+                                        <span><strong>Data:</strong> <?php echo htmlspecialchars(formatarDataHoraBr($aviso['created_at'])); ?></span>
+                                    <?php endif; ?>
+                                    <?php if (!empty($aviso['link'])): ?>
+                                        <span><a href="<?php echo htmlspecialchars($aviso['link']); ?>" style="color:var(--color-blue); font-size:12px;">Abrir detalhes</a></span>
+                                    <?php endif; ?>
+                                </div>
                             <?php endif; ?>
 
                             <button
@@ -124,6 +140,11 @@
                                 <div class="aviso-item-titulo aviso-titulo-lido"><?php echo htmlspecialchars($reuniao['grupo_nome']); ?></div>
                                 <div class="aviso-item-detalhe">
                                     <span>Reunião fora do padrão · <?php echo htmlspecialchars(formatarDataBr($reuniao['data'])); ?></span>
+                                </div>
+                            <?php elseif ($aviso['tipo'] === 'aviso_sistema'): ?>
+                                <div class="aviso-item-titulo aviso-titulo-lido"><?php echo htmlspecialchars($aviso['titulo'] ?? 'Aviso'); ?></div>
+                                <div class="aviso-item-detalhe">
+                                    <span><?php echo htmlspecialchars($aviso['mensagem'] ?? ''); ?></span>
                                 </div>
                             <?php endif; ?>
 

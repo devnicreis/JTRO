@@ -50,7 +50,7 @@
         </span>
     </div>
 
-    <div class="cards-resumo" style="grid-template-columns: repeat(4, minmax(0,1fr)); margin-bottom: 20px;">
+    <div class="cards-resumo diag-cards-resumo">
         <div class="card-resumo card-resumo-azul">
             <div class="card-resumo-label">Membros ativos</div>
             <div class="numero"><?php echo htmlspecialchars($grupoSelecionado['total_membros'] ?? '—'); ?></div>
@@ -71,6 +71,10 @@
                 <?php echo htmlspecialchars($grupoSelecionado['dia_semana']); ?>
                 · <?php echo htmlspecialchars($grupoSelecionado['horario']); ?>
             </div>
+        </div>
+        <div class="card-resumo card-resumo-terracota">
+            <div class="card-resumo-label">Líderes no GF</div>
+            <div class="numero"><?php echo (int) $totalLideresNoGrupo; ?></div>
         </div>
     </div>
 
@@ -130,7 +134,7 @@
                         style="width:100%; padding:7px 10px; border:1px solid var(--color-border-md); border-radius:var(--radius-md); font-size:13px;">
                 </div>
 
-                <?php if (empty($resumoMembros)): ?>
+                <?php if (empty($membrosFiltrados)): ?>
                     <p style="color:var(--color-text-muted); font-size:13px;">Nenhum membro registrado.</p>
                 <?php else: ?>
                     <div class="diag-membros-wrapper">
@@ -138,6 +142,7 @@
                             <thead>
                                 <tr>
                                     <th>Nome</th>
+                                    <th>Líder</th>
                                     <th>Última presença</th>
                                     <th>Pres.</th>
                                     <th>Aus.</th>
@@ -145,7 +150,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <?php foreach ($resumoMembros as $membro): ?>
+                                <?php foreach ($membrosFiltrados as $membro): ?>
                                     <?php
                                     $pct = (float) $membro['percentual_presenca'];
                                     $corPct = $pct >= 70 ? 'var(--color-green)' : ($pct >= 50 ? 'var(--color-amber)' : 'var(--color-red)');
@@ -161,6 +166,7 @@
                                                 </span>
                                             <?php endif; ?>
                                         </td>
+                                        <td><?php echo htmlspecialchars($membro['lideranca_label'] ?? '-'); ?></td>
                                         <td><?php echo htmlspecialchars(formatarDataBr($membro['ultima_presenca'] ?? null)); ?></td>
                                         <td style="text-align:center;"><?php echo htmlspecialchars($membro['total_presencas']); ?></td>
                                         <td style="text-align:center;"><?php echo htmlspecialchars($membro['total_ausencias']); ?></td>

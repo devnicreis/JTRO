@@ -39,7 +39,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $erro = 'Esse e-mail já está sendo usado por outra pessoa.';
         } else {
             try {
-                $repo->atualizar($pessoa['id'], $pessoa['nome'], $pessoa['cpf'], $email, $pessoa['cargo']);
+                $repo->atualizar($pessoa['id'], [
+                    'nome' => $pessoa['nome'],
+                    'cpf' => $pessoa['cpf'],
+                    'email' => $email,
+                    'cargo' => $pessoa['cargo'],
+                    'data_nascimento' => $pessoa['data_nascimento'] ?? null,
+                    'estado_civil' => $pessoa['estado_civil'] ?? 'solteiro',
+                    'nome_conjuge' => $pessoa['nome_conjuge'] ?? null,
+                    'eh_lider' => (int) ($pessoa['eh_lider'] ?? 0),
+                    'lider_grupo_familiar' => (int) ($pessoa['lider_grupo_familiar'] ?? 0),
+                    'lider_departamento' => (int) ($pessoa['lider_departamento'] ?? 0),
+                    'grupo_familiar_id' => $pessoa['grupo_familiar_id'] ?? null,
+                    'telefone_fixo' => $pessoa['telefone_fixo'] ?? null,
+                    'telefone_movel' => $pessoa['telefone_movel'] ?? null,
+                    'concluiu_integracao' => (int) ($pessoa['concluiu_integracao'] ?? 0),
+                    'integracao_conclusao_manual' => (int) ($pessoa['integracao_conclusao_manual'] ?? 0),
+                    'participou_retiro_integracao' => (int) ($pessoa['participou_retiro_integracao'] ?? 0),
+                ]);
                 $pessoa = $repo->buscarPorId($usuarioId);
                 Auth::atualizarSessao($pessoa);
                 $mensagem = 'E-mail atualizado com sucesso.';

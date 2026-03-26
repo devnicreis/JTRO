@@ -33,6 +33,7 @@ $faltosos          = [];
 $ultimasReunioes   = [];
 $grupoSelecionado  = null;
 $membrosFiltrados  = [];
+$totalLideresNoGrupo = 0;
 
 if (!$isAdmin && count($gruposAtivosLista) === 1) {
     $grupoSelecionadoId = $gruposAtivosLista[0]['id'];
@@ -75,6 +76,15 @@ if ($grupoSelecionadoId > 0) {
         }
 
         // Diagnóstico
+        foreach ($resumoMembros as $membroResumo) {
+            if (
+                (int) ($membroResumo['lider_grupo_familiar'] ?? 0) === 1 ||
+                (int) ($membroResumo['lider_departamento'] ?? 0) === 1
+            ) {
+                $totalLideresNoGrupo++;
+            }
+        }
+
         $percentual      = (float) $resumoPresenca['percentual_presencas'];
         $totalRegistros  = (int) $resumoPresenca['total_presencas'] + (int) $resumoPresenca['total_ausencias'];
 

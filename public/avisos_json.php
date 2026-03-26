@@ -55,6 +55,19 @@ if ($isAdmin) {
 
 $avisos = [];
 
+foreach ($avisoRepo->listarAvisosSistema($usuarioId) as $avisoSistema) {
+    $timestamp = strtotime($avisoSistema['created_at'] ?? 'now');
+    $avisos[] = [
+        'chave'     => $avisoSistema['chave_aviso'],
+        'tipo'      => ($avisoSistema['tipo'] ?? '') === 'integracao_concluida' ? 'success' : 'info',
+        'texto'     => $avisoSistema['titulo'],
+        'detalhe'   => $avisoSistema['mensagem'],
+        'link'      => $avisoSistema['link'] ?? null,
+        'lido'      => isset($chavesLidasMap[$avisoSistema['chave_aviso']]),
+        'timestamp' => $timestamp,
+    ];
+}
+
 // Cartas novas não lidas (apenas para líderes — admin já gerencia as cartas)
 if (!$isAdmin) {
     $cartasPublicadas = $cartaRepo->listarPublicadas();
