@@ -20,10 +20,14 @@ class PessoaRepository
             $sql = "INSERT INTO pessoas (
                         nome, cpf, cargo, ativo, email, data_nascimento, estado_civil, nome_conjuge,
                         eh_lider, lider_grupo_familiar, lider_departamento, telefone_fixo, telefone_movel,
+                        endereco_cep, endereco_logradouro, endereco_numero, endereco_complemento,
+                        endereco_bairro, endereco_cidade, endereco_uf,
                         concluiu_integracao, integracao_conclusao_manual, participou_retiro_integracao
                     ) VALUES (
                         :nome, :cpf, :cargo, :ativo, :email, :data_nascimento, :estado_civil, :nome_conjuge,
                         :eh_lider, :lider_grupo_familiar, :lider_departamento, :telefone_fixo, :telefone_movel,
+                        :endereco_cep, :endereco_logradouro, :endereco_numero, :endereco_complemento,
+                        :endereco_bairro, :endereco_cidade, :endereco_uf,
                         :concluiu_integracao, :integracao_conclusao_manual, :participou_retiro_integracao
                     )";
 
@@ -43,6 +47,13 @@ class PessoaRepository
                 ':lider_departamento' => !empty($dados['lider_departamento']) ? 1 : 0,
                 ':telefone_fixo' => $this->normalizarTextoOpcional($dados['telefone_fixo'] ?? null),
                 ':telefone_movel' => $this->normalizarTextoOpcional($dados['telefone_movel'] ?? null),
+                ':endereco_cep' => $this->normalizarTextoOpcional($dados['endereco_cep'] ?? null),
+                ':endereco_logradouro' => $this->normalizarTextoOpcional($dados['endereco_logradouro'] ?? null),
+                ':endereco_numero' => $this->normalizarTextoOpcional($dados['endereco_numero'] ?? null),
+                ':endereco_complemento' => $this->normalizarTextoOpcional($dados['endereco_complemento'] ?? null),
+                ':endereco_bairro' => $this->normalizarTextoOpcional($dados['endereco_bairro'] ?? null),
+                ':endereco_cidade' => $this->normalizarTextoOpcional($dados['endereco_cidade'] ?? null),
+                ':endereco_uf' => $this->normalizarTextoOpcional($dados['endereco_uf'] ?? null),
                 ':concluiu_integracao' => !empty($dados['concluiu_integracao']) ? 1 : 0,
                 ':integracao_conclusao_manual' => array_key_exists('integracao_conclusao_manual', $dados)
                     ? (!empty($dados['integracao_conclusao_manual']) ? 1 : 0)
@@ -115,9 +126,32 @@ class PessoaRepository
             $params[':telefone'] = '%' . preg_replace('/\D+/', '', (string) $filtros['telefone']) . '%';
         }
 
+        if (($filtros['telefone_fixo'] ?? '') !== '') {
+            $where[] = "COALESCE(p.telefone_fixo, '') LIKE :telefone_fixo";
+            $params[':telefone_fixo'] = '%' . preg_replace('/\D+/', '', (string) $filtros['telefone_fixo']) . '%';
+        }
+
+        if (($filtros['telefone_movel'] ?? '') !== '') {
+            $where[] = "COALESCE(p.telefone_movel, '') LIKE :telefone_movel";
+            $params[':telefone_movel'] = '%' . preg_replace('/\D+/', '', (string) $filtros['telefone_movel']) . '%';
+        }
+
         if (($filtros['contato'] ?? '') !== '') {
             $where[] = "LOWER(COALESCE(p.email, '')) LIKE :contato";
             $params[':contato'] = '%' . mb_strtolower(trim((string) $filtros['contato'])) . '%';
+        }
+
+        if (($filtros['endereco'] ?? '') !== '') {
+            $where[] = "LOWER(
+                COALESCE(p.endereco_logradouro, '') || ' ' ||
+                COALESCE(p.endereco_numero, '') || ' ' ||
+                COALESCE(p.endereco_complemento, '') || ' ' ||
+                COALESCE(p.endereco_bairro, '') || ' ' ||
+                COALESCE(p.endereco_cidade, '') || ' ' ||
+                COALESCE(p.endereco_uf, '') || ' ' ||
+                COALESCE(p.endereco_cep, '')
+            ) LIKE :endereco";
+            $params[':endereco'] = '%' . mb_strtolower(trim((string) $filtros['endereco'])) . '%';
         }
 
         if (($filtros['estado_civil'] ?? '') !== '') {
@@ -125,9 +159,24 @@ class PessoaRepository
             $params[':estado_civil'] = $filtros['estado_civil'];
         }
 
+        if (($filtros['nome_conjuge'] ?? '') !== '') {
+            $where[] = "LOWER(COALESCE(p.nome_conjuge, '')) LIKE :nome_conjuge";
+            $params[':nome_conjuge'] = '%' . mb_strtolower(trim((string) $filtros['nome_conjuge'])) . '%';
+        }
+
         if (($filtros['eh_lider'] ?? '') !== '') {
             $where[] = 'p.eh_lider = :eh_lider';
             $params[':eh_lider'] = (int) $filtros['eh_lider'];
+        }
+
+        if (($filtros['lider_grupo_familiar'] ?? '') !== '') {
+            $where[] = 'p.lider_grupo_familiar = :lider_grupo_familiar';
+            $params[':lider_grupo_familiar'] = (int) $filtros['lider_grupo_familiar'];
+        }
+
+        if (($filtros['lider_departamento'] ?? '') !== '') {
+            $where[] = 'p.lider_departamento = :lider_departamento';
+            $params[':lider_departamento'] = (int) $filtros['lider_departamento'];
         }
 
         if (($filtros['lideranca'] ?? '') !== '') {
@@ -246,6 +295,13 @@ class PessoaRepository
                     lider_departamento = :lider_departamento,
                     telefone_fixo = :telefone_fixo,
                     telefone_movel = :telefone_movel,
+                    endereco_cep = :endereco_cep,
+                    endereco_logradouro = :endereco_logradouro,
+                    endereco_numero = :endereco_numero,
+                    endereco_complemento = :endereco_complemento,
+                    endereco_bairro = :endereco_bairro,
+                    endereco_cidade = :endereco_cidade,
+                    endereco_uf = :endereco_uf,
                     concluiu_integracao = :concluiu_integracao,
                     integracao_conclusao_manual = :integracao_conclusao_manual,
                     participou_retiro_integracao = :participou_retiro_integracao
@@ -267,6 +323,13 @@ class PessoaRepository
                 ':lider_departamento' => !empty($dados['lider_departamento']) ? 1 : 0,
                 ':telefone_fixo' => $this->normalizarTextoOpcional($dados['telefone_fixo'] ?? null),
                 ':telefone_movel' => $this->normalizarTextoOpcional($dados['telefone_movel'] ?? null),
+                ':endereco_cep' => $this->normalizarTextoOpcional($dados['endereco_cep'] ?? null),
+                ':endereco_logradouro' => $this->normalizarTextoOpcional($dados['endereco_logradouro'] ?? null),
+                ':endereco_numero' => $this->normalizarTextoOpcional($dados['endereco_numero'] ?? null),
+                ':endereco_complemento' => $this->normalizarTextoOpcional($dados['endereco_complemento'] ?? null),
+                ':endereco_bairro' => $this->normalizarTextoOpcional($dados['endereco_bairro'] ?? null),
+                ':endereco_cidade' => $this->normalizarTextoOpcional($dados['endereco_cidade'] ?? null),
+                ':endereco_uf' => $this->normalizarTextoOpcional($dados['endereco_uf'] ?? null),
                 ':concluiu_integracao' => !empty($dados['concluiu_integracao']) ? 1 : 0,
                 ':integracao_conclusao_manual' => array_key_exists('integracao_conclusao_manual', $dados)
                     ? (!empty($dados['integracao_conclusao_manual']) ? 1 : 0)

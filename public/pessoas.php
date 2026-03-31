@@ -28,6 +28,16 @@ function limparTelefonePessoa(string $telefone): string
     return preg_replace('/\D+/', '', $telefone);
 }
 
+function limparCepPessoa(string $cep): string
+{
+    return preg_replace('/\D+/', '', $cep);
+}
+
+function normalizarTextoPessoa(string $valor): string
+{
+    return preg_replace('/\s+/', ' ', trim($valor));
+}
+
 function validarTelefoneFixoPessoa(string $telefone): bool
 {
     return $telefone === '' || in_array(strlen($telefone), [10, 11], true);
@@ -36,6 +46,17 @@ function validarTelefoneFixoPessoa(string $telefone): bool
 function validarTelefoneMovelPessoa(string $telefone): bool
 {
     return $telefone === '' || strlen($telefone) === 11;
+}
+
+function validarCepPessoa(string $cep): bool
+{
+    return strlen($cep) === 8;
+}
+
+function validarUfPessoa(string $uf): bool
+{
+    $ufs = ['AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'];
+    return in_array(strtoupper($uf), $ufs, true);
 }
 
 $repo = new PessoaRepository();
@@ -58,6 +79,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $grupoFamiliarId = (int) ($_POST['grupo_familiar_id'] ?? 0);
     $telefoneFixo = limparTelefonePessoa($_POST['telefone_fixo'] ?? '');
     $telefoneMovel = limparTelefonePessoa($_POST['telefone_movel'] ?? '');
+    $enderecoCep = limparCepPessoa($_POST['endereco_cep'] ?? '');
+    $enderecoLogradouro = normalizarTextoPessoa($_POST['endereco_logradouro'] ?? '');
+    $enderecoNumero = normalizarTextoPessoa($_POST['endereco_numero'] ?? '');
+    $enderecoComplemento = normalizarTextoPessoa($_POST['endereco_complemento'] ?? '');
+    $enderecoBairro = normalizarTextoPessoa($_POST['endereco_bairro'] ?? '');
+    $enderecoCidade = normalizarTextoPessoa($_POST['endereco_cidade'] ?? '');
+    $enderecoUf = strtoupper(normalizarTextoPessoa($_POST['endereco_uf'] ?? ''));
     $concluiuIntegracao = (int) ($_POST['concluiu_integracao'] ?? -1);
     $participouRetiroIntegracao = (int) ($_POST['participou_retiro_integracao'] ?? -1);
 
@@ -83,13 +111,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif (!in_array($estadoCivil, $estadosValidos, true)) {
         $erro = 'Selecione um estado civil válido.';
     } elseif (in_array($estadoCivil, ['casado', 'uniao_estavel'], true) && $nomeConjuge === '') {
-        $erro = 'Informe o nome do parceiro para o estado civil selecionado.';
+        $erro = 'Informe o nome do cônjuge para o estado civil selecionado.';
     } elseif ($nomeConjuge !== '' && !preg_match('/^[\p{L}\s]+$/u', $nomeConjuge)) {
-        $erro = 'O nome do parceiro deve conter apenas letras e espaços.';
+        $erro = 'O nome do cônjuge deve conter apenas letras e espaços.';
     } elseif (!validarTelefoneFixoPessoa($telefoneFixo)) {
         $erro = 'Informe um telefone fixo válido com DDD.';
     } elseif (!validarTelefoneMovelPessoa($telefoneMovel)) {
         $erro = 'Informe um telefone móvel válido com DDD.';
+    } elseif (!validarCepPessoa($enderecoCep) || $enderecoLogradouro === '' || $enderecoNumero === '' || $enderecoBairro === '' || $enderecoCidade === '' || $enderecoUf === '') {
+        $erro = 'Preencha o endereço completo da pessoa.';
+    } elseif (!validarUfPessoa($enderecoUf)) {
+        $erro = 'Selecione uma UF válida para o endereço.';
     } elseif ($ehLider === 1 && $liderGrupoFamiliar === 0 && $liderDepartamento === 0) {
         $erro = 'Marque ao menos uma função de liderança.';
     } else {
@@ -115,6 +147,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'grupo_familiar_id' => $grupoFamiliarId > 0 ? $grupoFamiliarId : null,
                     'telefone_fixo' => $telefoneFixo,
                     'telefone_movel' => $telefoneMovel,
+                    'endereco_cep' => $enderecoCep,
+                    'endereco_logradouro' => $enderecoLogradouro,
+                    'endereco_numero' => $enderecoNumero,
+                    'endereco_complemento' => $enderecoComplemento !== '' ? $enderecoComplemento : null,
+                    'endereco_bairro' => $enderecoBairro,
+                    'endereco_cidade' => $enderecoCidade,
+                    'endereco_uf' => $enderecoUf,
                     'concluiu_integracao' => $concluiuIntegracao,
                     'integracao_conclusao_manual' => $concluiuIntegracao,
                     'participou_retiro_integracao' => $participouRetiroIntegracao,
@@ -134,12 +173,18 @@ $filtros = [
     'cpf' => trim($_GET['cpf'] ?? ''),
     'email' => trim($_GET['email'] ?? ''),
     'telefone' => trim($_GET['telefone'] ?? ''),
+    'telefone_fixo' => trim($_GET['telefone_fixo'] ?? ''),
+    'telefone_movel' => trim($_GET['telefone_movel'] ?? ''),
     'contato' => trim($_GET['contato'] ?? ''),
+    'endereco' => trim($_GET['endereco'] ?? ''),
     'cargo' => trim($_GET['cargo'] ?? ''),
     'status' => trim($_GET['status'] ?? ''),
     'data_nascimento' => trim($_GET['data_nascimento'] ?? ''),
     'estado_civil' => trim($_GET['estado_civil'] ?? ''),
+    'nome_conjuge' => trim($_GET['nome_conjuge'] ?? ''),
     'eh_lider' => trim($_GET['eh_lider'] ?? ''),
+    'lider_grupo_familiar' => trim($_GET['lider_grupo_familiar'] ?? ''),
+    'lider_departamento' => trim($_GET['lider_departamento'] ?? ''),
     'lideranca' => trim($_GET['lideranca'] ?? ''),
     'grupo_familiar_id' => trim($_GET['grupo_familiar_id'] ?? ''),
     'concluiu_integracao' => trim($_GET['concluiu_integracao'] ?? ''),
@@ -150,4 +195,4 @@ $pessoas = $repo->listarTodos($filtros);
 $gruposFamiliares = $grupoRepo->listarAtivos();
 $pageTitle = 'Cadastro de Pessoas - JTRO';
 
-require_once __DIR__ . '/../src/Views/pessoas/index.php';
+require_once __DIR__ . '/../src/Views/pessoas/cadastro.php';

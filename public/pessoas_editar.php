@@ -28,6 +28,27 @@ function limparTelefonePessoaEdicao(string $telefone): string
     return preg_replace('/\D+/', '', $telefone);
 }
 
+function limparCepPessoaEdicao(string $cep): string
+{
+    return preg_replace('/\D+/', '', $cep);
+}
+
+function normalizarTextoPessoaEdicao(string $valor): string
+{
+    return preg_replace('/\s+/', ' ', trim($valor));
+}
+
+function validarCepPessoaEdicao(string $cep): bool
+{
+    return strlen($cep) === 8;
+}
+
+function validarUfPessoaEdicao(string $uf): bool
+{
+    $ufs = ['AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'];
+    return in_array(strtoupper($uf), $ufs, true);
+}
+
 $repo = new PessoaRepository();
 $grupoRepo = new GrupoFamiliarRepository();
 $auditoria = new AuditoriaService();
@@ -61,6 +82,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $grupoFamiliarId = (int) ($_POST['grupo_familiar_id'] ?? 0);
     $telefoneFixo = limparTelefonePessoaEdicao($_POST['telefone_fixo'] ?? '');
     $telefoneMovel = limparTelefonePessoaEdicao($_POST['telefone_movel'] ?? '');
+    $enderecoCep = limparCepPessoaEdicao($_POST['endereco_cep'] ?? '');
+    $enderecoLogradouro = normalizarTextoPessoaEdicao($_POST['endereco_logradouro'] ?? '');
+    $enderecoNumero = normalizarTextoPessoaEdicao($_POST['endereco_numero'] ?? '');
+    $enderecoComplemento = normalizarTextoPessoaEdicao($_POST['endereco_complemento'] ?? '');
+    $enderecoBairro = normalizarTextoPessoaEdicao($_POST['endereco_bairro'] ?? '');
+    $enderecoCidade = normalizarTextoPessoaEdicao($_POST['endereco_cidade'] ?? '');
+    $enderecoUf = strtoupper(normalizarTextoPessoaEdicao($_POST['endereco_uf'] ?? ''));
     $concluiuIntegracao = (int) ($_POST['concluiu_integracao'] ?? -1);
     $participouRetiroIntegracao = (int) ($_POST['participou_retiro_integracao'] ?? -1);
     $novaSenha = $_POST['nova_senha'] ?? '';
@@ -90,13 +118,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif (!in_array($estadoCivil, $estadosValidos, true)) {
         $erro = 'Selecione um estado civil válido.';
     } elseif (in_array($estadoCivil, ['casado', 'uniao_estavel'], true) && $nomeConjuge === '') {
-        $erro = 'Informe o nome do parceiro para o estado civil selecionado.';
+        $erro = 'Informe o nome do cônjuge para o estado civil selecionado.';
     } elseif ($nomeConjuge !== '' && !preg_match('/^[\p{L}\s]+$/u', $nomeConjuge)) {
-        $erro = 'O nome do parceiro deve conter apenas letras e espaços.';
+        $erro = 'O nome do cônjuge deve conter apenas letras e espaços.';
     } elseif ($telefoneFixo !== '' && !in_array(strlen($telefoneFixo), [10, 11], true)) {
         $erro = 'Informe um telefone fixo válido com DDD.';
     } elseif ($telefoneMovel !== '' && strlen($telefoneMovel) !== 11) {
         $erro = 'Informe um telefone móvel válido com DDD.';
+    } elseif (!validarCepPessoaEdicao($enderecoCep) || $enderecoLogradouro === '' || $enderecoNumero === '' || $enderecoBairro === '' || $enderecoCidade === '' || $enderecoUf === '') {
+        $erro = 'Preencha o endereço completo da pessoa.';
+    } elseif (!validarUfPessoaEdicao($enderecoUf)) {
+        $erro = 'Selecione uma UF válida para o endereço.';
     } elseif ($ehLider === 1 && $liderGrupoFamiliar === 0 && $liderDepartamento === 0) {
         $erro = 'Marque ao menos uma função de liderança.';
     } else {
@@ -124,33 +156,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'grupo_familiar_id' => $grupoFamiliarId > 0 ? $grupoFamiliarId : null,
                     'telefone_fixo' => $telefoneFixo,
                     'telefone_movel' => $telefoneMovel,
+                    'endereco_cep' => $enderecoCep,
+                    'endereco_logradouro' => $enderecoLogradouro,
+                    'endereco_numero' => $enderecoNumero,
+                    'endereco_complemento' => $enderecoComplemento !== '' ? $enderecoComplemento : null,
+                    'endereco_bairro' => $enderecoBairro,
+                    'endereco_cidade' => $enderecoCidade,
+                    'endereco_uf' => $enderecoUf,
                     'concluiu_integracao' => $concluiuIntegracao,
                     'integracao_conclusao_manual' => $concluiuIntegracao,
                     'participou_retiro_integracao' => $participouRetiroIntegracao,
                 ]);
 
-                $auditoria->registrar(
-                    'atualizar',
-                    'pessoa',
-                    $id,
-                    "Pessoa atualizada: {$nome}.",
-                    null,
-                    null,
-                    null
-                );
+                $auditoria->registrar('atualizar', 'pessoa', $id, "Pessoa atualizada: {$nome}.", null, null, null);
 
                 if ($novaSenha !== '') {
                     $repo->atualizarSenhaEObrigacao($id, $novaSenha, true);
-
-                    $auditoria->registrar(
-                        'redefinir',
-                        'senha',
-                        $id,
-                        "Senha redefinida por administrador para {$nome}.",
-                        null,
-                        null,
-                        null
-                    );
+                    $auditoria->registrar('redefinir', 'senha', $id, "Senha redefinida por administrador para {$nome}.", null, null, null);
                 }
 
                 $mensagem = 'Pessoa atualizada com sucesso.';

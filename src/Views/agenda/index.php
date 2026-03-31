@@ -202,7 +202,7 @@
 <?php
 function agendaCorDpto(string $dpto): string {
     $cores = [
-        'Toda a Igreja'  => '#185FA5',
+        'Evento Geral '  => '#185FA5',
         'Pastoral'       => '#185FA5',
         'Evangelização'  => '#860d0d',
         'Abba Jovem'     => '#534AB7',

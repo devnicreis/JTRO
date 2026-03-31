@@ -60,30 +60,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $erro = 'Selecione ao menos um líder.';
     } else {
         try {
-            $repo->atualizar(
-                $grupoId,
-                $nome,
-                $diaSemana,
-                $horario,
-                $perfilGrupo,
-                $localPadrao,
-                $localFixo,
-                $itemCeleiro,
-                $domingoOracaoCulto,
-                $lideresIds,
-                $membrosIds
-            );
+            $repo->atualizar($grupoId, $nome, $diaSemana, $horario, $perfilGrupo, $localPadrao, $localFixo, $itemCeleiro, $domingoOracaoCulto, $lideresIds, $membrosIds);
             $mensagem = 'Grupo Familiar atualizado com sucesso.';
 
-            $auditoria->registrar(
-                'atualizar',
-                'grupo_familiar',
-                $grupoId,
-                "Grupo Familiar atualizado: {$nome}.",
-                null,
-                $grupoId,
-                null
-            );
+            $auditoria->registrar('atualizar', 'grupo_familiar', $grupoId, "Grupo Familiar atualizado: {$nome}.", null, $grupoId, null);
 
             $grupo = $repo->buscarPorId($grupoId);
             $lideresSelecionados = $repo->listarLideresIdsDoGrupo($grupoId);
@@ -102,14 +82,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $grupo['local_fixo'] = $localFixo;
         $grupo['item_celeiro'] = $itemCeleiro;
         $grupo['domingo_oracao_culto'] = $domingoOracaoCulto;
-
         $lideresSelecionados = $lideresIds;
         $membrosSelecionados = $membrosIds;
     }
 }
 
 $dias = ['segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado', 'domingo'];
-
 $pageTitle = 'Editar Grupo Familiar - JTRO';
 
 require_once __DIR__ . '/../src/Views/grupos_familiares/editar.php';

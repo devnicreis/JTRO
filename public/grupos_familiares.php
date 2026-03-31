@@ -99,4 +99,4 @@ $grupos = $repo->listarTodos($filtros);
 
 $pageTitle = 'Cadastro de Grupos Familiares - JTRO';
 
-require_once __DIR__ . '/../src/Views/grupos_familiares/index.php';
+require_once __DIR__ . '/../src/Views/grupos_familiares/cadastro.php';

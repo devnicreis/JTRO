@@ -13,6 +13,13 @@ CREATE TABLE IF NOT EXISTS pessoas (
     grupo_familiar_id INTEGER,
     telefone_fixo TEXT,
     telefone_movel TEXT,
+    endereco_cep TEXT,
+    endereco_logradouro TEXT,
+    endereco_numero TEXT,
+    endereco_complemento TEXT,
+    endereco_bairro TEXT,
+    endereco_cidade TEXT,
+    endereco_uf TEXT,
     concluiu_integracao INTEGER NOT NULL DEFAULT 0,
     integracao_conclusao_manual INTEGER NOT NULL DEFAULT 0,
     participou_retiro_integracao INTEGER NOT NULL DEFAULT 0,
@@ -191,6 +198,22 @@ CREATE TABLE IF NOT EXISTS chamados (
     FOREIGN KEY (grupo_familiar_id) REFERENCES grupos_familiares(id),
     FOREIGN KEY (admin_responsavel_id) REFERENCES pessoas(id)
 );
+
+CREATE TABLE IF NOT EXISTS cantina_escalas (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    data_escala TEXT NOT NULL UNIQUE,
+    grupo_familiar_id INTEGER NOT NULL,
+    observacoes TEXT,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    FOREIGN KEY (grupo_familiar_id) REFERENCES grupos_familiares(id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_cantina_escalas_data
+    ON cantina_escalas(data_escala);
+
+CREATE INDEX IF NOT EXISTS idx_cantina_escalas_grupo_data
+    ON cantina_escalas(grupo_familiar_id, data_escala);
 
 CREATE TABLE IF NOT EXISTS eventos (
     id INTEGER PRIMARY KEY AUTOINCREMENT,

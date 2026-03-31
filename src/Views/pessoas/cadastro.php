@@ -6,12 +6,9 @@ $estadosCivis = opcoesEstadoCivil();
 $ufs = opcoesUF();
 ?>
 
-<div class="acoes" style="margin-bottom: 16px;">
-    <a href="/pessoas_cadastradas.php" class="botao-link botao-secundario">Voltar para pessoas cadastradas</a>
-</div>
-
 <div class="page-header">
-    <h1>Editar Pessoa</h1>
+    <h1>Cadastro de Pessoas</h1>
+    <p class="page-header-subtitulo">Registre os membros com os dados completos, incluindo endereço com preenchimento automático por CEP.</p>
 </div>
 
 <?php if ($mensagem !== ''): ?>
@@ -22,30 +19,29 @@ $ufs = opcoesUF();
     <div class="erro"><?php echo htmlspecialchars($erro); ?></div>
 <?php endif; ?>
 
-<form method="POST" action="/pessoas_editar.php">
-    <input type="hidden" name="id" value="<?php echo (int) $pessoa['id']; ?>">
-
+<form method="POST" action="/pessoas.php">
     <div class="grid">
         <div class="campo">
             <label for="nome">Nome</label>
-            <input type="text" id="nome" name="nome" required pattern="^[\p{L}\s]+$" value="<?php echo htmlspecialchars($pessoa['nome']); ?>">
+            <input type="text" id="nome" name="nome" required pattern="^[\p{L}\s]+$" value="<?php echo htmlspecialchars($_POST['nome'] ?? ''); ?>">
         </div>
         <div class="campo">
             <label for="cpf">CPF</label>
-            <input type="text" id="cpf" name="cpf" required inputmode="numeric" maxlength="11" pattern="\d{11}" value="<?php echo htmlspecialchars($pessoa['cpf']); ?>">
+            <input type="text" id="cpf" name="cpf" required inputmode="numeric" maxlength="11" pattern="\d{11}" value="<?php echo htmlspecialchars($_POST['cpf'] ?? ''); ?>">
         </div>
     </div>
 
     <div class="grid">
         <div class="campo">
             <label for="email">E-mail</label>
-            <input type="email" id="email" name="email" value="<?php echo htmlspecialchars($pessoa['email'] ?? ''); ?>">
+            <input type="email" id="email" name="email" value="<?php echo htmlspecialchars($_POST['email'] ?? ''); ?>">
         </div>
         <div class="campo">
             <label for="cargo">Perfil do sistema</label>
             <select id="cargo" name="cargo" required>
-                <option value="membro" <?php echo ($pessoa['cargo'] === 'membro') ? 'selected' : ''; ?>>Membro</option>
-                <option value="admin" <?php echo ($pessoa['cargo'] === 'admin') ? 'selected' : ''; ?>>Administrador</option>
+                <option value="">Selecione</option>
+                <option value="membro" <?php echo (($_POST['cargo'] ?? '') === 'membro') ? 'selected' : ''; ?>>Membro</option>
+                <option value="admin" <?php echo (($_POST['cargo'] ?? '') === 'admin') ? 'selected' : ''; ?>>Administrador</option>
             </select>
         </div>
     </div>
@@ -53,7 +49,7 @@ $ufs = opcoesUF();
     <div class="grid">
         <div class="campo">
             <label for="data_nascimento">Data de nascimento</label>
-            <input type="date" id="data_nascimento" name="data_nascimento" required value="<?php echo htmlspecialchars($pessoa['data_nascimento'] ?? ''); ?>">
+            <input type="date" id="data_nascimento" name="data_nascimento" required value="<?php echo htmlspecialchars($_POST['data_nascimento'] ?? ''); ?>">
         </div>
         <div class="campo">
             <label for="idade_exibida">Idade</label>
@@ -65,8 +61,9 @@ $ufs = opcoesUF();
         <div class="campo">
             <label for="estado_civil">Estado civil</label>
             <select id="estado_civil" name="estado_civil" required>
+                <option value="">Selecione</option>
                 <?php foreach ($estadosCivis as $valor => $label): ?>
-                    <option value="<?php echo htmlspecialchars($valor); ?>" <?php echo (($pessoa['estado_civil'] ?? '') === $valor) ? 'selected' : ''; ?>>
+                    <option value="<?php echo htmlspecialchars($valor); ?>" <?php echo (($_POST['estado_civil'] ?? '') === $valor) ? 'selected' : ''; ?>>
                         <?php echo htmlspecialchars($label); ?>
                     </option>
                 <?php endforeach; ?>
@@ -74,13 +71,13 @@ $ufs = opcoesUF();
         </div>
         <div class="campo" id="campo_nome_conjuge">
             <label for="nome_conjuge">Nome do cônjuge</label>
-            <input type="text" id="nome_conjuge" name="nome_conjuge" pattern="^[\p{L}\s]+$" value="<?php echo htmlspecialchars($pessoa['nome_conjuge'] ?? ''); ?>">
+            <input type="text" id="nome_conjuge" name="nome_conjuge" pattern="^[\p{L}\s]+$" value="<?php echo htmlspecialchars($_POST['nome_conjuge'] ?? ''); ?>">
         </div>
     </div>
 
     <div class="campo">
         <div class="checkbox-item">
-            <input type="checkbox" id="eh_lider" name="eh_lider" value="1" <?php echo ((int) ($pessoa['eh_lider'] ?? 0) === 1) ? 'checked' : ''; ?>>
+            <input type="checkbox" id="eh_lider" name="eh_lider" value="1" <?php echo isset($_POST['eh_lider']) ? 'checked' : ''; ?>>
             <label for="eh_lider">É líder</label>
         </div>
     </div>
@@ -88,13 +85,13 @@ $ufs = opcoesUF();
     <div class="grid" id="bloco_lideranca">
         <div class="campo">
             <div class="checkbox-item">
-                <input type="checkbox" id="lider_grupo_familiar" name="lider_grupo_familiar" value="1" <?php echo ((int) ($pessoa['lider_grupo_familiar'] ?? 0) === 1) ? 'checked' : ''; ?>>
+                <input type="checkbox" id="lider_grupo_familiar" name="lider_grupo_familiar" value="1" <?php echo isset($_POST['lider_grupo_familiar']) ? 'checked' : ''; ?>>
                 <label for="lider_grupo_familiar">Líder de Grupo Familiar</label>
             </div>
         </div>
         <div class="campo">
             <div class="checkbox-item">
-                <input type="checkbox" id="lider_departamento" name="lider_departamento" value="1" <?php echo ((int) ($pessoa['lider_departamento'] ?? 0) === 1) ? 'checked' : ''; ?>>
+                <input type="checkbox" id="lider_departamento" name="lider_departamento" value="1" <?php echo isset($_POST['lider_departamento']) ? 'checked' : ''; ?>>
                 <label for="lider_departamento">Líder de Departamento</label>
             </div>
         </div>
@@ -105,7 +102,7 @@ $ufs = opcoesUF();
         <select id="grupo_familiar_id" name="grupo_familiar_id">
             <option value="">Não vincular agora</option>
             <?php foreach ($gruposFamiliares as $grupo): ?>
-                <option value="<?php echo (int) $grupo['id']; ?>" <?php echo ((int) ($pessoa['grupo_familiar_id'] ?? 0) === (int) $grupo['id']) ? 'selected' : ''; ?>>
+                <option value="<?php echo (int) $grupo['id']; ?>" <?php echo ((int) ($_POST['grupo_familiar_id'] ?? 0) === (int) $grupo['id']) ? 'selected' : ''; ?>>
                     <?php echo htmlspecialchars($grupo['nome']); ?>
                 </option>
             <?php endforeach; ?>
@@ -115,11 +112,11 @@ $ufs = opcoesUF();
     <div class="grid">
         <div class="campo">
             <label for="telefone_fixo">Telefone fixo</label>
-            <input type="text" id="telefone_fixo" name="telefone_fixo" inputmode="numeric" maxlength="11" pattern="\d{10,11}" value="<?php echo htmlspecialchars($pessoa['telefone_fixo'] ?? ''); ?>">
+            <input type="text" id="telefone_fixo" name="telefone_fixo" inputmode="numeric" maxlength="11" pattern="\d{10,11}" value="<?php echo htmlspecialchars($_POST['telefone_fixo'] ?? ''); ?>">
         </div>
         <div class="campo">
             <label for="telefone_movel">Telefone móvel</label>
-            <input type="text" id="telefone_movel" name="telefone_movel" inputmode="numeric" maxlength="11" pattern="\d{11}" value="<?php echo htmlspecialchars($pessoa['telefone_movel'] ?? ''); ?>">
+            <input type="text" id="telefone_movel" name="telefone_movel" inputmode="numeric" maxlength="11" pattern="\d{11}" value="<?php echo htmlspecialchars($_POST['telefone_movel'] ?? ''); ?>">
         </div>
     </div>
 
@@ -128,34 +125,34 @@ $ufs = opcoesUF();
         <div class="grid-endereco-pessoa">
             <div class="campo">
                 <label for="endereco_cep">CEP</label>
-                <input type="text" id="endereco_cep" name="endereco_cep" required inputmode="numeric" maxlength="8" pattern="\d{8}" value="<?php echo htmlspecialchars($pessoa['endereco_cep'] ?? ''); ?>">
+                <input type="text" id="endereco_cep" name="endereco_cep" required inputmode="numeric" maxlength="8" pattern="\d{8}" value="<?php echo htmlspecialchars($_POST['endereco_cep'] ?? ''); ?>">
             </div>
             <div class="campo campo-endereco-logradouro">
                 <label for="endereco_logradouro">Endereço</label>
-                <input type="text" id="endereco_logradouro" name="endereco_logradouro" required value="<?php echo htmlspecialchars($pessoa['endereco_logradouro'] ?? ''); ?>">
+                <input type="text" id="endereco_logradouro" name="endereco_logradouro" required value="<?php echo htmlspecialchars($_POST['endereco_logradouro'] ?? ''); ?>">
             </div>
             <div class="campo">
                 <label for="endereco_numero">Número</label>
-                <input type="text" id="endereco_numero" name="endereco_numero" required value="<?php echo htmlspecialchars($pessoa['endereco_numero'] ?? ''); ?>">
+                <input type="text" id="endereco_numero" name="endereco_numero" required value="<?php echo htmlspecialchars($_POST['endereco_numero'] ?? ''); ?>">
             </div>
             <div class="campo campo-endereco-complemento">
                 <label for="endereco_complemento">Complemento</label>
-                <input type="text" id="endereco_complemento" name="endereco_complemento" value="<?php echo htmlspecialchars($pessoa['endereco_complemento'] ?? ''); ?>">
+                <input type="text" id="endereco_complemento" name="endereco_complemento" value="<?php echo htmlspecialchars($_POST['endereco_complemento'] ?? ''); ?>">
             </div>
             <div class="campo">
                 <label for="endereco_bairro">Bairro</label>
-                <input type="text" id="endereco_bairro" name="endereco_bairro" required value="<?php echo htmlspecialchars($pessoa['endereco_bairro'] ?? ''); ?>">
+                <input type="text" id="endereco_bairro" name="endereco_bairro" required value="<?php echo htmlspecialchars($_POST['endereco_bairro'] ?? ''); ?>">
             </div>
             <div class="campo">
                 <label for="endereco_cidade">Cidade</label>
-                <input type="text" id="endereco_cidade" name="endereco_cidade" required value="<?php echo htmlspecialchars($pessoa['endereco_cidade'] ?? ''); ?>">
+                <input type="text" id="endereco_cidade" name="endereco_cidade" required value="<?php echo htmlspecialchars($_POST['endereco_cidade'] ?? ''); ?>">
             </div>
             <div class="campo">
                 <label for="endereco_uf">UF</label>
                 <select id="endereco_uf" name="endereco_uf" required>
                     <option value="">Selecione</option>
                     <?php foreach ($ufs as $uf): ?>
-                        <option value="<?php echo htmlspecialchars($uf); ?>" <?php echo (($pessoa['endereco_uf'] ?? '') === $uf) ? 'selected' : ''; ?>>
+                        <option value="<?php echo htmlspecialchars($uf); ?>" <?php echo (($_POST['endereco_uf'] ?? '') === $uf) ? 'selected' : ''; ?>>
                             <?php echo htmlspecialchars($uf); ?>
                         </option>
                     <?php endforeach; ?>
@@ -168,31 +165,25 @@ $ufs = opcoesUF();
         <div class="campo">
             <label for="concluiu_integracao">Concluiu integração?</label>
             <select id="concluiu_integracao" name="concluiu_integracao" required>
-                <option value="1" <?php echo ((int) ($pessoa['concluiu_integracao'] ?? 0) === 1) ? 'selected' : ''; ?>>Sim</option>
-                <option value="0" <?php echo ((int) ($pessoa['concluiu_integracao'] ?? 0) === 0) ? 'selected' : ''; ?>>Não</option>
+                <option value="">Selecione</option>
+                <option value="1" <?php echo (($_POST['concluiu_integracao'] ?? '') === '1') ? 'selected' : ''; ?>>Sim</option>
+                <option value="0" <?php echo (($_POST['concluiu_integracao'] ?? '') === '0') ? 'selected' : ''; ?>>Não</option>
             </select>
         </div>
         <div class="campo">
             <label for="participou_retiro_integracao">Participou do retiro de integração?</label>
             <select id="participou_retiro_integracao" name="participou_retiro_integracao" required>
-                <option value="1" <?php echo ((int) ($pessoa['participou_retiro_integracao'] ?? 0) === 1) ? 'selected' : ''; ?>>Sim</option>
-                <option value="0" <?php echo ((int) ($pessoa['participou_retiro_integracao'] ?? 0) === 0) ? 'selected' : ''; ?>>Não</option>
+                <option value="">Selecione</option>
+                <option value="1" <?php echo (($_POST['participou_retiro_integracao'] ?? '') === '1') ? 'selected' : ''; ?>>Sim</option>
+                <option value="0" <?php echo (($_POST['participou_retiro_integracao'] ?? '') === '0') ? 'selected' : ''; ?>>Não</option>
             </select>
         </div>
     </div>
 
-    <div class="campo">
-        <label for="nova_senha">Nova senha</label>
-        <input type="password" id="nova_senha" name="nova_senha" minlength="8">
-        <small>Deixe em branco para não alterar. Mínimo de 8 caracteres, com letra maiúscula, minúscula, número e símbolo.</small>
+    <div class="acoes">
+        <button type="submit">Cadastrar pessoa</button>
+        <a href="/pessoas_cadastradas.php" class="botao-link botao-secundario">Ver pessoas cadastradas</a>
     </div>
-
-    <div class="campo">
-        <label for="confirmar_senha">Confirmar nova senha</label>
-        <input type="password" id="confirmar_senha" name="confirmar_senha" minlength="8">
-    </div>
-
-    <button type="submit">Salvar alterações</button>
 </form>
 
 <script>

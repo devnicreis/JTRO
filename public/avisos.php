@@ -14,6 +14,9 @@ $cartaRepo    = new CartaRepository();
 $usuarioId    = Auth::id();
 $isAdmin      = Auth::isAdmin();
 
+$avisoRepo->sincronizarAvisosAniversarioDoDia();
+$avisoRepo->sincronizarAvisosCantina();
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $acao       = $_POST['acao'] ?? '';
     $chaveAviso = trim($_POST['chave_aviso'] ?? '');

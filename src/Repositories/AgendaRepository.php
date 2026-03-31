@@ -7,7 +7,7 @@ class AgendaRepository
     private PDO $connection;
 
     public const DEPARTAMENTOS = [
-        'Toda a Igreja',
+        'Evento Geral',
         'Pastoral',
         'Evangelização',
         'Abba Jovem',

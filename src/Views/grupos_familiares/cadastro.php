@@ -3,15 +3,13 @@
 
 <?php
 $perfisGrupo = opcoesPerfilGrupo();
-$domingos = [1 => '1º Domingo', 2 => '2º Domingo', 3 => '3º Domingo', 4 => '4º Domingo', 5 => '5º Domingo'];
+$dias = ['segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado', 'domingo'];
+$domingosFiltro = [1 => '1º Domingo', 2 => '2º Domingo', 3 => '3º Domingo', 4 => '4º Domingo', 5 => '5º Domingo'];
 ?>
 
-<div class="acoes" style="margin-bottom: 16px;">
-    <a href="/grupos_familiares_cadastrados.php" class="botao-link botao-secundario">Voltar para GFs cadastrados</a>
-</div>
-
 <div class="page-header">
-    <h1>Editar Grupo Familiar</h1>
+    <h1>Cadastro de Grupos Familiares</h1>
+    <p class="page-header-subtitulo">Crie a estrutura do grupo, defina escalas e vincule líderes e membros sem misturar isso com a listagem geral.</p>
 </div>
 
 <?php if ($mensagem !== ''): ?>
@@ -21,12 +19,10 @@ $domingos = [1 => '1º Domingo', 2 => '2º Domingo', 3 => '3º Domingo', 4 => '4
     <div class="erro"><?php echo htmlspecialchars($erro); ?></div>
 <?php endif; ?>
 
-<form method="POST" action="/grupos_familiares_editar.php">
-    <input type="hidden" name="id" value="<?php echo $grupoId; ?>">
-
+<form method="POST" action="/grupos_familiares.php">
     <div class="campo">
         <label for="nome">Nome do Grupo Familiar</label>
-        <input type="text" id="nome" name="nome" required value="<?php echo htmlspecialchars($grupo['nome']); ?>">
+        <input type="text" id="nome" name="nome" required value="<?php echo htmlspecialchars($_POST['nome'] ?? ''); ?>">
     </div>
 
     <div class="grid">
@@ -34,8 +30,9 @@ $domingos = [1 => '1º Domingo', 2 => '2º Domingo', 3 => '3º Domingo', 4 => '4
             <label for="dia_semana">Dia da semana</label>
             <select id="dia_semana" name="dia_semana" required>
                 <option value="">Selecione</option>
+                <?php $diaSelecionado = $_POST['dia_semana'] ?? ''; ?>
                 <?php foreach ($dias as $dia): ?>
-                    <option value="<?php echo htmlspecialchars($dia); ?>" <?php echo $grupo['dia_semana'] === $dia ? 'selected' : ''; ?>>
+                    <option value="<?php echo htmlspecialchars($dia); ?>" <?php echo $diaSelecionado === $dia ? 'selected' : ''; ?>>
                         <?php echo htmlspecialchars(ucfirst($dia)); ?>
                     </option>
                 <?php endforeach; ?>
@@ -43,15 +40,16 @@ $domingos = [1 => '1º Domingo', 2 => '2º Domingo', 3 => '3º Domingo', 4 => '4
         </div>
         <div class="campo">
             <label for="horario">Horário</label>
-            <input type="time" id="horario" name="horario" required value="<?php echo htmlspecialchars($grupo['horario']); ?>">
+            <input type="time" id="horario" name="horario" required value="<?php echo htmlspecialchars($_POST['horario'] ?? ''); ?>">
         </div>
     </div>
 
     <div class="campo">
         <label for="perfil_grupo">Perfil do grupo</label>
         <select id="perfil_grupo" name="perfil_grupo" required>
+            <option value="">Selecione</option>
             <?php foreach ($perfisGrupo as $valor => $label): ?>
-                <option value="<?php echo htmlspecialchars($valor); ?>" <?php echo (($grupo['perfil_grupo'] ?? '') === $valor) ? 'selected' : ''; ?>>
+                <option value="<?php echo htmlspecialchars($valor); ?>" <?php echo (($_POST['perfil_grupo'] ?? '') === $valor) ? 'selected' : ''; ?>>
                     <?php echo htmlspecialchars($label); ?>
                 </option>
             <?php endforeach; ?>
@@ -61,11 +59,11 @@ $domingos = [1 => '1º Domingo', 2 => '2º Domingo', 3 => '3º Domingo', 4 => '4
     <div class="grid">
         <div class="campo">
             <label for="local_padrao">Local padrão</label>
-            <input type="text" id="local_padrao" name="local_padrao" value="<?php echo htmlspecialchars($grupo['local_padrao'] ?? ''); ?>">
+            <input type="text" id="local_padrao" name="local_padrao" value="<?php echo htmlspecialchars($_POST['local_padrao'] ?? ''); ?>">
         </div>
         <div class="campo" style="display:flex; align-items:flex-end; padding-bottom:2px;">
             <div class="checkbox-item">
-                <input type="checkbox" id="local_fixo" name="local_fixo" value="1" <?php echo (int) $grupo['local_fixo'] === 1 ? 'checked' : ''; ?>>
+                <input type="checkbox" id="local_fixo" name="local_fixo" value="1" <?php echo isset($_POST['local_fixo']) ? 'checked' : ''; ?>>
                 <label for="local_fixo">Este GF possui local fixo</label>
             </div>
         </div>
@@ -76,15 +74,15 @@ $domingos = [1 => '1º Domingo', 2 => '2º Domingo', 3 => '3º Domingo', 4 => '4
         <div class="grid">
             <div class="campo">
                 <label for="item_celeiro">Item do Projeto Celeiro</label>
-                <input type="text" id="item_celeiro" name="item_celeiro" placeholder="Ex.: Arroz" value="<?php echo htmlspecialchars($grupo['item_celeiro'] ?? ''); ?>">
+                <input type="text" id="item_celeiro" name="item_celeiro" placeholder="Ex.: Arroz" value="<?php echo htmlspecialchars($_POST['item_celeiro'] ?? ''); ?>">
             </div>
             <div class="campo">
                 <label for="domingo_oracao_culto">Domingo de oração antes do culto</label>
                 <select id="domingo_oracao_culto" name="domingo_oracao_culto">
-                    <option value="0" <?php echo empty($grupo['domingo_oracao_culto']) ? 'selected' : ''; ?>>Não escalonado</option>
-                    <?php $domAtual = (int) ($grupo['domingo_oracao_culto'] ?? 0); ?>
-                    <?php foreach ($domingos as $valor => $label): ?>
-                        <option value="<?php echo $valor; ?>" <?php echo $domAtual === $valor ? 'selected' : ''; ?>>
+                    <option value="0">Não escalonado</option>
+                    <?php $domingoSelecionado = (int) ($_POST['domingo_oracao_culto'] ?? 0); ?>
+                    <?php foreach ($domingosFiltro as $valor => $label): ?>
+                        <option value="<?php echo $valor; ?>" <?php echo $domingoSelecionado === $valor ? 'selected' : ''; ?>>
                             <?php echo htmlspecialchars($label); ?>
                         </option>
                     <?php endforeach; ?>
@@ -100,7 +98,7 @@ $domingos = [1 => '1º Domingo', 2 => '2º Domingo', 3 => '3º Domingo', 4 => '4
             <div class="checkbox-lista gf-lista-scroll" id="lista-lideres">
                 <?php foreach ($pessoas as $pessoa): ?>
                     <div class="checkbox-item gf-item">
-                        <input type="checkbox" id="lider_<?php echo (int) $pessoa['id']; ?>" name="lideres[]" value="<?php echo (int) $pessoa['id']; ?>" <?php echo in_array((int) $pessoa['id'], $lideresSelecionados, true) ? 'checked' : ''; ?>>
+                        <input type="checkbox" id="lider_<?php echo (int) $pessoa['id']; ?>" name="lideres[]" value="<?php echo (int) $pessoa['id']; ?>" <?php echo in_array((string) $pessoa['id'], $_POST['lideres'] ?? [], true) ? 'checked' : ''; ?>>
                         <label for="lider_<?php echo (int) $pessoa['id']; ?>">
                             <?php echo htmlspecialchars($pessoa['nome']); ?>
                             <span class="gf-cargo">(<?php echo htmlspecialchars($pessoa['cargo']); ?>)</span>
@@ -115,7 +113,7 @@ $domingos = [1 => '1º Domingo', 2 => '2º Domingo', 3 => '3º Domingo', 4 => '4
             <div class="checkbox-lista gf-lista-scroll" id="lista-membros">
                 <?php foreach ($pessoas as $pessoa): ?>
                     <div class="checkbox-item gf-item">
-                        <input type="checkbox" id="membro_<?php echo (int) $pessoa['id']; ?>" name="membros[]" value="<?php echo (int) $pessoa['id']; ?>" <?php echo in_array((int) $pessoa['id'], $membrosSelecionados, true) ? 'checked' : ''; ?>>
+                        <input type="checkbox" id="membro_<?php echo (int) $pessoa['id']; ?>" name="membros[]" value="<?php echo (int) $pessoa['id']; ?>" <?php echo in_array((string) $pessoa['id'], $_POST['membros'] ?? [], true) ? 'checked' : ''; ?>>
                         <label for="membro_<?php echo (int) $pessoa['id']; ?>">
                             <?php echo htmlspecialchars($pessoa['nome']); ?>
                             <span class="gf-cargo">(<?php echo htmlspecialchars($pessoa['cargo']); ?>)</span>
@@ -126,7 +124,10 @@ $domingos = [1 => '1º Domingo', 2 => '2º Domingo', 3 => '3º Domingo', 4 => '4
         </div>
     </div>
 
-    <button type="submit">Salvar alterações</button>
+    <div class="acoes">
+        <button type="submit">Cadastrar Grupo Familiar</button>
+        <a href="/grupos_familiares_cadastrados.php" class="botao-link botao-secundario">Ver GFs cadastrados</a>
+    </div>
 </form>
 
 <script>
@@ -140,6 +141,7 @@ function filtrarCheckbox(input, listaId) {
 document.addEventListener('DOMContentLoaded', function() {
     const fixo = document.getElementById('local_fixo');
     const local = document.getElementById('local_padrao');
+
     if (fixo && local) {
         function sincronizarLocal() {
             local.required = fixo.checked;

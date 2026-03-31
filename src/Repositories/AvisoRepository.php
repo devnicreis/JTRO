@@ -203,4 +203,105 @@ class AvisoRepository
             }
         }
     }
+
+    public function sincronizarAvisosCantina(?string $dataBase = null): void
+    {
+        $dataBase = $dataBase ?: date('Y-m-d');
+
+        $datasAlvo = [
+            7 => date('Y-m-d', strtotime($dataBase . ' +7 days')),
+            1 => date('Y-m-d', strtotime($dataBase . ' +1 day')),
+            0 => $dataBase,
+        ];
+
+        $placeholders = implode(',', array_fill(0, count($datasAlvo), '?'));
+        $stmtEscalas = $this->connection->prepare("
+            SELECT
+                ce.id,
+                ce.data_escala,
+                ce.grupo_familiar_id,
+                gf.nome AS grupo_nome
+            FROM cantina_escalas ce
+            INNER JOIN grupos_familiares gf ON gf.id = ce.grupo_familiar_id
+            WHERE gf.ativo = 1
+              AND ce.data_escala IN ({$placeholders})
+            ORDER BY ce.data_escala ASC
+        ");
+        $stmtEscalas->execute(array_values($datasAlvo));
+        $escalas = $stmtEscalas->fetchAll(PDO::FETCH_ASSOC);
+
+        $chavesValidas = [];
+
+        foreach ($escalas as $escala) {
+            $dataEscala = (string) $escala['data_escala'];
+            $escalaId = (int) $escala['id'];
+            $grupoId = (int) $escala['grupo_familiar_id'];
+            $grupoNome = trim((string) ($escala['grupo_nome'] ?? ''));
+            $diasRestantes = (int) floor((strtotime($dataEscala) - strtotime($dataBase)) / 86400);
+
+            if (!in_array($diasRestantes, [7, 1, 0], true)) {
+                continue;
+            }
+
+            $stmtLideres = $this->connection->prepare("
+                SELECT p.id
+                FROM grupo_lideres gl
+                INNER JOIN pessoas p ON p.id = gl.pessoa_id
+                WHERE gl.grupo_familiar_id = :grupo_id
+                  AND p.ativo = 1
+                ORDER BY p.nome ASC
+            ");
+            $stmtLideres->execute([':grupo_id' => $grupoId]);
+            $lideres = $stmtLideres->fetchAll(PDO::FETCH_COLUMN);
+
+            foreach ($lideres as $liderId) {
+                $liderId = (int) $liderId;
+                $chave = 'cantina_' . $escalaId . '_' . $liderId . '_' . $diasRestantes;
+                $chavesValidas[] = $chave;
+
+                if ($diasRestantes === 7) {
+                    $titulo = 'Escala da cantina em 7 dias';
+                    $mensagem = 'O GF ' . $grupoNome . ' está escalado para a cantina em ' . $this->formatarDataBr($dataEscala) . '.';
+                } elseif ($diasRestantes === 1) {
+                    $titulo = 'Escala da cantina amanhã';
+                    $mensagem = 'O GF ' . $grupoNome . ' estará na escala da cantina amanhã (' . $this->formatarDataBr($dataEscala) . ').';
+                } else {
+                    $titulo = 'Escala da cantina hoje';
+                    $mensagem = 'O GF ' . $grupoNome . ' está na escala da cantina hoje.';
+                }
+
+                $this->criarAvisoSistema(
+                    $liderId,
+                    $chave,
+                    'cantina',
+                    $titulo,
+                    $mensagem,
+                    '/index.php'
+                );
+            }
+        }
+
+        if (count($chavesValidas) > 0) {
+            $params = $chavesValidas;
+            $params[] = 'cantina';
+            $stmtLimpar = $this->connection->prepare("
+                DELETE FROM avisos_sistema
+                WHERE tipo = ?
+                  AND chave_aviso NOT IN (" . implode(',', array_fill(0, count($chavesValidas), '?')) . ")
+            ");
+            $stmtLimpar->execute(array_merge(['cantina'], $chavesValidas));
+        } else {
+            $stmtLimpar = $this->connection->prepare("
+                DELETE FROM avisos_sistema
+                WHERE tipo = :tipo
+            ");
+            $stmtLimpar->execute([':tipo' => 'cantina']);
+        }
+    }
+
+    private function formatarDataBr(string $data): string
+    {
+        $date = DateTime::createFromFormat('Y-m-d', $data);
+        return $date ? $date->format('d/m/Y') : $data;
+    }
 }

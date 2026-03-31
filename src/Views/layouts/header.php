@@ -26,24 +26,36 @@
         return '<a href="' . $href . '" class="nav-item' . $ativo . '">' . $icon . '<span>' . $label . '</span>' . $badgeHtml . '</a>';
     }
 
-    $iconDashboard    = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="6" height="6" rx="1.5"/><rect x="9" y="1" width="6" height="6" rx="1.5"/><rect x="1" y="9" width="6" height="6" rx="1.5"/><rect x="9" y="9" width="6" height="6" rx="1.5"/></svg>';
-    $iconPessoas      = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="5" r="3"/><path d="M2 15c0-3.3 2.7-6 6-6s6 2.7 6 6"/></svg>';
-    $iconGrupos       = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="5" cy="5" r="2.5"/><circle cx="11" cy="5" r="2.5"/><path d="M1 14c0-2.8 1.8-5 4-5M15 14c0-2.8-1.8-5-4-5M5 14c0-2.2 1.3-4 3-4s3 1.8 3 4"/></svg>';
-    $iconPresencas    = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="12" height="11" rx="2"/><path d="M5 1v4M11 1v4M2 7h12"/><path d="M5.5 10.5l1.5 1.5 3-3"/></svg>';
+    $iconDashboard = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="6" height="6" rx="1.5"/><rect x="9" y="1" width="6" height="6" rx="1.5"/><rect x="1" y="9" width="6" height="6" rx="1.5"/><rect x="9" y="9" width="6" height="6" rx="1.5"/></svg>';
+    $iconPessoas = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="5" r="3"/><path d="M2 15c0-3.3 2.7-6 6-6s6 2.7 6 6"/></svg>';
+    $iconGrupos = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="5" cy="5" r="2.5"/><circle cx="11" cy="5" r="2.5"/><path d="M1 14c0-2.8 1.8-5 4-5M15 14c0-2.8-1.8-5-4-5M5 14c0-2.2 1.3-4 3-4s3 1.8 3 4"/></svg>';
+    $iconPresencas = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="12" height="11" rx="2"/><path d="M5 1v4M11 1v4M2 7h12"/><path d="M5.5 10.5l1.5 1.5 3-3"/></svg>';
     $iconNotificacoes = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 1a5 5 0 015 5c0 3 1 4 1.5 5h-13C2 10 3 9 3 6a5 5 0 015-5z"/><path d="M6.5 13a1.5 1.5 0 003 0"/></svg>';
-    $iconAuditoria    = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 4h10M3 8h7M3 12h5"/></svg>';
-    $iconAgenda       = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="12" height="11" rx="2"/><path d="M5 1v4M11 1v4M2 7h12"/><path d="M5 10h2M9 10h2M5 13h2"/></svg>';
-    $iconCarta        = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="3" width="14" height="10" rx="2"/><path d="M1 5l7 5 7-5"/></svg>';
-    $iconChamados     = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 9.5V3.5A1.5 1.5 0 013.5 2h4.8a1.5 1.5 0 011.06.44l2.2 2.2A1.5 1.5 0 0112 5.7v3.8"/><path d="M9 2v2.5A1.5 1.5 0 0010.5 6H13"/><path d="M4 12.5h4"/><path d="M6 10.5v4"/></svg>';
-    $iconChevron      = '<svg class="nav-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 7l3 3 3-3"/></svg>';
-    $iconSair         = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 8H2M6 5l-3 3 3 3"/><path d="M6 2h6a1 1 0 011 1v10a1 1 0 01-1 1H6"/></svg>';
+    $iconAuditoria = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 4h10M3 8h7M3 12h5"/></svg>';
+    $iconAgenda = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="12" height="11" rx="2"/><path d="M5 1v4M11 1v4M2 7h12"/><path d="M5 10h2M9 10h2M5 13h2"/></svg>';
+    $iconCarta = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="3" width="14" height="10" rx="2"/><path d="M1 5l7 5 7-5"/></svg>';
+    $iconChamados = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 9.5V3.5A1.5 1.5 0 013.5 2h4.8a1.5 1.5 0 011.06.44l2.2 2.2A1.5 1.5 0 0112 5.7v3.8"/><path d="M9 2v2.5A1.5 1.5 0 0010.5 6H13"/><path d="M4 12.5h4"/><path d="M6 10.5v4"/></svg>';
+    $iconChevron = '<svg class="nav-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 7l3 3 3-3"/></svg>';
+    $iconSair = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 8H2M6 5l-3 3 3 3"/><path d="M6 2h6a1 1 0 011 1v10a1 1 0 01-1 1H6"/></svg>';
+
+    $pessoasPaginas = [
+        'pessoas',
+        'pessoas_cadastradas',
+        'pessoas_editar',
+        'pessoas_desativar',
+        'pessoas_reativar',
+        'pessoas_integracao',
+    ];
+    $pessoasAberto = in_array($paginaAtual, $pessoasPaginas, true);
 
     $gruposPaginas = [
         'grupos_familiares',
+        'grupos_familiares_cadastrados',
         'grupos_familiares_editar',
         'grupos_familiares_desativar',
         'grupos_familiares_reativar',
         'diagnostico_gf',
+        'cantina',
     ];
     $gruposAberto = in_array($paginaAtual, $gruposPaginas, true);
 
@@ -64,6 +76,7 @@
     $presencaRepoHeader = new PresencaRepository();
     $avisoRepoHeader = new AvisoRepository();
     $avisoRepoHeader->sincronizarAvisosAniversarioDoDia();
+    $avisoRepoHeader->sincronizarAvisosCantina();
     $usuarioIdHeader = (int) ($usuario['id'] ?? 0);
     $gruposIntegracaoHeader = $isAdmin
         ? $presencaRepoHeader->listarGruposIntegracao()
@@ -71,10 +84,7 @@
     $temAcessoRetiroIntegracao = count($gruposIntegracaoHeader) > 0;
 
     if (!isset($totalAvisos)) {
-        $chavesLidasHeader = $usuarioIdHeader > 0
-            ? $avisoRepoHeader->listarChavesLidas($usuarioIdHeader)
-            : [];
-
+        $chavesLidasHeader = $usuarioIdHeader > 0 ? $avisoRepoHeader->listarChavesLidas($usuarioIdHeader) : [];
         $chavesLidasMapHeader = array_fill_keys($chavesLidasHeader, true);
         $totalAvisos = 0;
 
@@ -119,10 +129,7 @@
         require_once __DIR__ . '/../../Repositories/CartaRepository.php';
         $cartaRepoHdr = new CartaRepository();
         $usuarioIdHdr = (int) ($usuario['id'] ?? 0);
-        $chavesMapParaCarta = $chavesLidasMapHeader ?? array_fill_keys(
-            (new AvisoRepository())->listarChavesLidas($usuarioIdHdr),
-            true
-        );
+        $chavesMapParaCarta = $chavesLidasMapHeader ?? array_fill_keys((new AvisoRepository())->listarChavesLidas($usuarioIdHdr), true);
         $totalCartasNaoLidas = $cartaRepoHdr->contarNaoLidasPorUsuario($usuarioIdHdr, $chavesMapParaCarta);
     }
 
@@ -146,39 +153,45 @@
             <div class="nav-secao">Gestão</div>
 
             <?php if ($isAdmin): ?>
-                <?php echo navItem('/pessoas.php', 'Pessoas', 'pessoas', $paginaAtual, $iconPessoas); ?>
+                <div class="nav-item-grupo <?php echo $pessoasAberto ? 'aberto' : ''; ?>">
+                    <button class="nav-item nav-item-trigger <?php echo $pessoasAberto ? 'ativo' : ''; ?>" onclick="toggleSubmenu(this)" type="button">
+                        <?php echo $iconPessoas; ?>
+                        <span>Pessoas</span>
+                        <?php echo $iconChevron; ?>
+                    </button>
+                    <div class="nav-submenu">
+                        <a href="/pessoas.php" class="nav-subitem <?php echo $paginaAtual === 'pessoas' ? 'ativo' : ''; ?>">Cadastrar Nova Pessoa</a>
+                        <a href="/pessoas_cadastradas.php" class="nav-subitem <?php echo $paginaAtual === 'pessoas_cadastradas' ? 'ativo' : ''; ?>">Pessoas Cadastradas</a>
+                    </div>
+                </div>
             <?php endif; ?>
 
             <div class="nav-item-grupo <?php echo $gruposAberto ? 'aberto' : ''; ?>">
-                <button class="nav-item nav-item-trigger <?php echo $gruposAberto ? 'ativo' : ''; ?>"
-                    onclick="toggleSubmenu(this)" type="button">
+                <button class="nav-item nav-item-trigger <?php echo $gruposAberto ? 'ativo' : ''; ?>" onclick="toggleSubmenu(this)" type="button">
                     <?php echo $iconGrupos; ?>
                     <span>Grupos Familiares</span>
                     <?php echo $iconChevron; ?>
                 </button>
                 <div class="nav-submenu">
                     <?php if ($isAdmin): ?>
-                        <a href="/grupos_familiares.php"
-                            class="nav-subitem <?php echo $paginaAtual === 'grupos_familiares' ? 'ativo' : ''; ?>">Cadastro de GFs</a>
+                        <a href="/grupos_familiares.php" class="nav-subitem <?php echo $paginaAtual === 'grupos_familiares' ? 'ativo' : ''; ?>">Cadastrar Novo GF</a>
+                        <a href="/grupos_familiares_cadastrados.php" class="nav-subitem <?php echo $paginaAtual === 'grupos_familiares_cadastrados' ? 'ativo' : ''; ?>">GFs Cadastrados</a>
+                        <a href="/cantina.php" class="nav-subitem <?php echo $paginaAtual === 'cantina' ? 'ativo' : ''; ?>">Cantina</a>
                     <?php endif; ?>
-                    <a href="/diagnostico_gf.php"
-                        class="nav-subitem <?php echo $paginaAtual === 'diagnostico_gf' ? 'ativo' : ''; ?>">Diagnóstico de GFs</a>
+                    <a href="/diagnostico_gf.php" class="nav-subitem <?php echo $paginaAtual === 'diagnostico_gf' ? 'ativo' : ''; ?>">Diagnóstico de GFs</a>
                 </div>
             </div>
 
             <div class="nav-item-grupo <?php echo $presencasAberto ? 'aberto' : ''; ?>">
-                <button class="nav-item nav-item-trigger <?php echo $presencasAberto ? 'ativo' : ''; ?>"
-                    onclick="toggleSubmenu(this)" type="button">
+                <button class="nav-item nav-item-trigger <?php echo $presencasAberto ? 'ativo' : ''; ?>" onclick="toggleSubmenu(this)" type="button">
                     <?php echo $iconPresencas; ?>
                     <span>Reuniões e Presenças</span>
                     <?php echo $iconChevron; ?>
                 </button>
                 <div class="nav-submenu">
-                    <a href="/presencas.php"
-                        class="nav-subitem <?php echo $paginaAtual === 'presencas' ? 'ativo' : ''; ?>">Reuniões</a>
+                    <a href="/presencas.php" class="nav-subitem <?php echo $paginaAtual === 'presencas' ? 'ativo' : ''; ?>">Reuniões</a>
                     <?php if ($temAcessoRetiroIntegracao): ?>
-                        <a href="/retiro_integracao.php"
-                            class="nav-subitem <?php echo $paginaAtual === 'retiro_integracao' ? 'ativo' : ''; ?>">Retiro de Integração</a>
+                        <a href="/retiro_integracao.php" class="nav-subitem <?php echo $paginaAtual === 'retiro_integracao' ? 'ativo' : ''; ?>">Retiro de Integração</a>
                     <?php endif; ?>
                 </div>
             </div>
@@ -219,15 +232,19 @@
 
                 document.addEventListener('DOMContentLoaded', function() {
                     const pa = <?php echo json_encode($paginaAtual); ?>;
+                    const pp = <?php echo json_encode($pessoasPaginas); ?>;
                     const gp = <?php echo json_encode($gruposPaginas); ?>;
-                    const pp = <?php echo json_encode($presencasPaginas); ?>;
+                    const rp = <?php echo json_encode($presencasPaginas); ?>;
                     const grupos = document.querySelectorAll('.nav-item-grupo');
 
-                    if (gp.includes(pa) && grupos.length > 0) {
+                    if (pp.includes(pa) && grupos.length > 0) {
                         grupos[0].classList.add('aberto');
                     }
-                    if (pp.includes(pa) && grupos.length > 1) {
+                    if (gp.includes(pa) && grupos.length > 1) {
                         grupos[1].classList.add('aberto');
+                    }
+                    if (rp.includes(pa) && grupos.length > 2) {
+                        grupos[2].classList.add('aberto');
                     }
                 });
             </script>

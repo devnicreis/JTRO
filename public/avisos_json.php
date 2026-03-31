@@ -19,6 +19,9 @@ $cartaRepo    = new CartaRepository();
 $usuarioId    = Auth::id();
 $isAdmin      = Auth::isAdmin();
 
+$avisoRepo->sincronizarAvisosAniversarioDoDia();
+$avisoRepo->sincronizarAvisosCantina();
+
 // ── POST: marcar lido/não lido ─────────────────────────────
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $body  = json_decode(file_get_contents('php://input'), true);

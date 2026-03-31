@@ -12,14 +12,14 @@ $erro = '';
 $id = (int) ($_GET['id'] ?? $_POST['id'] ?? 0);
 
 if ($id <= 0) {
-    header('Location: /grupos_familiares.php');
+    header('Location: /grupos_familiares_cadastrados.php');
     exit;
 }
 
 $grupo = $repo->buscarPorId($id);
 
 if (!$grupo) {
-    header('Location: /grupos_familiares.php');
+    header('Location: /grupos_familiares_cadastrados.php');
     exit;
 }
 
@@ -32,7 +32,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $erro = 'O motivo deve ter no máximo 250 caracteres.';
     } else {
         $repo->desativar($id, $motivo);
-        header('Location: /grupos_familiares.php');
+        header('Location: /grupos_familiares_cadastrados.php');
         exit;
     }
 }
@@ -40,7 +40,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <?php require_once __DIR__ . '/../src/Views/layouts/header.php'; ?>
 
 <div class="menu">
-    <a href="/grupos_familiares.php">← Voltar para Grupos Familiares</a>
+    <a href="/grupos_familiares_cadastrados.php">← Voltar para GFs Cadastrados</a>
 </div>
 
 <h1>Desativar Grupo Familiar</h1>
@@ -64,7 +64,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <div class="acoes" style="justify-content:flex-start;">
         <button type="submit">Confirmar desativação</button>
-        <a class="botao-link botao-secundario" href="/grupos_familiares.php">Cancelar</a>
+        <a class="botao-link botao-secundario" href="/grupos_familiares_cadastrados.php">Cancelar</a>
     </div>
 </form>
 

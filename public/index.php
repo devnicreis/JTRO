@@ -20,6 +20,7 @@ $presencaRepo = new PresencaRepository();
 $auditoria  = new AuditoriaService();
 $avisoRepo  = new AvisoRepository();
 $avisoRepo->sincronizarAvisosAniversarioDoDia();
+$avisoRepo->sincronizarAvisosCantina();
 
 $mensagem = '';
 if (isset($_GET['senha_alterada']) && $_GET['senha_alterada'] === '1') {
@@ -31,6 +32,8 @@ $pageTitle = 'Dashboard - JTRO';
 $chavesLidas    = $avisoRepo->listarChavesLidas(Auth::id());
 $chavesLidasMap = array_fill_keys($chavesLidas, true);
 $totalAvisos    = 0;
+$gruposDoLider = $grupoRepo->listarGruposDoLider(Auth::id());
+$ultimasReunioesDosMeusGfs = $presencaRepo->listarUltimasReunioesDoLider(Auth::id(), 5);
 
 // ── Helper para contar avisos não lidos ──────────────────────
 function contarNaoLidos(array $itens, string $prefixo, array $map, string $campoId = 'id'): int {
@@ -76,6 +79,13 @@ if (Auth::isAdmin()) {
     $membrosFaltososAvisos       = $presencaRepo->buscarMembrosComFaltasConsecutivasGerais(2);
     $reunioesForaDoPadraoAvisos  = $presencaRepo->buscarReunioesForaDoPadrao(20);
 
+    foreach ($gruposDoLider as &$grupo) {
+        $grupo['resumo_presenca'] = $presencaRepo->buscarResumoPresencaPorGrupo((int) $grupo['id']);
+        $grupo['resumo_membros'] = $presencaRepo->buscarResumoPorMembroDoGrupo((int) $grupo['id']);
+        $grupo['faltosos'] = $presencaRepo->buscarMembrosComFaltasConsecutivas((int) $grupo['id'], 2);
+    }
+    unset($grupo);
+
     foreach ($gruposAlarmantesAvisos as $i) {
         if (!isset($chavesLidasMap['gf_alarmante_' . $i['id']])) $totalAvisos++;
     }
@@ -93,8 +103,7 @@ if (Auth::isAdmin()) {
 } else {
     $dashboardTipo = 'lider';
 
-    $gruposDoLider   = $grupoRepo->listarGruposDoLider(Auth::id());
-    $ultimasReunioes = $presencaRepo->listarUltimasReunioesDoLider(Auth::id(), 5);
+    $ultimasReunioes = $ultimasReunioesDosMeusGfs;
 
     foreach ($gruposDoLider as &$grupo) {
         $grupo['resumo_presenca'] = $presencaRepo->buscarResumoPresencaPorGrupo((int) $grupo['id']);

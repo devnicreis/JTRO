@@ -1,7 +1,10 @@
 <?php require_once __DIR__ . '/../layouts/header.php'; ?>
 <?php require_once __DIR__ . '/../helpers.php'; ?>
 
-<?php $estadosCivis = opcoesEstadoCivil(); ?>
+<?php
+$estadosCivis = opcoesEstadoCivil();
+$ufs = opcoesUF();
+?>
 
 <div class="page-header">
     <h1>Cadastro de Pessoas</h1>
@@ -29,7 +32,7 @@
             <label for="cpf">CPF</label>
             <input type="text" id="cpf" name="cpf" required
                    inputmode="numeric" maxlength="11" pattern="\d{11}"
-                   title="Digite somente números, sem pontos e traços."
+                   title="Digite somente nÃºmeros, sem pontos e traÃ§os."
                    value="<?php echo htmlspecialchars($_POST['cpf'] ?? ''); ?>">
             <small>Digite somente números, sem pontos e traços.</small>
         </div>
@@ -81,7 +84,7 @@
             <label for="nome_conjuge">Nome do parceiro</label>
             <input type="text" id="nome_conjuge" name="nome_conjuge"
                    pattern="^[A-Za-zÃ€-Ã¿\s]+$"
-                   title="Digite apenas letras e espaÃ§os."
+                   title="Digite apenas letras e espaços."
                    value="<?php echo htmlspecialchars($_POST['nome_conjuge'] ?? ''); ?>">
         </div>
     </div>
@@ -90,7 +93,7 @@
         <div class="checkbox-item">
             <input type="checkbox" id="eh_lider" name="eh_lider" value="1"
                    <?php echo isset($_POST['eh_lider']) ? 'checked' : ''; ?>>
-            <label for="eh_lider">É líder</label>
+            <label for="eh_lider">É Líder</label>
         </div>
     </div>
 
@@ -99,14 +102,14 @@
             <div class="checkbox-item">
                 <input type="checkbox" id="lider_grupo_familiar" name="lider_grupo_familiar" value="1"
                        <?php echo isset($_POST['lider_grupo_familiar']) ? 'checked' : ''; ?>>
-                <label for="lider_grupo_familiar">Líder de Grupo Familiar</label>
+                <label for="lider_grupo_familiar">Lí­der de Grupo Familiar</label>
             </div>
         </div>
         <div class="campo">
             <div class="checkbox-item">
                 <input type="checkbox" id="lider_departamento" name="lider_departamento" value="1"
                        <?php echo isset($_POST['lider_departamento']) ? 'checked' : ''; ?>>
-                <label for="lider_departamento">Líder de Departamento</label>
+                <label for="lider_departamento">Lí­der de Departamento</label>
             </div>
         </div>
     </div>
@@ -121,7 +124,7 @@
                 </option>
             <?php endforeach; ?>
         </select>
-        <small>Opcional. Ao vincular aqui, a pessoa tambémt passa a aparecer no GF.</small>
+        <small>Opcional. Ao vincular aqui, a pessoa também passa a aparecer no GF.</small>
     </div>
 
     <div class="grid">
@@ -138,6 +141,53 @@
                    inputmode="numeric" maxlength="11" pattern="\d{11}"
                    value="<?php echo htmlspecialchars($_POST['telefone_movel'] ?? ''); ?>">
             <small>Digite somente números com DDD.</small>
+        </div>
+    </div>
+
+    <div class="form-secao">
+        <div class="form-secao-titulo">Endereço</div>
+        <div class="grid-endereco-pessoa">
+            <div class="campo">
+                <label for="endereco_cep">CEP</label>
+                <input type="text" id="endereco_cep" name="endereco_cep" required inputmode="numeric" maxlength="8" pattern="\d{8}"
+                       value="<?php echo htmlspecialchars($_POST['endereco_cep'] ?? ''); ?>">
+            </div>
+            <div class="campo campo-endereco-logradouro">
+                <label for="endereco_logradouro">Endereço</label>
+                <input type="text" id="endereco_logradouro" name="endereco_logradouro" required
+                       value="<?php echo htmlspecialchars($_POST['endereco_logradouro'] ?? ''); ?>">
+            </div>
+            <div class="campo">
+                <label for="endereco_numero">Número</label>
+                <input type="text" id="endereco_numero" name="endereco_numero" required
+                       value="<?php echo htmlspecialchars($_POST['endereco_numero'] ?? ''); ?>">
+            </div>
+            <div class="campo campo-endereco-complemento">
+                <label for="endereco_complemento">Complemento</label>
+                <input type="text" id="endereco_complemento" name="endereco_complemento"
+                       value="<?php echo htmlspecialchars($_POST['endereco_complemento'] ?? ''); ?>">
+            </div>
+            <div class="campo">
+                <label for="endereco_bairro">Bairro</label>
+                <input type="text" id="endereco_bairro" name="endereco_bairro" required
+                       value="<?php echo htmlspecialchars($_POST['endereco_bairro'] ?? ''); ?>">
+            </div>
+            <div class="campo">
+                <label for="endereco_cidade">Cidade</label>
+                <input type="text" id="endereco_cidade" name="endereco_cidade" required
+                       value="<?php echo htmlspecialchars($_POST['endereco_cidade'] ?? ''); ?>">
+            </div>
+            <div class="campo">
+                <label for="endereco_uf">UF</label>
+                <select id="endereco_uf" name="endereco_uf" required>
+                    <option value="">Selecione</option>
+                    <?php foreach ($ufs as $uf): ?>
+                        <option value="<?php echo htmlspecialchars($uf); ?>" <?php echo (($_POST['endereco_uf'] ?? '') === $uf) ? 'selected' : ''; ?>>
+                            <?php echo htmlspecialchars($uf); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
         </div>
     </div>
 
@@ -163,31 +213,6 @@
     <button type="submit">Cadastrar pessoa</button>
 </form>
 
-<h2 style="margin-top:32px; margin-bottom:16px; display:none;">Filtros</h2>
-
-<form method="GET" action="/pessoas.php" id="filtrosPessoasLegado" style="display:none;">
-    <div class="grid">
-        <div class="campo">
-            <label for="filtro_id">ID</label>
-            <input type="text" id="filtro_id" name="id" value="<?php echo htmlspecialchars($filtros['id'] ?? ''); ?>">
-        </div>
-        <div class="campo">
-            <label for="filtro_nome">Nome</label>
-            <input type="text" id="filtro_nome" name="nome" value="<?php echo htmlspecialchars($filtros['nome'] ?? ''); ?>">
-        </div>
-    </div>
-    <div class="grid">
-        <div class="campo">
-            <label for="filtro_cpf">CPF</label>
-            <input type="text" id="filtro_cpf" name="cpf" value="<?php echo htmlspecialchars($filtros['cpf'] ?? ''); ?>">
-        </div>
-        <div class="campo">
-            <label for="filtro_email">E-mail</label>
-            <input type="text" id="filtro_email" name="email" value="<?php echo htmlspecialchars($filtros['email'] ?? ''); ?>">
-        </div>
-    </div>
-</form>
-
 <h2 style="margin-top:32px; margin-bottom:16px;">Pessoas cadastradas</h2>
 
 <form method="GET" action="/pessoas.php" id="filtrosPessoasTabela"></form>
@@ -202,6 +227,7 @@
                 <th>Perfil</th>
                 <th>Data Nasc.</th>
                 <th>Contato</th>
+                <th>Endereço</th>
                 <th>Estado Civil</th>
                 <th>Liderança</th>
                 <th>GF</th>
@@ -224,6 +250,7 @@
                 </th>
                 <th><input class="tabela-filtro-campo" form="filtrosPessoasTabela" type="date" name="data_nascimento" value="<?php echo htmlspecialchars($filtros['data_nascimento'] ?? ''); ?>"></th>
                 <th><input class="tabela-filtro-campo" form="filtrosPessoasTabela" type="text" name="telefone" value="<?php echo htmlspecialchars($filtros['telefone'] ?? ''); ?>" placeholder="Fixo ou móvel"></th>
+                <th><input class="tabela-filtro-campo" form="filtrosPessoasTabela" type="text" name="endereco" value="<?php echo htmlspecialchars($filtros['endereco'] ?? ''); ?>" placeholder="Rua, bairro, cidade..."></th>
                 <th>
                     <select class="tabela-filtro-campo" form="filtrosPessoasTabela" name="estado_civil">
                         <option value="">Todos</option>
@@ -286,7 +313,7 @@
         <tbody>
             <?php if (count($pessoas) === 0): ?>
                 <tr>
-                    <td colspan="14" class="tabela-vazia">Nenhuma pessoa encontrada para o filtro atual.</td>
+                    <td colspan="15" class="tabela-vazia">Nenhuma pessoa encontrada para o filtro atual.</td>
                 </tr>
             <?php endif; ?>
             <?php foreach ($pessoas as $registro): ?>
@@ -313,7 +340,7 @@
                     <td><?php echo htmlspecialchars($registro['id']); ?></td>
                     <td><div class="tabela-coluna-principal"><?php echo htmlspecialchars($registro['nome']); ?></div></td>
                     <td><?php echo htmlspecialchars($registro['cpf']); ?></td>
-                    <td><?php echo htmlspecialchars($registro['email'] ?: '-'); ?></td>
+                    <td><?php echo htmlspecialchars($registro['email'] ?: '—'); ?></td>
                     <td><span class="badge badge-blue"><?php echo htmlspecialchars(ucfirst((string) $registro['cargo'])); ?></span></td>
                     <td>
                         <div><?php echo htmlspecialchars(formatarDataBr($registro['data_nascimento'] ?? null)); ?></div>
@@ -325,6 +352,7 @@
                         <div><?php echo htmlspecialchars(formatarTelefone($registro['telefone_fixo'] ?? null)); ?></div>
                         <div class="tabela-meta"><?php echo htmlspecialchars(formatarTelefone($registro['telefone_movel'] ?? null)); ?></div>
                     </td>
+                    <td><?php echo htmlspecialchars(formatarEnderecoPessoa($registro)); ?></td>
                     <td>
                         <div><?php echo htmlspecialchars(labelEstadoCivil($registro['estado_civil'] ?? null)); ?></div>
                         <?php if (!empty($registro['nome_conjuge'])): ?>
@@ -332,7 +360,7 @@
                         <?php endif; ?>
                     </td>
                     <td><?php echo htmlspecialchars($liderancaTexto); ?></td>
-                    <td><?php echo htmlspecialchars($registro['grupo_familiar_nome'] ?: '-'); ?></td>
+                    <td><?php echo htmlspecialchars($registro['grupo_familiar_nome'] ?: '—'); ?></td>
                     <td>
                         <span class="badge <?php echo ((int) ($registro['concluiu_integracao'] ?? 0) === 1) ? 'badge-green' : 'badge-amber'; ?>">
                             <?php echo htmlspecialchars(labelSimNao((int) ($registro['concluiu_integracao'] ?? 0))); ?>

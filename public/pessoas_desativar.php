@@ -12,14 +12,14 @@ $erro = '';
 $id = (int) ($_GET['id'] ?? $_POST['id'] ?? 0);
 
 if ($id <= 0) {
-    header('Location: /pessoas.php');
+    header('Location: /pessoas_cadastradas.php');
     exit;
 }
 
 $pessoa = $repo->buscarPorId($id);
 
 if (!$pessoa) {
-    header('Location: /pessoas.php');
+    header('Location: /pessoas_cadastradas.php');
     exit;
 }
 
@@ -47,7 +47,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'texto' => $texto,
         ]);
 
-        header('Location: /pessoas.php');
+        header('Location: /pessoas_cadastradas.php');
         exit;
     }
 }
@@ -55,7 +55,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <?php require_once __DIR__ . '/../src/Views/layouts/header.php'; ?>
 
 <div class="menu">
-    <a href="/pessoas.php">← Voltar para Pessoas</a>
+    <a href="/pessoas_cadastradas.php">← Voltar para Pessoas Cadastradas</a>
 </div>
 
 <h1>Desativar Pessoa</h1>
@@ -97,7 +97,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <div class="acoes" style="justify-content:flex-start;">
         <button type="submit">Confirmar desativação</button>
-        <a class="botao-link botao-secundario" href="/pessoas.php">Cancelar</a>
+        <a class="botao-link botao-secundario" href="/pessoas_cadastradas.php">Cancelar</a>
     </div>
 </form>
 

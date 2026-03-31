@@ -403,6 +403,12 @@ class GrupoFamiliarRepository
                 gf.local_padrao, gf.local_fixo,
                 gf.item_celeiro, gf.domingo_oracao_culto,
                 (
+                    SELECT MIN(ce.data_escala)
+                    FROM cantina_escalas ce
+                    WHERE ce.grupo_familiar_id = gf.id
+                      AND ce.data_escala >= date('now', 'localtime')
+                ) AS proxima_cantina_data,
+                (
                     SELECT COUNT(*) FROM grupo_membros gm
                     INNER JOIN pessoas p ON p.id = gm.pessoa_id
                     WHERE gm.grupo_familiar_id = gf.id AND p.ativo = 1
@@ -429,6 +435,12 @@ class GrupoFamiliarRepository
                 gf.id, gf.nome, gf.dia_semana, gf.horario, gf.perfil_grupo,
                 gf.local_padrao, gf.local_fixo, gf.ativo,
                 gf.item_celeiro, gf.domingo_oracao_culto,
+                (
+                    SELECT MIN(ce.data_escala)
+                    FROM cantina_escalas ce
+                    WHERE ce.grupo_familiar_id = gf.id
+                      AND ce.data_escala >= date('now', 'localtime')
+                ) AS proxima_cantina_data,
                 (
                     SELECT GROUP_CONCAT(p.nome, ', ')
                     FROM grupo_lideres gl2

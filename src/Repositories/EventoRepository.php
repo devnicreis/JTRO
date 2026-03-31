@@ -6,7 +6,7 @@ class EventoRepository
     private PDO $connection;
 
     const DEPARTAMENTOS = [
-        'Toda a Igreja',
+        'Evento Geral',
         'Pastoral',
         'Evangelizacao',
         'Abba Jovem',
@@ -247,6 +247,6 @@ class EventoRepository
         if (str_contains($titulo, 'comunica') || str_contains($titulo, 'midia') || str_contains($titulo, 'mídia')) return 'Comunicacao';
         if (str_contains($titulo, 'karate') || str_contains($titulo, 'pilates') || str_contains($titulo, 'escola de musica')) return 'Espaco Externo';
         if (str_contains($titulo, 'evangeliza') || str_contains($titulo, 'missao') || str_contains($titulo, 'missão')) return 'Evangelizacao';
-        return 'Toda a Igreja';
+        return 'Evento Geral';
     }
 }
