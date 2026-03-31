@@ -486,10 +486,10 @@ class PessoaRepository
 
     public function buscarPorEmail(string $email): ?array
     {
-        $sql = "SELECT * FROM pessoas WHERE email = :email LIMIT 1";
+        $sql = "SELECT * FROM pessoas WHERE LOWER(COALESCE(email, '')) = :email LIMIT 1";
 
         $stmt = $this->connection->prepare($sql);
-        $stmt->execute([':email' => $email]);
+        $stmt->execute([':email' => mb_strtolower(trim($email))]);
 
         $resultado = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -498,10 +498,10 @@ class PessoaRepository
 
     public function buscarPorEmailAtivo(string $email): ?array
     {
-        $sql = "SELECT * FROM pessoas WHERE email = :email AND ativo = 1 LIMIT 1";
+        $sql = "SELECT * FROM pessoas WHERE LOWER(COALESCE(email, '')) = :email AND ativo = 1 LIMIT 1";
 
         $stmt = $this->connection->prepare($sql);
-        $stmt->execute([':email' => $email]);
+        $stmt->execute([':email' => mb_strtolower(trim($email))]);
 
         $resultado = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -510,11 +510,11 @@ class PessoaRepository
 
     public function buscarPorEmailExcetoId(string $email, int $id): ?array
     {
-        $sql = "SELECT * FROM pessoas WHERE email = :email AND id != :id LIMIT 1";
+        $sql = "SELECT * FROM pessoas WHERE LOWER(COALESCE(email, '')) = :email AND id != :id LIMIT 1";
 
         $stmt = $this->connection->prepare($sql);
         $stmt->execute([
-            ':email' => $email,
+            ':email' => mb_strtolower(trim($email)),
             ':id' => $id
         ]);
 

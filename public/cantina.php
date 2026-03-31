@@ -61,4 +61,4 @@ $gruposFamiliares = $grupoRepo->listarAtivos();
 $escalas = $cantinaRepo->listarEscalasDoAno($ano, $filtros);
 $pageTitle = 'Cantina - JTRO';
 
-require_once __DIR__ . '/../src/Views/cantina/index.php';
+require_once __DIR__ . '/../src/Views/cantina/index_v2.php';

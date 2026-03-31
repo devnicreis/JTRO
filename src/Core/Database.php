@@ -6,6 +6,7 @@ class Database
 {
     private static ?PDO $connection = null;
     private static bool $schemaInitialized = false;
+    private static bool $legacyMigrationsApplied = false;
 
     public static function getConnection(): PDO
     {
@@ -32,6 +33,7 @@ class Database
             self::$connection->exec('PRAGMA foreign_keys = ON');
 
             self::initializeSchema(self::$connection);
+            self::applyLegacyMigrations(self::$connection);
         }
 
         return self::$connection;
@@ -55,5 +57,50 @@ class Database
 
         $connection->exec($sql);
         self::$schemaInitialized = true;
+    }
+
+    private static function applyLegacyMigrations(PDO $connection): void
+    {
+        if (self::$legacyMigrationsApplied) {
+            return;
+        }
+
+        self::ensurePessoaAddressColumns($connection);
+        self::$legacyMigrationsApplied = true;
+    }
+
+    private static function ensurePessoaAddressColumns(PDO $connection): void
+    {
+        $addressColumns = [
+            'endereco_cep' => 'TEXT',
+            'endereco_logradouro' => 'TEXT',
+            'endereco_numero' => 'TEXT',
+            'endereco_complemento' => 'TEXT',
+            'endereco_bairro' => 'TEXT',
+            'endereco_cidade' => 'TEXT',
+            'endereco_uf' => 'TEXT',
+        ];
+
+        foreach ($addressColumns as $column => $type) {
+            if (self::tableHasColumn($connection, 'pessoas', $column)) {
+                continue;
+            }
+
+            $connection->exec(sprintf('ALTER TABLE pessoas ADD COLUMN %s %s', $column, $type));
+        }
+    }
+
+    private static function tableHasColumn(PDO $connection, string $table, string $column): bool
+    {
+        $stmt = $connection->query(sprintf('PRAGMA table_info(%s)', $table));
+        $columns = $stmt ? $stmt->fetchAll(PDO::FETCH_ASSOC) : [];
+
+        foreach ($columns as $info) {
+            if (($info['name'] ?? null) === $column) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

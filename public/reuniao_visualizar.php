@@ -35,4 +35,4 @@ $lideres = $repo->buscarLideresDoGrupo((int) $reuniao['grupo_familiar_id']);
 
 $pageTitle = 'Visualizar Reunião - JTRO';
 
-require_once __DIR__ . '/../src/Views/reunioes/visualizar.php';
+require_once __DIR__ . '/../src/Views/reunioes/visualizar_v2.php';

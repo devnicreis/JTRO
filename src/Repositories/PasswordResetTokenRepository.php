@@ -62,6 +62,28 @@ class PasswordResetTokenRepository
         return $resultado ?: null;
     }
 
+    public function buscarTokenValidoDaPessoa(int $pessoaId): ?array
+    {
+        $stmt = $this->connection->prepare("
+            SELECT *
+            FROM password_reset_tokens
+            WHERE pessoa_id = :pessoa_id
+              AND usado_em IS NULL
+              AND expira_em >= :agora
+            ORDER BY created_at DESC, id DESC
+            LIMIT 1
+        ");
+
+        $stmt->execute([
+            ':pessoa_id' => $pessoaId,
+            ':agora' => date('Y-m-d H:i:s')
+        ]);
+
+        $resultado = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $resultado ?: null;
+    }
+
     public function marcarComoUsado(int $id): void
     {
         $stmt = $this->connection->prepare("

@@ -98,6 +98,22 @@ CREATE TABLE IF NOT EXISTS password_reset_tokens (
     FOREIGN KEY (pessoa_id) REFERENCES pessoas(id)
 );
 
+CREATE TABLE IF NOT EXISTS password_reset_requests (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    pessoa_id INTEGER,
+    email TEXT NOT NULL,
+    ip_address TEXT,
+    status TEXT NOT NULL,
+    requested_at TEXT NOT NULL,
+    FOREIGN KEY (pessoa_id) REFERENCES pessoas(id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_password_reset_requests_pessoa_status_data
+    ON password_reset_requests(pessoa_id, status, requested_at);
+
+CREATE INDEX IF NOT EXISTS idx_password_reset_requests_email_data
+    ON password_reset_requests(email, requested_at);
+
 CREATE TABLE IF NOT EXISTS logs (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     usuario_id INTEGER,

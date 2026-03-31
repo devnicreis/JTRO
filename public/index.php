@@ -131,4 +131,4 @@ if (Auth::isAdmin()) {
     }
 }
 
-require_once __DIR__ . '/../src/Views/dashboard/index.php';
+require_once __DIR__ . '/../src/Views/dashboard/index_v2.php';

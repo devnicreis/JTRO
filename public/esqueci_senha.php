@@ -13,13 +13,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($email === '') {
         $erro = 'Informe seu e-mail.';
     } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        $erro = 'Informe um e-mail válido.';
+        $erro = 'Informe um e-mail valido.';
     } else {
         try {
             $service->solicitarResetPorEmail($email);
             $mensagem = 'Se houver uma conta com esse e-mail, enviaremos instruções para redefinição de senha.';
-        } catch (Exception $e) {
-            $erro = 'Erro ao enviar e-mail: ' . $e->getMessage();
+        } catch (Throwable $exception) {
+            error_log('[JTRO] Falha ao processar reset de senha: ' . $exception->getMessage());
+            $erro = 'Não foi possível processar sua solicitação agora. Tente novamente em alguns minutos.';
         }
     }
 }

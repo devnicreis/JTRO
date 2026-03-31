@@ -23,9 +23,7 @@ $filtros = [
     'lider_grupo_familiar' => trim($_GET['lider_grupo_familiar'] ?? ''),
     'lider_departamento' => trim($_GET['lider_departamento'] ?? ''),
     'grupo_familiar_id' => trim($_GET['grupo_familiar_id'] ?? ''),
-    'telefone_fixo' => trim($_GET['telefone_fixo'] ?? ''),
-    'telefone_movel' => trim($_GET['telefone_movel'] ?? ''),
-    'contato' => trim($_GET['contato'] ?? ''),
+    'telefone' => trim($_GET['telefone'] ?? ''),
     'endereco' => trim($_GET['endereco'] ?? ''),
     'concluiu_integracao' => trim($_GET['concluiu_integracao'] ?? ''),
     'participou_retiro_integracao' => trim($_GET['participou_retiro_integracao'] ?? ''),
@@ -36,4 +34,4 @@ $pessoas = $repo->listarTodos($filtros);
 $gruposFamiliares = $grupoRepo->listarAtivos();
 $pageTitle = 'Pessoas Cadastradas - JTRO';
 
-require_once __DIR__ . '/../src/Views/pessoas/listagem.php';
+require_once __DIR__ . '/../src/Views/pessoas/listagem_v2.php';
