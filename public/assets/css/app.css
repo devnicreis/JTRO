@@ -2244,3 +2244,124 @@ tbody tr:hover td { background: var(--color-bg); }
     font-weight: 500;
     font-family: 'Plus Jakarta Sans', sans-serif;
 }
+
+/* ============================================================
+   Privacidade, LGPD e verificacao anti-bot
+   ============================================================ */
+
+.auth-card-wide {
+    width: min(720px, calc(100% - 32px));
+    max-width: 720px;
+}
+
+.legal-card {
+    max-height: calc(100vh - 48px);
+    overflow: auto;
+}
+
+.legal-section {
+    border-top: 1px solid var(--color-border);
+    padding-top: 18px;
+    margin-top: 18px;
+}
+
+.legal-section h2 {
+    margin: 0 0 8px;
+    font-size: 15px;
+    color: var(--color-text-primary);
+}
+
+.legal-section p {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.7;
+    color: var(--color-text-secondary);
+}
+
+.privacy-panel {
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: 16px;
+    margin-bottom: 18px;
+}
+
+.privacy-panel-texto {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.7;
+    color: var(--color-text-secondary);
+}
+
+.privacy-links {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 16px;
+}
+
+.privacy-checkbox {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 18px;
+}
+
+.privacy-checkbox input[type="checkbox"] {
+    margin-top: 3px;
+}
+
+.privacy-checkbox label {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.7;
+    color: var(--color-text-secondary);
+}
+
+.privacy-checkbox a,
+.auth-documentos a,
+.privacy-profile-help a {
+    color: var(--color-blue);
+    text-decoration: none;
+}
+
+.privacy-checkbox a:hover,
+.auth-documentos a:hover,
+.privacy-profile-help a:hover {
+    text-decoration: underline;
+}
+
+.privacy-profile-banner {
+    margin-bottom: 16px;
+}
+
+.privacy-profile-help {
+    margin: 16px 0 0;
+    font-size: 13px;
+    line-height: 1.7;
+    color: var(--color-text-secondary);
+}
+
+.auth-documentos {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 14px;
+    margin-top: 18px;
+    font-size: 12px;
+    justify-content: center;
+    text-align: center;
+}
+
+.login-turnstile {
+    margin: 6px 0 18px;
+}
+
+.login-turnstile .cf-turnstile {
+    width: 100%;
+}
+
+@media (max-width: 780px) {
+    .legal-card {
+        max-height: none;
+    }
+}

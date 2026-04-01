@@ -95,4 +95,35 @@
     </form>
 </div>
 
+<div class="card-perfil">
+    <h2>Privacidade e LGPD</h2>
+
+    <div class="privacy-profile-status">
+        <?php if ($privacidadeAceitaAtual): ?>
+            <div class="mensagem privacy-profile-banner">Seus documentos de privacidade est&atilde;o em dia.</div>
+        <?php else: ?>
+            <div class="erro privacy-profile-banner">Seu aceite de privacidade precisa ser atualizado.</div>
+        <?php endif; ?>
+    </div>
+
+    <div class="grid-perfil">
+        <div class="campo">
+            <label>Data do aceite</label>
+            <input type="text" value="<?php echo htmlspecialchars($privacidadeAceitaEm ?? 'Ainda nao registrado'); ?>" readonly>
+        </div>
+
+        <div class="campo">
+            <label>Vers&atilde;o aceita</label>
+            <input type="text" value="<?php echo htmlspecialchars(trim(($termosVersaoAceita ?? '-') . ' / ' . ($politicaVersaoAceita ?? '-'))); ?>" readonly>
+        </div>
+    </div>
+
+    <div class="privacy-links">
+        <a href="/termos_uso.php" target="_blank" rel="noopener noreferrer" class="botao-link botao-secundario">Ver Termos de Uso</a>
+        <a href="/politica_privacidade.php" target="_blank" rel="noopener noreferrer" class="botao-link botao-secundario">Ver Pol&iacute;tica de Privacidade</a>
+    </div>
+
+    <p class="privacy-profile-help">Para solicitações relacionadas à privacidade ou revisao do aceite, entre em contato com <?php echo htmlspecialchars($supportContact !== '' ? $supportContact : 'a administração responsável pelo seu cadastro'); ?>.</p>
+</div>
+
 <?php require __DIR__ . '/../layouts/footer.php'; ?>

@@ -97,7 +97,7 @@ $domingosFiltro = [1 => '1º Domingo', 2 => '2º Domingo', 3 => '3º Domingo', 4
             <input type="text" class="gf-busca" placeholder="Buscar líder..." oninput="filtrarCheckbox(this, 'lista-lideres')" style="margin-bottom:8px;">
             <div class="checkbox-lista gf-lista-scroll" id="lista-lideres">
                 <?php foreach ($pessoas as $pessoa): ?>
-                    <div class="checkbox-item gf-item">
+                    <div class="checkbox-item gf-item" data-genero="<?php echo htmlspecialchars($pessoa['genero'] ?? ''); ?>">
                         <input type="checkbox" id="lider_<?php echo (int) $pessoa['id']; ?>" name="lideres[]" value="<?php echo (int) $pessoa['id']; ?>" <?php echo in_array((string) $pessoa['id'], $_POST['lideres'] ?? [], true) ? 'checked' : ''; ?>>
                         <label for="lider_<?php echo (int) $pessoa['id']; ?>">
                             <?php echo htmlspecialchars($pessoa['nome']); ?>
@@ -112,7 +112,7 @@ $domingosFiltro = [1 => '1º Domingo', 2 => '2º Domingo', 3 => '3º Domingo', 4
             <input type="text" class="gf-busca" placeholder="Buscar membro..." oninput="filtrarCheckbox(this, 'lista-membros')" style="margin-bottom:8px;">
             <div class="checkbox-lista gf-lista-scroll" id="lista-membros">
                 <?php foreach ($pessoas as $pessoa): ?>
-                    <div class="checkbox-item gf-item">
+                    <div class="checkbox-item gf-item" data-genero="<?php echo htmlspecialchars($pessoa['genero'] ?? ''); ?>">
                         <input type="checkbox" id="membro_<?php echo (int) $pessoa['id']; ?>" name="membros[]" value="<?php echo (int) $pessoa['id']; ?>" <?php echo in_array((string) $pessoa['id'], $_POST['membros'] ?? [], true) ? 'checked' : ''; ?>>
                         <label for="membro_<?php echo (int) $pessoa['id']; ?>">
                             <?php echo htmlspecialchars($pessoa['nome']); ?>
@@ -134,13 +134,17 @@ $domingosFiltro = [1 => '1º Domingo', 2 => '2º Domingo', 3 => '3º Domingo', 4
 function filtrarCheckbox(input, listaId) {
     const termo = input.value.toLowerCase().trim();
     document.querySelectorAll('#' + listaId + ' .gf-item').forEach(function(item) {
-        item.style.display = (!termo || item.querySelector('label').textContent.toLowerCase().includes(termo)) ? '' : 'none';
+        const checkbox = item.querySelector('input[type="checkbox"]');
+        const bloqueado = checkbox && checkbox.disabled;
+        const corresponde = !termo || item.querySelector('label').textContent.toLowerCase().includes(termo);
+        item.style.display = (!bloqueado && corresponde) ? '' : 'none';
     });
 }
 
 document.addEventListener('DOMContentLoaded', function() {
     const fixo = document.getElementById('local_fixo');
     const local = document.getElementById('local_padrao');
+    const perfilGrupo = document.getElementById('perfil_grupo');
 
     if (fixo && local) {
         function sincronizarLocal() {
@@ -149,6 +153,28 @@ document.addEventListener('DOMContentLoaded', function() {
 
         sincronizarLocal();
         fixo.addEventListener('change', sincronizarLocal);
+    }
+
+    if (perfilGrupo) {
+        function sincronizarParticipantesPorPerfil() {
+            const somenteMulheres = perfilGrupo.value === 'mulheres';
+            document.querySelectorAll('.gf-item[data-genero]').forEach(function(item) {
+                const genero = item.getAttribute('data-genero') || '';
+                const checkbox = item.querySelector('input[type="checkbox"]');
+                const permitido = !somenteMulheres || genero === 'feminino';
+
+                item.style.display = permitido ? '' : 'none';
+                if (checkbox) {
+                    checkbox.disabled = !permitido;
+                    if (!permitido) {
+                        checkbox.checked = false;
+                    }
+                }
+            });
+        }
+
+        sincronizarParticipantesPorPerfil();
+        perfilGrupo.addEventListener('change', sincronizarParticipantesPorPerfil);
     }
 });
 </script>

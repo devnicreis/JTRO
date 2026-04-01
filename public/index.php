@@ -25,6 +25,8 @@ $avisoRepo->sincronizarAvisosCantina();
 $mensagem = '';
 if (isset($_GET['senha_alterada']) && $_GET['senha_alterada'] === '1') {
     $mensagem = 'Senha alterada com sucesso.';
+} elseif (isset($_GET['privacidade_aceita']) && $_GET['privacidade_aceita'] === '1') {
+    $mensagem = 'Aceite de privacidade registrado com sucesso.';
 }
 
 $pageTitle = 'Dashboard - JTRO';

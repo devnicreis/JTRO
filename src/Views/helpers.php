@@ -148,6 +148,20 @@ function labelEstadoCivil(?string $estadoCivil): string
     return $opcoes[$estadoCivil ?? ''] ?? '—';
 }
 
+function opcoesGenero(): array
+{
+    return [
+        'masculino' => 'Masculino',
+        'feminino' => 'Feminino',
+    ];
+}
+
+function labelGenero(?string $genero): string
+{
+    $opcoes = opcoesGenero();
+    return $opcoes[$genero ?? ''] ?? '—';
+}
+
 function opcoesPerfilGrupo(): array
 {
     return [

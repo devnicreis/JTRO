@@ -2,6 +2,7 @@
 require_once __DIR__ . '/../src/Core/Auth.php';
 require_once __DIR__ . '/../src/Repositories/CartaRepository.php';
 require_once __DIR__ . '/../src/Services/AuditoriaService.php';
+require_once __DIR__ . '/../src/Services/CartaContentSanitizer.php';
 
 Auth::requireLogin();
 Auth::requireSenhaAtualizada();
@@ -20,12 +21,16 @@ if (!$carta) {
     exit;
 }
 
+$carta['conteudo'] = CartaContentSanitizer::sanitizeHtml($carta['conteudo'] ?? '');
+$carta['pregacao_link'] = CartaContentSanitizer::sanitizeExternalUrl($carta['pregacao_link'] ?? '') ?? '';
+$carta['imagem_url'] = CartaContentSanitizer::sanitizeExternalUrl($carta['imagem_url'] ?? '') ?? '';
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $dataCarta      = trim($_POST['data_carta'] ?? '');
-    $conteudo       = trim($_POST['conteudo'] ?? '');
+    $conteudo       = CartaContentSanitizer::sanitizeHtml($_POST['conteudo'] ?? '');
     $pregacaoTitulo = trim($_POST['pregacao_titulo'] ?? '');
-    $pregacaoLink   = trim($_POST['pregacao_link'] ?? '');
-    $imagemUrl      = trim($_POST['imagem_url'] ?? '');
+    $pregacaoLink   = CartaContentSanitizer::sanitizeExternalUrl($_POST['pregacao_link'] ?? '');
+    $imagemUrl      = CartaContentSanitizer::sanitizeExternalUrl($_POST['imagem_url'] ?? '');
     $publicar       = isset($_POST['publicar']);
 
     $avisosNomes    = $_POST['aviso_nome'] ?? [];
@@ -46,6 +51,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($dataCarta === '') {
         $erro = 'Informe a data da carta.';
+    } elseif (trim((string) ($_POST['pregacao_link'] ?? '')) !== '' && $pregacaoLink === null) {
+        $erro = 'Informe um link valido para a pregacao com http:// ou https://.';
+    } elseif (trim((string) ($_POST['imagem_url'] ?? '')) !== '' && $imagemUrl === null) {
+        $erro = 'Informe uma URL de imagem valida com http:// ou https://.';
     } else {
         try {
             $repo->atualizar($id, $dataCarta, $conteudo, $pregacaoTitulo, $pregacaoLink, $avisosJson, $imagemUrl);

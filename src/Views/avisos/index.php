@@ -165,6 +165,8 @@
 </div>
 
 <script>
+const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ?? '';
+
 function esc(str) {
     return String(str)
         .replace(/&/g, '&amp;').replace(/</g, '&lt;')
@@ -190,7 +192,10 @@ function registrarBotoes(container) {
 
             fetch('/avisos_json.php', {
                 method:  'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': csrfToken
+                },
                 body:    JSON.stringify({ acao: acao, chave: chave })
             }).then(function() {
                 item.style.transition = 'opacity 0.2s, transform 0.2s';

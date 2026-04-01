@@ -4,7 +4,11 @@
     <meta charset="UTF-8">
     <title>Esqueci minha senha - JTRO</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <?php echo Auth::csrfMetaTag(); ?>
     <link rel="stylesheet" href="/assets/css/app.css">
+    <?php if ($turnstileEnabled): ?>
+        <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+    <?php endif; ?>
 </head>
 <body>
 
@@ -40,10 +44,20 @@
                 <small>Informe o e-mail cadastrado no sistema.</small>
             </div>
 
-            <button type="submit" class="login-btn-entrar">Enviar link de redefinição</button>
+            <?php if ($turnstileEnabled): ?>
+                <div class="login-turnstile">
+                    <div class="cf-turnstile" data-sitekey="<?php echo htmlspecialchars($turnstileSiteKey); ?>" data-size="flexible"></div>
+                </div>
+            <?php endif; ?>
+
+            <button type="submit" class="login-btn-entrar">Enviar link de redefini&ccedil;&atilde;o</button>
         </form>
 
-        <a href="/login.php" class="login-link-esqueci">← Voltar para o login</a>
+        <a href="/login.php" class="login-link-esqueci">Voltar para o login</a>
+        <div class="auth-documentos">
+            <a href="/termos_uso.php" target="_blank" rel="noopener noreferrer">Termos de Uso</a>
+            <a href="/politica_privacidade.php" target="_blank" rel="noopener noreferrer">Pol&iacute;tica de Privacidade</a>
+        </div>
     </div>
 </div>
 

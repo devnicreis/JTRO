@@ -33,6 +33,8 @@ class GrupoFamiliarRepository
             throw new InvalidArgumentException('Selecione pelo menos um líder.');
         }
 
+        $this->validarParticipantesPorPerfil($perfilGrupo, array_merge($lideresIds, $membrosIds));
+
         $this->connection->beginTransaction();
         try {
             $stmt = $this->connection->prepare("
@@ -91,6 +93,8 @@ class GrupoFamiliarRepository
         if (count($lideresIds) === 0) {
             throw new InvalidArgumentException('Selecione pelo menos um líder.');
         }
+
+        $this->validarParticipantesPorPerfil($perfilGrupo, array_merge($lideresIds, $membrosIds));
 
         $membrosAnteriores = $this->listarMembrosIdsDoGrupo($grupoId);
 
@@ -339,7 +343,7 @@ class GrupoFamiliarRepository
     public function listarPessoasAtivas(): array
     {
         return $this->connection->query("
-            SELECT id, nome, cargo FROM pessoas WHERE ativo = 1 ORDER BY nome ASC
+            SELECT id, nome, cargo, genero FROM pessoas WHERE ativo = 1 ORDER BY nome ASC
         ")->fetchAll(PDO::FETCH_ASSOC);
     }
 
@@ -393,6 +397,38 @@ class GrupoFamiliarRepository
         return (int) $this->connection->query(
             "SELECT COUNT(*) FROM grupos_familiares WHERE ativo = 1"
         )->fetchColumn();
+    }
+
+    private function validarParticipantesPorPerfil(string $perfilGrupo, array $pessoasIds): void
+    {
+        $pessoasIds = array_values(array_unique(array_map('intval', $pessoasIds)));
+
+        if ($perfilGrupo !== 'mulheres' || count($pessoasIds) === 0) {
+            return;
+        }
+
+        $placeholders = implode(',', array_fill(0, count($pessoasIds), '?'));
+        $stmt = $this->connection->prepare("
+            SELECT id, nome, COALESCE(genero, '') AS genero
+            FROM pessoas
+            WHERE id IN ({$placeholders})
+        ");
+        $stmt->execute($pessoasIds);
+        $pessoas = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $invalidas = [];
+        foreach ($pessoas as $pessoa) {
+            if (($pessoa['genero'] ?? '') !== 'feminino') {
+                $invalidas[] = (string) ($pessoa['nome'] ?? 'Pessoa sem nome');
+            }
+        }
+
+        if ($invalidas !== []) {
+            throw new InvalidArgumentException(
+                'Grupo Familiar com perfil Mulheres aceita apenas pessoas com genero Feminino. Ajuste: '
+                . implode(', ', $invalidas) . '.'
+            );
+        }
     }
 
     public function listarGruposDoLider(int $pessoaId): array

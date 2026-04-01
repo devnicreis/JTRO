@@ -1,6 +1,7 @@
 <?php
 
 require_once __DIR__ . '/../src/Core/Auth.php';
+require_once __DIR__ . '/../src/Core/PrivacySettings.php';
 require_once __DIR__ . '/../src/Repositories/PessoaRepository.php';
 require_once __DIR__ . '/../src/Services/AuditoriaService.php';
 
@@ -24,6 +25,11 @@ if (!$pessoa) {
 }
 
 $forcarTroca = Auth::precisaTrocarSenha() || (isset($_GET['forcar_troca']) && $_GET['forcar_troca'] === '1');
+$privacidadeAceitaAtual = PrivacySettings::consentimentoAtual($pessoa);
+$privacidadeAceitaEm = $pessoa['privacidade_aceita_em'] ?? null;
+$termosVersaoAceita = $pessoa['termos_versao_aceita'] ?? null;
+$politicaVersaoAceita = $pessoa['politica_versao_aceita'] ?? null;
+$supportContact = PrivacySettings::supportContact();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $acao = $_POST['acao'] ?? '';

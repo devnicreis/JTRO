@@ -1,5 +1,7 @@
 <?php
 
+require_once __DIR__ . '/../Core/AppConfig.php';
+
 class MailService
 {
     private string $apiKey;
@@ -7,10 +9,8 @@ class MailService
 
     public function __construct()
     {
-        $config = require __DIR__ . '/../../config/local.php';
-
-        $this->apiKey = $config['resend_api_key'] ?? '';
-        $this->from = $config['mail_from'] ?? 'onboarding@resend.dev';
+        $this->apiKey = AppConfig::getString('resend_api_key', '');
+        $this->from = AppConfig::getString('mail_from', 'onboarding@resend.dev');
     }
 
     public function enviarEmail(string $to, string $subject, string $html): bool
@@ -35,11 +35,13 @@ class MailService
         curl_setopt_array($ch, [
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_POST => true,
+            CURLOPT_CONNECTTIMEOUT => 10,
             CURLOPT_HTTPHEADER => [
                 'Authorization: Bearer ' . $this->apiKey,
                 'Content-Type: application/json',
             ],
             CURLOPT_POSTFIELDS => $payload,
+            CURLOPT_TIMEOUT => 15,
         ]);
 
         $response = curl_exec($ch);

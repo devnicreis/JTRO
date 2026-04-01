@@ -5,6 +5,8 @@ require_once __DIR__ . '/../Core/Database.php';
 class AgendaRepository
 {
     private PDO $connection;
+    private const MAX_IMPORT_BYTES = 1048576;
+    private const MAX_IMPORT_EVENTS = 500;
 
     public const DEPARTAMENTOS = [
         'Evento Geral',
@@ -182,8 +184,16 @@ class AgendaRepository
         $importados = 0;
         $ignorados  = 0;
 
+        if (strlen($conteudo) > self::MAX_IMPORT_BYTES) {
+            throw new RuntimeException('O arquivo .ics excede o limite permitido.');
+        }
+
         $conteudo = str_replace(["\r\n", "\r"], "\n", $conteudo);
         $conteudo = preg_replace("/\n[ \t]/", '', $conteudo);
+
+        if (!str_contains($conteudo, 'BEGIN:VCALENDAR') || !str_contains($conteudo, 'BEGIN:VEVENT')) {
+            throw new RuntimeException('Arquivo .ics invalido.');
+        }
 
         $eventos = [];
         $atual   = null;
@@ -195,6 +205,10 @@ class AgendaRepository
             } elseif ($linha === 'END:VEVENT' && $atual !== null) {
                 $eventos[] = $atual;
                 $atual = null;
+
+                if (count($eventos) > self::MAX_IMPORT_EVENTS) {
+                    throw new RuntimeException('O arquivo .ics ultrapassa o limite de eventos suportados.');
+                }
             } elseif ($atual !== null && str_contains($linha, ':')) {
                 [$chave, $valor] = explode(':', $linha, 2);
                 $chave = preg_replace('/;.*/', '', $chave);

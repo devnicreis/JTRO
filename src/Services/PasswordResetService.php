@@ -1,5 +1,7 @@
 <?php
 
+require_once __DIR__ . '/../Core/AppConfig.php';
+require_once __DIR__ . '/../Core/RequestContext.php';
 require_once __DIR__ . '/../Repositories/PessoaRepository.php';
 require_once __DIR__ . '/../Repositories/PasswordResetRequestRepository.php';
 require_once __DIR__ . '/../Repositories/PasswordResetTokenRepository.php';
@@ -9,6 +11,7 @@ class PasswordResetService
 {
     private const COOLDOWN_MINUTES = 15;
     private const MAX_REQUESTS_PER_24_HOURS = 3;
+    private const MAX_REQUESTS_PER_IP_PER_HOUR = 20;
 
     private PessoaRepository $pessoaRepository;
     private PasswordResetRequestRepository $requestRepository;
@@ -27,6 +30,11 @@ class PasswordResetService
     {
         $emailNormalizado = $this->normalizarEmail($email);
         $ipAddress = $this->obterIpSolicitacao();
+
+        if ($ipAddress !== null && $this->atingiuLimitePorIp($ipAddress)) {
+            $this->requestRepository->registrar(null, $emailNormalizado, $ipAddress, 'ip_rate_limit');
+            return;
+        }
 
         $pessoa = $this->pessoaRepository->buscarPorEmailAtivo($emailNormalizado);
 
@@ -47,18 +55,12 @@ class PasswordResetService
             return;
         }
 
-        $registroToken = $this->tokenRepository->buscarTokenValidoDaPessoa($pessoaId);
+        $this->tokenRepository->invalidarTokensAtivosDaPessoa($pessoaId);
 
-        if ($registroToken) {
-            $token = $registroToken['token'];
-        } else {
-            $this->tokenRepository->invalidarTokensAtivosDaPessoa($pessoaId);
+        $token = bin2hex(random_bytes(32));
+        $expiraEm = date('Y-m-d H:i:s', time() + 3600);
 
-            $token = bin2hex(random_bytes(32));
-            $expiraEm = date('Y-m-d H:i:s', time() + 3600);
-
-            $this->tokenRepository->criarToken($pessoaId, $token, $expiraEm);
-        }
+        $this->tokenRepository->criarToken($pessoaId, $token, $expiraEm);
 
         $resetLink = $this->montarLinkReset($token);
 
@@ -97,10 +99,7 @@ class PasswordResetService
 
     private function montarLinkReset(string $token): string
     {
-        $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-        $host = $_SERVER['HTTP_HOST'] ?? 'localhost:8000';
-
-        return $scheme . '://' . $host . '/redefinir_senha.php?token=' . urlencode($token);
+        return $this->obterBaseUrlAplicacao() . '/redefinir_senha.php?token=' . urlencode($token);
     }
 
     private function estaEmCooldown(int $pessoaId): bool
@@ -122,11 +121,16 @@ class PasswordResetService
         return mb_strtolower(trim($email));
     }
 
+    private function atingiuLimitePorIp(string $ipAddress): bool
+    {
+        $desde = date('Y-m-d H:i:s', time() - 3600);
+
+        return $this->requestRepository->contarSolicitacoesPorIpDesde($ipAddress, $desde) >= self::MAX_REQUESTS_PER_IP_PER_HOUR;
+    }
+
     private function obterIpSolicitacao(): ?string
     {
-        $ip = trim((string) ($_SERVER['REMOTE_ADDR'] ?? ''));
-
-        return $ip !== '' ? $ip : null;
+        return RequestContext::clientIp();
     }
 
     private function registrarLinkParaTeste(string $email, string $link): void
@@ -162,5 +166,21 @@ class PasswordResetService
             <p>Se voce nao solicitou essa alteracao, ignore este e-mail.</p>
         </div>
     ";
+    }
+
+    private function obterBaseUrlAplicacao(): string
+    {
+        $baseUrl = rtrim(AppConfig::getString('app_base_url', 'http://localhost:8000'), '/');
+
+        if (!filter_var($baseUrl, FILTER_VALIDATE_URL)) {
+            throw new RuntimeException('app_base_url invalida na configuracao do JTRO.');
+        }
+
+        $scheme = strtolower((string) parse_url($baseUrl, PHP_URL_SCHEME));
+        if (!in_array($scheme, ['http', 'https'], true)) {
+            throw new RuntimeException('app_base_url deve usar http:// ou https://.');
+        }
+
+        return $baseUrl;
     }
 }

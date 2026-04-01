@@ -5,10 +5,12 @@ require_once __DIR__ . '/../Core/Database.php';
 class PasswordResetRequestRepository
 {
     private PDO $connection;
+    private static bool $cleanupDone = false;
 
     public function __construct()
     {
         $this->connection = Database::getConnection();
+        $this->purgeOldRecords();
     }
 
     public function registrar(?int $pessoaId, string $email, ?string $ipAddress, string $status): void
@@ -61,5 +63,39 @@ class PasswordResetRequestRepository
         ]);
 
         return (int) $stmt->fetchColumn();
+    }
+
+    public function contarSolicitacoesPorIpDesde(string $ipAddress, string $desde): int
+    {
+        $stmt = $this->connection->prepare("
+            SELECT COUNT(*)
+            FROM password_reset_requests
+            WHERE ip_address = :ip_address
+              AND requested_at >= :desde
+        ");
+
+        $stmt->execute([
+            ':ip_address' => $ipAddress,
+            ':desde' => $desde,
+        ]);
+
+        return (int) $stmt->fetchColumn();
+    }
+
+    private function purgeOldRecords(int $days = 90): void
+    {
+        if (self::$cleanupDone) {
+            return;
+        }
+
+        self::$cleanupDone = true;
+
+        $limite = date('Y-m-d H:i:s', time() - ($days * 86400));
+        $stmt = $this->connection->prepare("
+            DELETE FROM password_reset_requests
+            WHERE requested_at < :limite
+        ");
+
+        $stmt->execute([':limite' => $limite]);
     }
 }

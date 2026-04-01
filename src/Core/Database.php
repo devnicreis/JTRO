@@ -17,12 +17,20 @@ class Database
 
             // cria pasta storage se não existir
             if (!is_dir($storagePath)) {
-                mkdir($storagePath, 0777, true);
+                mkdir($storagePath, 0750, true);
+            }
+
+            if (function_exists('chmod')) {
+                @chmod($storagePath, 0750);
             }
 
             // cria arquivo sqlite se não existir
             if (!file_exists($databasePath)) {
                 touch($databasePath);
+            }
+
+            if (function_exists('chmod')) {
+                @chmod($databasePath, 0640);
             }
 
             $dsn = 'sqlite:' . $databasePath;
@@ -66,6 +74,9 @@ class Database
         }
 
         self::ensurePessoaAddressColumns($connection);
+        self::ensurePessoaPrivacyColumns($connection);
+        self::ensurePessoaResponsibleColumns($connection);
+        self::ensurePessoaGenderAndSpouseColumns($connection);
         self::$legacyMigrationsApplied = true;
     }
 
@@ -88,6 +99,65 @@ class Database
 
             $connection->exec(sprintf('ALTER TABLE pessoas ADD COLUMN %s %s', $column, $type));
         }
+    }
+
+    private static function ensurePessoaPrivacyColumns(PDO $connection): void
+    {
+        $privacyColumns = [
+            'privacidade_aceita_em' => 'TEXT',
+            'termos_versao_aceita' => 'TEXT',
+            'politica_versao_aceita' => 'TEXT',
+        ];
+
+        foreach ($privacyColumns as $column => $type) {
+            if (self::tableHasColumn($connection, 'pessoas', $column)) {
+                continue;
+            }
+
+            $connection->exec(sprintf('ALTER TABLE pessoas ADD COLUMN %s %s', $column, $type));
+        }
+    }
+
+    private static function ensurePessoaResponsibleColumns(PDO $connection): void
+    {
+        $responsibleColumns = [
+            'responsavel_1_cpf' => 'TEXT',
+            'responsavel_1_nome' => 'TEXT',
+            'responsavel_1_pessoa_id' => 'INTEGER',
+            'responsavel_2_cpf' => 'TEXT',
+            'responsavel_2_nome' => 'TEXT',
+            'responsavel_2_pessoa_id' => 'INTEGER',
+        ];
+
+        foreach ($responsibleColumns as $column => $type) {
+            if (self::tableHasColumn($connection, 'pessoas', $column)) {
+                continue;
+            }
+
+            $connection->exec(sprintf('ALTER TABLE pessoas ADD COLUMN %s %s', $column, $type));
+        }
+
+        $connection->exec('CREATE INDEX IF NOT EXISTS idx_pessoas_responsavel_1_pessoa_id ON pessoas(responsavel_1_pessoa_id)');
+        $connection->exec('CREATE INDEX IF NOT EXISTS idx_pessoas_responsavel_2_pessoa_id ON pessoas(responsavel_2_pessoa_id)');
+    }
+
+    private static function ensurePessoaGenderAndSpouseColumns(PDO $connection): void
+    {
+        $columns = [
+            'genero' => 'TEXT',
+            'conjuge_cpf' => 'TEXT',
+            'conjuge_pessoa_id' => 'INTEGER',
+        ];
+
+        foreach ($columns as $column => $type) {
+            if (self::tableHasColumn($connection, 'pessoas', $column)) {
+                continue;
+            }
+
+            $connection->exec(sprintf('ALTER TABLE pessoas ADD COLUMN %s %s', $column, $type));
+        }
+
+        $connection->exec('CREATE INDEX IF NOT EXISTS idx_pessoas_conjuge_pessoa_id ON pessoas(conjuge_pessoa_id)');
     }
 
     private static function tableHasColumn(PDO $connection, string $table, string $column): bool

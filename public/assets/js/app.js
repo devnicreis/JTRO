@@ -3,6 +3,19 @@
    ============================================================ */
 
 document.addEventListener('DOMContentLoaded', function () {
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ?? '';
+
+    document.querySelectorAll('form[method="POST"], form[method="post"]').forEach(function (form) {
+        if (!csrfToken || form.querySelector('input[name="_csrf"]')) {
+            return;
+        }
+
+        const hiddenInput = document.createElement('input');
+        hiddenInput.type = 'hidden';
+        hiddenInput.name = '_csrf';
+        hiddenInput.value = csrfToken;
+        form.prepend(hiddenInput);
+    });
 
     // ── Validação de campo de data em formulários ──────────────
     // Só aplica restrição de data passada em páginas que NÃO sejam da agenda
@@ -81,7 +94,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             fetch('/avisos_json.php', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
                 body: JSON.stringify({ acao: 'marcar_todos_lidos', chaves: naoLidos.map(a => a.chave), chave: '' })
             }).then(function () {
                 avisosCache.forEach(a => a.lido = true);
@@ -183,7 +196,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 fetch('/avisos_json.php', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
                     body: JSON.stringify({ acao: acao, chave: chave })
                 }).then(function () {
                     const aviso = avisosCache.find(a => a.chave === chave);
@@ -204,3 +217,4 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
 });
+

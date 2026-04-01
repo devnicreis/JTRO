@@ -24,7 +24,16 @@ $avisoRepo->sincronizarAvisosCantina();
 
 // ── POST: marcar lido/não lido ─────────────────────────────
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $body  = json_decode(file_get_contents('php://input'), true);
+    Auth::requireCsrf($_SERVER['HTTP_X_CSRF_TOKEN'] ?? null);
+
+    $rawBody = file_get_contents('php://input');
+    $body  = json_decode($rawBody !== false ? $rawBody : '', true);
+    if (!is_array($body)) {
+        http_response_code(400);
+        echo json_encode(['erro' => 'Corpo da requisicao invalido.']);
+        exit;
+    }
+
     $acao  = $body['acao']  ?? '';
     $chave = $body['chave'] ?? '';
 
@@ -33,11 +42,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif ($acao === 'marcar_nao_lido' && $chave !== '') {
         $avisoRepo->desmarcarComoLido($usuarioId, $chave);
     } elseif ($acao === 'marcar_todos_lidos') {
-        $chaves = $body['chaves'] ?? [];
+        $chaves = is_array($body['chaves'] ?? null) ? array_slice($body['chaves'], 0, 200) : [];
         foreach ($chaves as $c) {
-            if ($c !== '') $avisoRepo->marcarComoLido($usuarioId, $c);
+            if (is_string($c) && trim($c) !== '') {
+                $avisoRepo->marcarComoLido($usuarioId, $c);
+            }
         }
+    } else {
+        http_response_code(400);
+        echo json_encode(['erro' => 'Acao invalida.']);
+        exit;
     }
+
     echo json_encode(['ok' => true]);
     exit;
 }

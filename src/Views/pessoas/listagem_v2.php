@@ -1,11 +1,14 @@
 <?php require_once __DIR__ . '/../layouts/header.php'; ?>
 <?php require_once __DIR__ . '/../helpers.php'; ?>
 
-<?php $estadosCivis = opcoesEstadoCivil(); ?>
+<?php
+$estadosCivis = opcoesEstadoCivil();
+$generos = opcoesGenero();
+?>
 
 <div class="page-header">
     <h1>Pessoas Cadastradas</h1>
-    <p class="page-header-subtitulo">Use a rolagem da tabela para consultar os cadastros sem alongar a página inteira.</p>
+    <p class="page-header-subtitulo">Use a rolagem da tabela para consultar os cadastros sem alongar a p&aacute;gina inteira.</p>
 </div>
 
 <div class="acoes" style="margin-bottom: 16px;">
@@ -24,17 +27,18 @@
                 <th>Perfil</th>
                 <th>Data de nasc.</th>
                 <th>Estado civil</th>
-                <th>Cônjuge</th>
-                <th>É líder</th>
-                <th>Líder GF</th>
-                <th>Líder Dpto.</th>
+                <th>G&ecirc;nero</th>
+                <th>C&ocirc;njuge</th>
+                <th>&Eacute; l&iacute;der</th>
+                <th>L&iacute;der GF</th>
+                <th>L&iacute;der Dpto.</th>
                 <th>GF</th>
                 <th>Contato</th>
-                <th>Endereço</th>
-                <th>Integração</th>
+                <th>Endere&ccedil;o</th>
+                <th>Integra&ccedil;&atilde;o</th>
                 <th>Retiro</th>
                 <th>Status</th>
-                <th class="tabela-acoes">Ações</th>
+                <th class="tabela-acoes">A&ccedil;&otilde;es</th>
             </tr>
             <tr class="filtros-linha">
                 <th><input class="tabela-filtro-campo" form="filtrosPessoasTabela" type="text" name="id" value="<?php echo htmlspecialchars($filtros['id'] ?? ''); ?>" placeholder="ID"></th>
@@ -59,26 +63,36 @@
                         <?php endforeach; ?>
                     </select>
                 </th>
+                <th>
+                    <select class="tabela-filtro-campo" form="filtrosPessoasTabela" name="genero">
+                        <option value="">Todos</option>
+                        <?php foreach ($generos as $valor => $label): ?>
+                            <option value="<?php echo htmlspecialchars($valor); ?>" <?php echo (($filtros['genero'] ?? '') === $valor) ? 'selected' : ''; ?>>
+                                <?php echo htmlspecialchars($label); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </th>
                 <th><input class="tabela-filtro-campo" form="filtrosPessoasTabela" type="text" name="nome_conjuge" value="<?php echo htmlspecialchars($filtros['nome_conjuge'] ?? ''); ?>" placeholder="Cônjuge"></th>
                 <th>
                     <select class="tabela-filtro-campo" form="filtrosPessoasTabela" name="eh_lider">
                         <option value="">Todos</option>
                         <option value="1" <?php echo (($filtros['eh_lider'] ?? '') === '1') ? 'selected' : ''; ?>>Sim</option>
-                        <option value="0" <?php echo (($filtros['eh_lider'] ?? '') === '0') ? 'selected' : ''; ?>>Não</option>
+                        <option value="0" <?php echo (($filtros['eh_lider'] ?? '') === '0') ? 'selected' : ''; ?>>N&atilde;o</option>
                     </select>
                 </th>
                 <th>
                     <select class="tabela-filtro-campo" form="filtrosPessoasTabela" name="lider_grupo_familiar">
                         <option value="">Todos</option>
                         <option value="1" <?php echo (($filtros['lider_grupo_familiar'] ?? '') === '1') ? 'selected' : ''; ?>>Sim</option>
-                        <option value="0" <?php echo (($filtros['lider_grupo_familiar'] ?? '') === '0') ? 'selected' : ''; ?>>Não</option>
+                        <option value="0" <?php echo (($filtros['lider_grupo_familiar'] ?? '') === '0') ? 'selected' : ''; ?>>N&atilde;o</option>
                     </select>
                 </th>
                 <th>
                     <select class="tabela-filtro-campo" form="filtrosPessoasTabela" name="lider_departamento">
                         <option value="">Todos</option>
                         <option value="1" <?php echo (($filtros['lider_departamento'] ?? '') === '1') ? 'selected' : ''; ?>>Sim</option>
-                        <option value="0" <?php echo (($filtros['lider_departamento'] ?? '') === '0') ? 'selected' : ''; ?>>Não</option>
+                        <option value="0" <?php echo (($filtros['lider_departamento'] ?? '') === '0') ? 'selected' : ''; ?>>N&atilde;o</option>
                     </select>
                 </th>
                 <th>
@@ -97,14 +111,14 @@
                     <select class="tabela-filtro-campo" form="filtrosPessoasTabela" name="concluiu_integracao">
                         <option value="">Todos</option>
                         <option value="1" <?php echo (($filtros['concluiu_integracao'] ?? '') === '1') ? 'selected' : ''; ?>>Sim</option>
-                        <option value="0" <?php echo (($filtros['concluiu_integracao'] ?? '') === '0') ? 'selected' : ''; ?>>Não</option>
+                        <option value="0" <?php echo (($filtros['concluiu_integracao'] ?? '') === '0') ? 'selected' : ''; ?>>N&atilde;o</option>
                     </select>
                 </th>
                 <th>
                     <select class="tabela-filtro-campo" form="filtrosPessoasTabela" name="participou_retiro_integracao">
                         <option value="">Todos</option>
                         <option value="1" <?php echo (($filtros['participou_retiro_integracao'] ?? '') === '1') ? 'selected' : ''; ?>>Sim</option>
-                        <option value="0" <?php echo (($filtros['participou_retiro_integracao'] ?? '') === '0') ? 'selected' : ''; ?>>Não</option>
+                        <option value="0" <?php echo (($filtros['participou_retiro_integracao'] ?? '') === '0') ? 'selected' : ''; ?>>N&atilde;o</option>
                     </select>
                 </th>
                 <th>
@@ -125,7 +139,7 @@
         <tbody>
             <?php if (count($pessoas) === 0): ?>
                 <tr>
-                    <td colspan="18" class="tabela-vazia">Nenhuma pessoa encontrada para o filtro atual.</td>
+                    <td colspan="19" class="tabela-vazia">Nenhuma pessoa encontrada para o filtro atual.</td>
                 </tr>
             <?php endif; ?>
             <?php foreach ($pessoas as $pessoa): ?>
@@ -143,6 +157,7 @@
                         <?php endif; ?>
                     </td>
                     <td><?php echo htmlspecialchars(labelEstadoCivil($pessoa['estado_civil'] ?? null)); ?></td>
+                    <td><?php echo htmlspecialchars(labelGenero($pessoa['genero'] ?? null)); ?></td>
                     <td><?php echo htmlspecialchars($pessoa['nome_conjuge'] ?: '—'); ?></td>
                     <td><?php echo htmlspecialchars(labelSimNao((int) ($pessoa['eh_lider'] ?? 0))); ?></td>
                     <td><?php echo htmlspecialchars(labelSimNao((int) ($pessoa['lider_grupo_familiar'] ?? 0))); ?></td>

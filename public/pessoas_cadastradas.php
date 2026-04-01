@@ -16,6 +16,7 @@ $filtros = [
     'cpf' => trim($_GET['cpf'] ?? ''),
     'email' => trim($_GET['email'] ?? ''),
     'cargo' => trim($_GET['cargo'] ?? ''),
+    'genero' => trim($_GET['genero'] ?? ''),
     'data_nascimento' => trim($_GET['data_nascimento'] ?? ''),
     'estado_civil' => trim($_GET['estado_civil'] ?? ''),
     'nome_conjuge' => trim($_GET['nome_conjuge'] ?? ''),

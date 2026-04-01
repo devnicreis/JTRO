@@ -3,8 +3,11 @@ database/seed_admin.php
 storage/reset_links.log
 config/local.php
 .env
+.env.*
+!.env.example
 storage/*.sqlite
 storage/*.log
+storage/tmp_*
 database/delete.sql
 
 # Arquivos temporários do sistema

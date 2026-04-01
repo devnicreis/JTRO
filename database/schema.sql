@@ -4,9 +4,12 @@ CREATE TABLE IF NOT EXISTS pessoas (
     cpf TEXT NOT NULL UNIQUE,
     email TEXT UNIQUE,
     cargo TEXT NOT NULL,
+    genero TEXT,
     data_nascimento TEXT,
     estado_civil TEXT NOT NULL DEFAULT 'solteiro',
     nome_conjuge TEXT,
+    conjuge_cpf TEXT,
+    conjuge_pessoa_id INTEGER,
     eh_lider INTEGER NOT NULL DEFAULT 0,
     lider_grupo_familiar INTEGER NOT NULL DEFAULT 0,
     lider_departamento INTEGER NOT NULL DEFAULT 0,
@@ -28,7 +31,16 @@ CREATE TABLE IF NOT EXISTS pessoas (
     motivo_desativacao_texto TEXT,
     ativo INTEGER NOT NULL DEFAULT 1,
     senha_hash TEXT,
-    precisa_trocar_senha INTEGER NOT NULL DEFAULT 1
+    precisa_trocar_senha INTEGER NOT NULL DEFAULT 1,
+    privacidade_aceita_em TEXT,
+    termos_versao_aceita TEXT,
+    politica_versao_aceita TEXT,
+    responsavel_1_cpf TEXT,
+    responsavel_1_nome TEXT,
+    responsavel_1_pessoa_id INTEGER,
+    responsavel_2_cpf TEXT,
+    responsavel_2_nome TEXT,
+    responsavel_2_pessoa_id INTEGER
 );
 
 CREATE TABLE IF NOT EXISTS grupos_familiares (
@@ -113,6 +125,35 @@ CREATE INDEX IF NOT EXISTS idx_password_reset_requests_pessoa_status_data
 
 CREATE INDEX IF NOT EXISTS idx_password_reset_requests_email_data
     ON password_reset_requests(email, requested_at);
+
+CREATE TABLE IF NOT EXISTS login_attempts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    cpf TEXT NOT NULL,
+    ip_address TEXT,
+    status TEXT NOT NULL,
+    attempted_at TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_login_attempts_cpf_status_data
+    ON login_attempts(cpf, status, attempted_at);
+
+CREATE INDEX IF NOT EXISTS idx_login_attempts_ip_status_data
+    ON login_attempts(ip_address, status, attempted_at);
+
+CREATE TABLE IF NOT EXISTS privacidade_consentimentos (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    pessoa_id INTEGER NOT NULL,
+    termos_versao TEXT NOT NULL,
+    politica_versao TEXT NOT NULL,
+    aceito_em TEXT NOT NULL,
+    ip_address TEXT,
+    user_agent TEXT,
+    revogado_em TEXT,
+    FOREIGN KEY (pessoa_id) REFERENCES pessoas(id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_privacidade_consentimentos_pessoa_aceito
+    ON privacidade_consentimentos(pessoa_id, aceito_em DESC);
 
 CREATE TABLE IF NOT EXISTS logs (
     id INTEGER PRIMARY KEY AUTOINCREMENT,

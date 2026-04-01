@@ -18,17 +18,23 @@ class PessoaRepository
 
         try {
             $sql = "INSERT INTO pessoas (
-                        nome, cpf, cargo, ativo, email, data_nascimento, estado_civil, nome_conjuge,
+                        nome, cpf, cargo, genero, ativo, email, data_nascimento, estado_civil, nome_conjuge,
+                        conjuge_cpf, conjuge_pessoa_id,
                         eh_lider, lider_grupo_familiar, lider_departamento, telefone_fixo, telefone_movel,
                         endereco_cep, endereco_logradouro, endereco_numero, endereco_complemento,
                         endereco_bairro, endereco_cidade, endereco_uf,
-                        concluiu_integracao, integracao_conclusao_manual, participou_retiro_integracao
+                        concluiu_integracao, integracao_conclusao_manual, participou_retiro_integracao,
+                        responsavel_1_cpf, responsavel_1_nome, responsavel_1_pessoa_id,
+                        responsavel_2_cpf, responsavel_2_nome, responsavel_2_pessoa_id
                     ) VALUES (
-                        :nome, :cpf, :cargo, :ativo, :email, :data_nascimento, :estado_civil, :nome_conjuge,
+                        :nome, :cpf, :cargo, :genero, :ativo, :email, :data_nascimento, :estado_civil, :nome_conjuge,
+                        :conjuge_cpf, :conjuge_pessoa_id,
                         :eh_lider, :lider_grupo_familiar, :lider_departamento, :telefone_fixo, :telefone_movel,
                         :endereco_cep, :endereco_logradouro, :endereco_numero, :endereco_complemento,
                         :endereco_bairro, :endereco_cidade, :endereco_uf,
-                        :concluiu_integracao, :integracao_conclusao_manual, :participou_retiro_integracao
+                        :concluiu_integracao, :integracao_conclusao_manual, :participou_retiro_integracao,
+                        :responsavel_1_cpf, :responsavel_1_nome, :responsavel_1_pessoa_id,
+                        :responsavel_2_cpf, :responsavel_2_nome, :responsavel_2_pessoa_id
                     )";
 
             $stmt = $this->connection->prepare($sql);
@@ -37,11 +43,14 @@ class PessoaRepository
                 ':nome' => $pessoa->nome,
                 ':cpf' => $pessoa->getCpf(),
                 ':cargo' => $pessoa->getCargo(),
+                ':genero' => $this->normalizarTextoOpcional($dados['genero'] ?? null),
                 ':ativo' => $pessoa->ativo ? 1 : 0,
                 ':email' => $this->normalizarTextoOpcional($dados['email'] ?? null),
                 ':data_nascimento' => $this->normalizarTextoOpcional($dados['data_nascimento'] ?? null),
                 ':estado_civil' => $dados['estado_civil'] ?? 'solteiro',
                 ':nome_conjuge' => $this->normalizarTextoOpcional($dados['nome_conjuge'] ?? null),
+                ':conjuge_cpf' => $this->normalizarTextoOpcional($dados['conjuge_cpf'] ?? null),
+                ':conjuge_pessoa_id' => $this->normalizarInteiroOpcional($dados['conjuge_pessoa_id'] ?? null),
                 ':eh_lider' => !empty($dados['eh_lider']) ? 1 : 0,
                 ':lider_grupo_familiar' => !empty($dados['lider_grupo_familiar']) ? 1 : 0,
                 ':lider_departamento' => !empty($dados['lider_departamento']) ? 1 : 0,
@@ -59,6 +68,12 @@ class PessoaRepository
                     ? (!empty($dados['integracao_conclusao_manual']) ? 1 : 0)
                     : (!empty($dados['concluiu_integracao']) ? 1 : 0),
                 ':participou_retiro_integracao' => !empty($dados['participou_retiro_integracao']) ? 1 : 0,
+                ':responsavel_1_cpf' => $this->normalizarTextoOpcional($dados['responsavel_1_cpf'] ?? null),
+                ':responsavel_1_nome' => $this->normalizarTextoOpcional($dados['responsavel_1_nome'] ?? null),
+                ':responsavel_1_pessoa_id' => $this->normalizarInteiroOpcional($dados['responsavel_1_pessoa_id'] ?? null),
+                ':responsavel_2_cpf' => $this->normalizarTextoOpcional($dados['responsavel_2_cpf'] ?? null),
+                ':responsavel_2_nome' => $this->normalizarTextoOpcional($dados['responsavel_2_nome'] ?? null),
+                ':responsavel_2_pessoa_id' => $this->normalizarInteiroOpcional($dados['responsavel_2_pessoa_id'] ?? null),
             ]);
 
             $pessoaId = (int) $this->connection->lastInsertId();
@@ -109,6 +124,11 @@ class PessoaRepository
         if (($filtros['cargo'] ?? '') !== '') {
             $where[] = 'p.cargo = :cargo';
             $params[':cargo'] = $filtros['cargo'];
+        }
+
+        if (($filtros['genero'] ?? '') !== '') {
+            $where[] = 'p.genero = :genero';
+            $params[':genero'] = $filtros['genero'];
         }
 
         if (($filtros['status'] ?? '') !== '') {
@@ -286,10 +306,13 @@ class PessoaRepository
                 SET nome = :nome,
                     cpf = :cpf,
                     cargo = :cargo,
+                    genero = :genero,
                     email = :email,
                     data_nascimento = :data_nascimento,
                     estado_civil = :estado_civil,
                     nome_conjuge = :nome_conjuge,
+                    conjuge_cpf = :conjuge_cpf,
+                    conjuge_pessoa_id = :conjuge_pessoa_id,
                     eh_lider = :eh_lider,
                     lider_grupo_familiar = :lider_grupo_familiar,
                     lider_departamento = :lider_departamento,
@@ -304,7 +327,13 @@ class PessoaRepository
                     endereco_uf = :endereco_uf,
                     concluiu_integracao = :concluiu_integracao,
                     integracao_conclusao_manual = :integracao_conclusao_manual,
-                    participou_retiro_integracao = :participou_retiro_integracao
+                    participou_retiro_integracao = :participou_retiro_integracao,
+                    responsavel_1_cpf = :responsavel_1_cpf,
+                    responsavel_1_nome = :responsavel_1_nome,
+                    responsavel_1_pessoa_id = :responsavel_1_pessoa_id,
+                    responsavel_2_cpf = :responsavel_2_cpf,
+                    responsavel_2_nome = :responsavel_2_nome,
+                    responsavel_2_pessoa_id = :responsavel_2_pessoa_id
                 WHERE id = :id
             ";
 
@@ -314,10 +343,13 @@ class PessoaRepository
                 ':nome' => $dados['nome'],
                 ':cpf' => $dados['cpf'],
                 ':cargo' => $dados['cargo'],
+                ':genero' => $this->normalizarTextoOpcional($dados['genero'] ?? null),
                 ':email' => $this->normalizarTextoOpcional($dados['email'] ?? null),
                 ':data_nascimento' => $this->normalizarTextoOpcional($dados['data_nascimento'] ?? null),
                 ':estado_civil' => $dados['estado_civil'] ?? 'solteiro',
                 ':nome_conjuge' => $this->normalizarTextoOpcional($dados['nome_conjuge'] ?? null),
+                ':conjuge_cpf' => $this->normalizarTextoOpcional($dados['conjuge_cpf'] ?? null),
+                ':conjuge_pessoa_id' => $this->normalizarInteiroOpcional($dados['conjuge_pessoa_id'] ?? null),
                 ':eh_lider' => !empty($dados['eh_lider']) ? 1 : 0,
                 ':lider_grupo_familiar' => !empty($dados['lider_grupo_familiar']) ? 1 : 0,
                 ':lider_departamento' => !empty($dados['lider_departamento']) ? 1 : 0,
@@ -335,6 +367,12 @@ class PessoaRepository
                     ? (!empty($dados['integracao_conclusao_manual']) ? 1 : 0)
                     : (!empty($dados['concluiu_integracao']) ? 1 : 0),
                 ':participou_retiro_integracao' => !empty($dados['participou_retiro_integracao']) ? 1 : 0,
+                ':responsavel_1_cpf' => $this->normalizarTextoOpcional($dados['responsavel_1_cpf'] ?? null),
+                ':responsavel_1_nome' => $this->normalizarTextoOpcional($dados['responsavel_1_nome'] ?? null),
+                ':responsavel_1_pessoa_id' => $this->normalizarInteiroOpcional($dados['responsavel_1_pessoa_id'] ?? null),
+                ':responsavel_2_cpf' => $this->normalizarTextoOpcional($dados['responsavel_2_cpf'] ?? null),
+                ':responsavel_2_nome' => $this->normalizarTextoOpcional($dados['responsavel_2_nome'] ?? null),
+                ':responsavel_2_pessoa_id' => $this->normalizarInteiroOpcional($dados['responsavel_2_pessoa_id'] ?? null),
                 ':id' => $id
             ]);
 
@@ -490,6 +528,26 @@ class PessoaRepository
 
         $stmt = $this->connection->prepare($sql);
         $stmt->execute([':email' => mb_strtolower(trim($email))]);
+
+        $resultado = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $resultado ?: null;
+    }
+
+    public function buscarResponsavelPorCpf(string $cpf, ?int $ignorarId = null): ?array
+    {
+        $sql = "SELECT id, nome, cpf, ativo FROM pessoas WHERE cpf = :cpf";
+        $params = [':cpf' => $cpf];
+
+        if ($ignorarId !== null && $ignorarId > 0) {
+            $sql .= " AND id != :ignorar_id";
+            $params[':ignorar_id'] = $ignorarId;
+        }
+
+        $sql .= " LIMIT 1";
+
+        $stmt = $this->connection->prepare($sql);
+        $stmt->execute($params);
 
         $resultado = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -696,6 +754,8 @@ class PessoaRepository
         $grupoAtual = $grupoAtual !== false ? (int) $grupoAtual : null;
         $grupoAtual = $grupoAtual > 0 ? $grupoAtual : null;
 
+        $this->validarGrupoMulheresPorGenero($pessoaId, $grupoId);
+
         $stmtPessoa = $this->connection->prepare("
             UPDATE pessoas
             SET grupo_familiar_id = :grupo_familiar_id
@@ -742,6 +802,34 @@ class PessoaRepository
                 ':grupo_id_existente' => $grupoId,
                 ':pessoa_id_existente' => $pessoaId,
             ]);
+        }
+    }
+
+    private function validarGrupoMulheresPorGenero(int $pessoaId, ?int $grupoId): void
+    {
+        if ($grupoId === null || $grupoId <= 0) {
+            return;
+        }
+
+        $stmt = $this->connection->prepare("
+            SELECT p.nome, COALESCE(p.genero, '') AS genero, gf.perfil_grupo
+            FROM pessoas p
+            INNER JOIN grupos_familiares gf ON gf.id = :grupo_id
+            WHERE p.id = :pessoa_id
+            LIMIT 1
+        ");
+        $stmt->execute([
+            ':grupo_id' => $grupoId,
+            ':pessoa_id' => $pessoaId,
+        ]);
+
+        $dados = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$dados) {
+            return;
+        }
+
+        if (($dados['perfil_grupo'] ?? '') === 'mulheres' && ($dados['genero'] ?? '') !== 'feminino') {
+            throw new InvalidArgumentException('Somente pessoas com gênero Feminino podem participar de Grupo Familiar com perfil Mulheres.');
         }
     }
 }

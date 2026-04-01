@@ -5,6 +5,7 @@ require_once __DIR__ . '/../Core/Database.php';
 class AvisoRepository
 {
     private PDO $connection;
+    private const MAX_CHAVE_LENGTH = 160;
 
     public function __construct()
     {
@@ -13,6 +14,8 @@ class AvisoRepository
 
     public function marcarComoLido(int $usuarioId, string $chaveAviso): void
     {
+        $chaveAviso = $this->normalizarChave($chaveAviso);
+
         $stmt = $this->connection->prepare("
             INSERT INTO avisos_lidos (usuario_id, chave_aviso, lido_em)
             VALUES (:usuario_id, :chave_aviso, :lido_em)
@@ -29,6 +32,8 @@ class AvisoRepository
 
     public function desmarcarComoLido(int $usuarioId, string $chaveAviso): void
     {
+        $chaveAviso = $this->normalizarChave($chaveAviso);
+
         $stmt = $this->connection->prepare("
             DELETE FROM avisos_lidos
             WHERE usuario_id = :usuario_id
@@ -62,6 +67,8 @@ class AvisoRepository
         string $mensagem,
         ?string $link = null
     ): void {
+        $chaveAviso = $this->normalizarChave($chaveAviso);
+
         $stmt = $this->connection->prepare("
             INSERT INTO avisos_sistema (
                 usuario_id, chave_aviso, tipo, titulo, mensagem, link, created_at
@@ -87,6 +94,20 @@ class AvisoRepository
             ':link' => $link,
             ':created_at' => date('Y-m-d H:i:s'),
         ]);
+    }
+
+    private function normalizarChave(string $chaveAviso): string
+    {
+        $chaveAviso = trim($chaveAviso);
+        if ($chaveAviso === '') {
+            throw new InvalidArgumentException('Chave de aviso invalida.');
+        }
+
+        if (mb_strlen($chaveAviso) > self::MAX_CHAVE_LENGTH) {
+            $chaveAviso = mb_substr($chaveAviso, 0, self::MAX_CHAVE_LENGTH);
+        }
+
+        return $chaveAviso;
     }
 
     public function listarAvisosSistema(int $usuarioId): array
