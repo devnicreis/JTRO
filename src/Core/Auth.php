@@ -226,13 +226,18 @@ class Auth
     private static function enforceAccountRequirements(): void
     {
         $paginaAtual = basename($_SERVER['PHP_SELF'] ?? '');
+        $precisaTrocarSenha = self::precisaTrocarSenha();
 
-        if (self::precisaTrocarSenha() && !in_array($paginaAtual, ['meu_perfil.php', 'logout.php'], true)) {
+        if ($precisaTrocarSenha && !in_array($paginaAtual, ['meu_perfil.php', 'logout.php'], true)) {
             header('Location: /meu_perfil.php?forcar_troca=1');
             exit;
         }
 
-        if (self::precisaAceitarPrivacidade() && !in_array($paginaAtual, ['privacidade_consentimento.php', 'logout.php'], true)) {
+        if (
+            !$precisaTrocarSenha
+            && self::precisaAceitarPrivacidade()
+            && !in_array($paginaAtual, ['privacidade_consentimento.php', 'logout.php'], true)
+        ) {
             header('Location: /privacidade_consentimento.php');
             exit;
         }

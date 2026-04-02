@@ -59,8 +59,8 @@ class GrupoFamiliarRepository
 
             $grupoId = (int) $this->connection->lastInsertId();
             $this->sincronizarLideres($grupoId, $lideresIds);
-            $todosMembros = $this->sincronizarMembros($grupoId, $lideresIds, $membrosIds);
-            $this->sincronizarGrupoPrincipalDasPessoas($grupoId, $todosMembros, []);
+            $membrosAtuais = $this->sincronizarMembros($grupoId, $membrosIds);
+            $this->sincronizarGrupoPrincipalDasPessoas($grupoId, $membrosAtuais, []);
             $this->connection->commit();
         } catch (Exception $e) {
             $this->connection->rollBack();
@@ -130,8 +130,8 @@ class GrupoFamiliarRepository
                 ->execute([':id' => $grupoId]);
 
             $this->sincronizarLideres($grupoId, $lideresIds);
-            $todosMembros = $this->sincronizarMembros($grupoId, $lideresIds, $membrosIds);
-            $this->sincronizarGrupoPrincipalDasPessoas($grupoId, $todosMembros, $membrosAnteriores);
+            $membrosAtuais = $this->sincronizarMembros($grupoId, $membrosIds);
+            $this->sincronizarGrupoPrincipalDasPessoas($grupoId, $membrosAtuais, $membrosAnteriores);
             $this->connection->commit();
         } catch (Exception $e) {
             $this->connection->rollBack();
@@ -172,9 +172,9 @@ class GrupoFamiliarRepository
         }
     }
 
-    private function sincronizarMembros(int $grupoId, array $lideresIds, array $membrosIds): array
+    private function sincronizarMembros(int $grupoId, array $membrosIds): array
     {
-        $todos = array_values(array_unique(array_merge($lideresIds, $membrosIds)));
+        $todos = array_values(array_unique(array_map('intval', $membrosIds)));
         $stmt = $this->connection->prepare("
             INSERT INTO grupo_membros (grupo_familiar_id, pessoa_id) VALUES (:grupo_id, :pessoa_id)
         ");

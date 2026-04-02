@@ -90,12 +90,18 @@ class PessoaRepository
 
     public function listarTodos(array $filtros = []): array
     {
+        $grupoFamiliarExibicaoIdSql = $this->grupoFamiliarExibicaoIdSql('p');
+        $grupoFamiliarExibicaoNomeSql = $this->grupoFamiliarExibicaoNomeSql($grupoFamiliarExibicaoIdSql);
+        $grupoFamiliarFiltro = ($filtros['grupo_familiar_id'] ?? '') !== ''
+            ? (int) $filtros['grupo_familiar_id']
+            : null;
         $sql = "
             SELECT
                 p.*,
-                gf.nome AS grupo_familiar_nome
+                COALESCE({$grupoFamiliarExibicaoIdSql}, gf_principal.id) AS grupo_familiar_exibicao_id,
+                COALESCE({$grupoFamiliarExibicaoNomeSql}, gf_principal.nome) AS grupo_familiar_nome
             FROM pessoas p
-            LEFT JOIN grupos_familiares gf ON gf.id = p.grupo_familiar_id
+            LEFT JOIN grupos_familiares gf_principal ON gf_principal.id = p.grupo_familiar_id
         ";
 
         $where = [];
@@ -213,11 +219,6 @@ class PessoaRepository
             }
         }
 
-        if (($filtros['grupo_familiar_id'] ?? '') !== '') {
-            $where[] = 'p.grupo_familiar_id = :grupo_familiar_id';
-            $params[':grupo_familiar_id'] = (int) $filtros['grupo_familiar_id'];
-        }
-
         if (($filtros['concluiu_integracao'] ?? '') !== '') {
             $where[] = 'p.concluiu_integracao = :concluiu_integracao';
             $params[':concluiu_integracao'] = (int) $filtros['concluiu_integracao'];
@@ -237,7 +238,15 @@ class PessoaRepository
         $stmt = $this->connection->prepare($sql);
         $stmt->execute($params);
 
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $linhas = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        if ($grupoFamiliarFiltro !== null) {
+            $linhas = array_values(array_filter($linhas, static function (array $linha) use ($grupoFamiliarFiltro): bool {
+                return (int) ($linha['grupo_familiar_exibicao_id'] ?? 0) === $grupoFamiliarFiltro;
+            }));
+        }
+
+        return $linhas;
     }
 
     public function listarAtivas(): array
@@ -263,12 +272,15 @@ class PessoaRepository
 
     public function buscarPorId(int $id): ?array
     {
+        $grupoFamiliarExibicaoIdSql = $this->grupoFamiliarExibicaoIdSql('p');
+        $grupoFamiliarExibicaoNomeSql = $this->grupoFamiliarExibicaoNomeSql($grupoFamiliarExibicaoIdSql);
         $sql = "
             SELECT
                 p.*,
-                gf.nome AS grupo_familiar_nome
+                COALESCE({$grupoFamiliarExibicaoIdSql}, gf_principal.id) AS grupo_familiar_exibicao_id,
+                COALESCE({$grupoFamiliarExibicaoNomeSql}, gf_principal.nome) AS grupo_familiar_nome
             FROM pessoas p
-            LEFT JOIN grupos_familiares gf ON gf.id = p.grupo_familiar_id
+            LEFT JOIN grupos_familiares gf_principal ON gf_principal.id = p.grupo_familiar_id
             WHERE p.id = :id
             LIMIT 1
         ";
@@ -730,6 +742,37 @@ class PessoaRepository
     {
         $valor = trim((string) $valor);
         return $valor !== '' ? $valor : null;
+    }
+
+    private function grupoFamiliarExibicaoIdSql(string $alias): string
+    {
+        return "
+            (
+                SELECT gm.grupo_familiar_id
+                FROM grupo_membros gm
+                WHERE gm.pessoa_id = {$alias}.id
+                  AND NOT EXISTS (
+                      SELECT 1
+                      FROM grupo_lideres gl
+                      WHERE gl.pessoa_id = {$alias}.id
+                        AND gl.grupo_familiar_id = gm.grupo_familiar_id
+                  )
+                ORDER BY gm.grupo_familiar_id
+                LIMIT 1
+            )
+        ";
+    }
+
+    private function grupoFamiliarExibicaoNomeSql(string $grupoFamiliarExibicaoIdSql): string
+    {
+        return "
+            (
+                SELECT gf.nome
+                FROM grupos_familiares gf
+                WHERE gf.id = {$grupoFamiliarExibicaoIdSql}
+                LIMIT 1
+            )
+        ";
     }
 
     private function normalizarInteiroOpcional($valor): ?int
