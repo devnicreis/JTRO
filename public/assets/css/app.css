@@ -949,6 +949,30 @@ tbody tr:hover td { background: var(--color-bg); }
     background: var(--color-surface);
 }
 
+.card-perfil-destaque {
+    border-color: var(--color-amber-mid);
+    box-shadow: 0 0 0 4px rgba(239, 159, 39, 0.16), var(--shadow-sm);
+    scroll-margin-top: 28px;
+}
+
+.perfil-alerta-senha {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 12px 14px;
+    margin-bottom: 16px;
+    border-radius: var(--radius-md);
+    background: var(--color-amber-light);
+    border-left: 3px solid var(--color-amber-mid);
+    color: var(--color-amber);
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.perfil-alerta-senha strong {
+    color: var(--color-text-primary);
+}
+
 .card-perfil h2 {
     font-size: 20px; margin-bottom: 16px;
     font-family: 'Outfit', sans-serif; font-weight: 500;

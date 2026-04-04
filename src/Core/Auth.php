@@ -227,18 +227,15 @@ class Auth
     {
         $paginaAtual = basename($_SERVER['PHP_SELF'] ?? '');
         $precisaTrocarSenha = self::precisaTrocarSenha();
+        $precisaAceitarPrivacidade = self::precisaAceitarPrivacidade();
 
-        if ($precisaTrocarSenha && !in_array($paginaAtual, ['meu_perfil.php', 'logout.php'], true)) {
-            header('Location: /meu_perfil.php?forcar_troca=1');
+        if ($precisaAceitarPrivacidade && !in_array($paginaAtual, ['privacidade_consentimento.php', 'logout.php'], true)) {
+            header('Location: /privacidade_consentimento.php');
             exit;
         }
 
-        if (
-            !$precisaTrocarSenha
-            && self::precisaAceitarPrivacidade()
-            && !in_array($paginaAtual, ['privacidade_consentimento.php', 'logout.php'], true)
-        ) {
-            header('Location: /privacidade_consentimento.php');
+        if ($precisaTrocarSenha && !in_array($paginaAtual, ['meu_perfil.php', 'privacidade_consentimento.php', 'logout.php'], true)) {
+            header('Location: /meu_perfil.php?forcar_troca=1');
             exit;
         }
     }

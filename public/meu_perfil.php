@@ -25,6 +25,7 @@ if (!$pessoa) {
 }
 
 $forcarTroca = Auth::precisaTrocarSenha() || (isset($_GET['forcar_troca']) && $_GET['forcar_troca'] === '1');
+$destacarTrocaSenha = $forcarTroca;
 $privacidadeAceitaAtual = PrivacySettings::consentimentoAtual($pessoa);
 $privacidadeAceitaEm = $pessoa['privacidade_aceita_em'] ?? null;
 $termosVersaoAceita = $pessoa['termos_versao_aceita'] ?? null;

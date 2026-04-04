@@ -23,6 +23,12 @@ if (!$pessoa) {
 
 if (PrivacySettings::consentimentoAtual($pessoa)) {
     Auth::atualizarSessao($pessoa);
+
+    if (Auth::precisaTrocarSenha()) {
+        header('Location: /meu_perfil.php?forcar_troca=1');
+        exit;
+    }
+
     header('Location: /index.php');
     exit;
 }
@@ -45,6 +51,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $pessoaAtualizada = $repo->buscarPorId((int) $usuarioId);
         if ($pessoaAtualizada !== null) {
             Auth::atualizarSessao($pessoaAtualizada);
+        }
+
+        if (Auth::precisaTrocarSenha()) {
+            header('Location: /meu_perfil.php?forcar_troca=1&origem=privacidade');
+            exit;
         }
 
         header('Location: /index.php?privacidade_aceita=1');
