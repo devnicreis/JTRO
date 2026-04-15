@@ -201,7 +201,7 @@ if (!function_exists('renderDashboardGruposFamiliares')) {
     <?php $temAlertas = !empty($gruposAlarmantesAvisos) || !empty($membrosFaltososAvisos); ?>
     <div class="presencas-layout">
         <div class="presencas-coluna">
-            <div class="presencas-card quadro-ultimas-reunioes">
+            <div class="presencas-card quadro-ultimas-reunioes quadro-ultimas-reunioes-dashboard">
                 <h2>Últimas reuniões</h2>
                 <?php if (count($ultimasReunioes) === 0): ?>
                     <p style="color: var(--color-text-muted); font-size: 13px;">Nenhuma reunião registrada ainda.</p>
@@ -298,7 +298,7 @@ if (!function_exists('renderDashboardGruposFamiliares')) {
         </div>
 
         <div class="presencas-coluna">
-            <div class="presencas-card quadro-ultimas-reunioes quadro-ultimas-reunioes-lider">
+            <div class="presencas-card quadro-ultimas-reunioes quadro-ultimas-reunioes-lider quadro-ultimas-reunioes-dashboard">
                 <h2>Últimas reuniões dos meus GFs</h2>
                 <?php if (count($ultimasReunioes) === 0): ?>
                     <p style="color: var(--color-text-muted); font-size: 13px;">Nenhuma reunião registrada ainda.</p>

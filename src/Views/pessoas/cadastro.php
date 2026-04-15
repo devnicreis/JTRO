@@ -106,7 +106,7 @@ $ufs = opcoesUF();
             <div class="campo">
                 <label for="responsavel_1_cpf">CPF do respons&aacute;vel</label>
                 <input type="text" id="responsavel_1_cpf" name="responsavel_1_cpf" inputmode="numeric" maxlength="11" pattern="\d{11}" value="<?php echo htmlspecialchars($_POST['responsavel_1_cpf'] ?? ''); ?>">
-                <small>Se o respons&aacute;vel j&aacute; estiver cadastrado, o nome ser&aacute; preenchido automaticamente.</small>
+                <small>Se o respons&aacute;vel j&aacute; estiver cadastrado, o nome ser&aacute; preenchido automaticamente. Para menores de 18 anos, e-mail, contatos e endere&ccedil;o tamb&eacute;m podem ser importados e continuar&atilde;o edit&aacute;veis.</small>
             </div>
             <div class="campo">
                 <label for="responsavel_1_nome">Nome do respons&aacute;vel</label>
@@ -274,6 +274,18 @@ document.addEventListener('DOMContentLoaded', function() {
     const responsavel1Nome = document.getElementById('responsavel_1_nome');
     const responsavel2Cpf = document.getElementById('responsavel_2_cpf');
     const responsavel2Nome = document.getElementById('responsavel_2_nome');
+    const camposAutofillResponsavel = {
+        email: document.getElementById('email'),
+        telefone_fixo: document.getElementById('telefone_fixo'),
+        telefone_movel: document.getElementById('telefone_movel'),
+        endereco_cep: document.getElementById('endereco_cep'),
+        endereco_logradouro: document.getElementById('endereco_logradouro'),
+        endereco_numero: document.getElementById('endereco_numero'),
+        endereco_complemento: document.getElementById('endereco_complemento'),
+        endereco_bairro: document.getElementById('endereco_bairro'),
+        endereco_cidade: document.getElementById('endereco_cidade'),
+        endereco_uf: document.getElementById('endereco_uf'),
+    };
 
     function idadeAtual() {
         if (!campoData || !campoData.value) return null;
@@ -336,10 +348,36 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    function aplicarAutofillCampo(campo, valor) {
+        if (!campo) return;
+
+        const proximoValor = (valor || '').trim();
+        if (proximoValor === '') return;
+
+        const valorAtual = (campo.value || '').trim();
+        const ultimoAutofill = (campo.dataset.autofillValue || '').trim();
+
+        if (valorAtual === '' || valorAtual === ultimoAutofill) {
+            campo.value = proximoValor;
+            campo.dataset.autofillValue = proximoValor;
+        }
+    }
+
+    function aplicarAutofillResponsavel(dados) {
+        if (idadeAtual() === null || idadeAtual() >= 18) {
+            return;
+        }
+
+        Object.entries(camposAutofillResponsavel).forEach(function(entry) {
+            const [campo, elemento] = entry;
+            aplicarAutofillCampo(elemento, dados[campo] || '');
+        });
+    }
+
     function atualizarResponsaveis() {
         if (!blocoResponsaveis || !responsavel1Cpf || !responsavel1Nome) return;
         const idade = idadeAtual();
-        const menorDeIdade = idade !== null && idade < 18;
+        const menorDeIdade = idade !== null && idade <= 18;
 
         blocoResponsaveis.style.display = menorDeIdade ? '' : 'none';
         responsavel1Cpf.required = menorDeIdade;
@@ -380,7 +418,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    async function buscarPessoaPorCpf(inputCpf, inputNome) {
+    async function buscarPessoaPorCpf(inputCpf, inputNome, opcoes = {}) {
         if (!inputCpf || !inputNome) return;
         const cpf = (inputCpf.value || '').replace(/\D/g, '');
 
@@ -407,6 +445,9 @@ document.addEventListener('DOMContentLoaded', function() {
             if (dados.encontrado && dados.nome) {
                 inputNome.value = dados.nome;
                 inputNome.readOnly = true;
+                if (opcoes.preencherContatoEndereco) {
+                    aplicarAutofillResponsavel(dados);
+                }
             } else {
                 inputNome.readOnly = false;
             }
@@ -445,11 +486,11 @@ document.addEventListener('DOMContentLoaded', function() {
     if (campoCep) campoCep.addEventListener('blur', buscarCep);
     if (checkboxSegundoResponsavel) checkboxSegundoResponsavel.addEventListener('change', atualizarSegundoResponsavel);
     if (inputConjugeCpf) inputConjugeCpf.addEventListener('blur', function() { buscarPessoaPorCpf(inputConjugeCpf, inputConjugeNome); });
-    if (responsavel1Cpf) responsavel1Cpf.addEventListener('blur', function() { buscarPessoaPorCpf(responsavel1Cpf, responsavel1Nome); });
+    if (responsavel1Cpf) responsavel1Cpf.addEventListener('blur', function() { buscarPessoaPorCpf(responsavel1Cpf, responsavel1Nome, { preencherContatoEndereco: true }); });
     if (responsavel2Cpf) responsavel2Cpf.addEventListener('blur', function() { buscarPessoaPorCpf(responsavel2Cpf, responsavel2Nome); });
 
     if (inputConjugeCpf && inputConjugeCpf.value) buscarPessoaPorCpf(inputConjugeCpf, inputConjugeNome);
-    if (responsavel1Cpf && responsavel1Cpf.value) buscarPessoaPorCpf(responsavel1Cpf, responsavel1Nome);
+    if (responsavel1Cpf && responsavel1Cpf.value) buscarPessoaPorCpf(responsavel1Cpf, responsavel1Nome, { preencherContatoEndereco: true });
     if (responsavel2Cpf && responsavel2Cpf.value) buscarPessoaPorCpf(responsavel2Cpf, responsavel2Nome);
 });
 </script>

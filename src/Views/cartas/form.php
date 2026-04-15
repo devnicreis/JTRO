@@ -7,6 +7,7 @@ $pregacaoTitulo = $isEdicao ? ($carta['pregacao_titulo'] ?? '') : '';
 $pregacaoLink   = $isEdicao ? ($carta['pregacao_link']   ?? '') : '';
 $imagemUrl      = $isEdicao ? ($carta['imagem_url']      ?? '') : '';
 $conteudo       = $isEdicao ? ($carta['conteudo']        ?? '') : '';
+$conteudoFallback = trim(html_entity_decode(strip_tags((string) $conteudo), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
 $jaPublicada    = $isEdicao && $carta['publicada'];
 
 // Decodifica avisos
@@ -53,6 +54,7 @@ if ($isEdicao && !empty($carta['avisos'])) {
     <div class="carta-secao">
         <div class="carta-secao-titulo">Conteúdo da Carta <span class="escala-hint">(devocional, reflexão bíblica...)</span></div>
         <div id="editor-quill" style="min-height:220px; font-size:14px; font-family:'Plus Jakarta Sans',sans-serif;"><?php echo $conteudo; ?></div>
+        <textarea id="editor-fallback" rows="10" style="display:none; min-height:220px;" placeholder="Escreva o devocional, reflexão bíblica ou mensagem da semana..."><?php echo htmlspecialchars($conteudoFallback); ?></textarea>
         <input type="hidden" name="conteudo" id="conteudo-hidden">
         <div style="text-align:right; font-size:11px; color:var(--color-text-muted); margin-top:4px;">
             <span id="quill-char-count">0</span> / 8000 caracteres
@@ -161,7 +163,7 @@ if ($isEdicao && !empty($carta['avisos'])) {
 document.addEventListener('DOMContentLoaded', function() {
 
     // Quill
-    window.quill = new Quill('#editor-quill', {
+    if (false) { window.quill = new Quill('#editor-quill', {
         theme: 'snow',
         placeholder: 'Escreva o devocional, reflexão bíblica ou mensagem da semana...',
         modules: {
@@ -172,13 +174,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 ['clean']
             ]
         }
-    });
+    }); }
 
     const QUILL_MAX = 8000;
+    const formCarta = document.getElementById('formCarta');
+    const editorQuill = document.getElementById('editor-quill');
+    const editorFallback = document.getElementById('editor-fallback');
+    const conteudoHidden = document.getElementById('conteudo-hidden');
+    let quillInstance = null;
 
-    function atualizarContador() {
-        const count = quill.getText().trim().length;
-        const el    = document.getElementById('quill-char-count');
+    function atualizarContadorComValor(count) {
+        const el = document.getElementById('quill-char-count');
         if (!el) return;
         el.textContent = count;
         el.style.color = count > QUILL_MAX * 0.9
@@ -186,18 +192,74 @@ document.addEventListener('DOMContentLoaded', function() {
             : '';
     }
 
-    quill.on('text-change', function() {
-        if (quill.getLength() - 1 > QUILL_MAX) {
-            quill.deleteText(QUILL_MAX, quill.getLength());
+    function escaparHtml(texto) {
+        return (texto || '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+    function converterTextoFallbackParaHtml(texto) {
+        const conteudo = (texto || '').replace(/\r\n?/g, '\n').trim();
+        if (conteudo === '') {
+            return '';
         }
-        atualizarContador();
-    });
 
-    atualizarContador();
+        return conteudo
+            .split(/\n{2,}/)
+            .map(function(bloco) {
+                return '<p>' + escaparHtml(bloco).replace(/\n/g, '<br>') + '</p>';
+            })
+            .join('');
+    }
 
-    document.getElementById('formCarta').addEventListener('submit', function() {
-        document.getElementById('conteudo-hidden').value = quill.root.innerHTML;
-    });
+    function inicializarEditor() {
+        if (typeof window.Quill === 'function' && editorQuill) {
+            try {
+                quillInstance = new Quill('#editor-quill', {
+                    theme: 'snow',
+                    placeholder: 'Escreva o devocional, reflexÃ£o bÃ­blica ou mensagem da semana...',
+                    modules: {
+                        toolbar: [
+                            ['bold', 'italic', 'underline'],
+                            [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+                            ['link'],
+                            ['clean']
+                        ]
+                    }
+                });
+
+                quillInstance.on('text-change', function() {
+                    if (quillInstance.getLength() - 1 > QUILL_MAX) {
+                        quillInstance.deleteText(QUILL_MAX, quillInstance.getLength());
+                    }
+                    atualizarContadorComValor(quillInstance.getText().trim().length);
+                });
+
+                atualizarContadorComValor(quillInstance.getText().trim().length);
+                return;
+            } catch (error) {
+                quillInstance = null;
+            }
+        }
+
+        if (editorQuill) {
+            editorQuill.style.display = 'none';
+        }
+
+        if (editorFallback) {
+            editorFallback.style.display = '';
+            editorFallback.addEventListener('input', function() {
+                if (editorFallback.value.length > QUILL_MAX) {
+                    editorFallback.value = editorFallback.value.slice(0, QUILL_MAX);
+                }
+                atualizarContadorComValor(editorFallback.value.trim().length);
+            });
+            atualizarContadorComValor(editorFallback.value.trim().length);
+        }
+    }
 
     // Avisos dinâmicos
     window.avisoCount = <?php echo count($avisosList); ?>;
@@ -241,6 +303,19 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     })();
     <?php endforeach; ?>
+
+    inicializarEditor();
+
+    if (formCarta && conteudoHidden) {
+        formCarta.addEventListener('submit', function() {
+            if (quillInstance) {
+                conteudoHidden.value = quillInstance.root.innerHTML;
+                return;
+            }
+
+            conteudoHidden.value = converterTextoFallbackParaHtml(editorFallback ? editorFallback.value : '');
+        });
+    }
 
 }); // DOMContentLoaded
 </script>

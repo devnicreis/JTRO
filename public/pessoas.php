@@ -57,6 +57,28 @@ function calcularIdadePessoa(string $data): ?int
     return $dt->diff(new DateTime('today'))->y;
 }
 
+function emailMenorPermitidoPorResponsavelPessoa(string $email, array $dadosResponsaveis): bool
+{
+    $emailNormalizado = mb_strtolower(trim($email));
+    if ($emailNormalizado === '') {
+        return false;
+    }
+
+    foreach (['responsavel_1', 'responsavel_2'] as $chaveResponsavel) {
+        $responsavel = $dadosResponsaveis[$chaveResponsavel] ?? null;
+        if (!is_array($responsavel)) {
+            continue;
+        }
+
+        $emailResponsavel = mb_strtolower(trim((string) ($responsavel['email'] ?? '')));
+        if ($emailResponsavel !== '' && $emailResponsavel === $emailNormalizado) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 function resolverDadosResponsaveisPessoa(PessoaRepository $repo, array $fonte, ?int $pessoaIdIgnorado = null): array
 {
     $responsavel1Cpf = normalizarCpfPessoa((string) ($fonte['responsavel_1_cpf'] ?? ''));
@@ -67,18 +89,22 @@ function resolverDadosResponsaveisPessoa(PessoaRepository $repo, array $fonte, ?
     $segundoResponsavelAtivo = $segundoResponsavelMarcado || $responsavel2Cpf !== '' || $responsavel2Nome !== '';
 
     $responsavel1PessoaId = null;
+    $responsavel1 = null;
     if ($responsavel1Cpf !== '') {
         $responsavel = $repo->buscarResponsavelPorCpf($responsavel1Cpf, $pessoaIdIgnorado);
         if ($responsavel !== null) {
+            $responsavel1 = $responsavel;
             $responsavel1PessoaId = (int) $responsavel['id'];
             $responsavel1Nome = normalizarNomePessoa((string) ($responsavel['nome'] ?? ''));
         }
     }
 
     $responsavel2PessoaId = null;
+    $responsavel2 = null;
     if ($segundoResponsavelAtivo && $responsavel2Cpf !== '') {
         $responsavel = $repo->buscarResponsavelPorCpf($responsavel2Cpf, $pessoaIdIgnorado);
         if ($responsavel !== null) {
+            $responsavel2 = $responsavel;
             $responsavel2PessoaId = (int) $responsavel['id'];
             $responsavel2Nome = normalizarNomePessoa((string) ($responsavel['nome'] ?? ''));
         }
@@ -88,11 +114,43 @@ function resolverDadosResponsaveisPessoa(PessoaRepository $repo, array $fonte, ?
         'responsavel_1_cpf' => $responsavel1Cpf,
         'responsavel_1_nome' => $responsavel1Nome,
         'responsavel_1_pessoa_id' => $responsavel1PessoaId,
+        'responsavel_1' => $responsavel1,
         'responsavel_2_cpf' => $segundoResponsavelAtivo ? $responsavel2Cpf : '',
         'responsavel_2_nome' => $segundoResponsavelAtivo ? $responsavel2Nome : '',
         'responsavel_2_pessoa_id' => $segundoResponsavelAtivo ? $responsavel2PessoaId : null,
+        'responsavel_2' => $segundoResponsavelAtivo ? $responsavel2 : null,
         'adicionar_segundo_responsavel' => $segundoResponsavelAtivo ? '1' : '0',
     ];
+}
+
+function preencherContatoEnderecoDeMenorComResponsavel(array $fonte, ?array $responsavel, bool $menorDeIdade): array
+{
+    if (!$menorDeIdade || $responsavel === null) {
+        return $fonte;
+    }
+
+    $campos = [
+        'email',
+        'telefone_fixo',
+        'telefone_movel',
+        'endereco_cep',
+        'endereco_logradouro',
+        'endereco_numero',
+        'endereco_complemento',
+        'endereco_bairro',
+        'endereco_cidade',
+        'endereco_uf',
+    ];
+
+    foreach ($campos as $campo) {
+        $valorAtual = trim((string) ($fonte[$campo] ?? ''));
+        $valorResponsavel = trim((string) ($responsavel[$campo] ?? ''));
+        if ($valorAtual === '' && $valorResponsavel !== '') {
+            $fonte[$campo] = $valorResponsavel;
+        }
+    }
+
+    return $fonte;
 }
 
 function resolverDadosConjugePessoa(PessoaRepository $repo, array $fonte, ?int $pessoaIdIgnorado = null): array
@@ -146,7 +204,6 @@ $erro = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $nome = normalizarNomePessoa($_POST['nome'] ?? '');
     $cpf = trim($_POST['cpf'] ?? '');
-    $email = trim($_POST['email'] ?? '');
     $cargo = $_POST['cargo'] ?? '';
     $genero = trim($_POST['genero'] ?? '');
     $dataNascimento = trim($_POST['data_nascimento'] ?? '');
@@ -156,6 +213,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $liderGrupoFamiliar = isset($_POST['lider_grupo_familiar']) ? 1 : 0;
     $liderDepartamento = isset($_POST['lider_departamento']) ? 1 : 0;
     $grupoFamiliarId = (int) ($_POST['grupo_familiar_id'] ?? 0);
+    $concluiuIntegracao = (int) ($_POST['concluiu_integracao'] ?? -1);
+    $participouRetiroIntegracao = (int) ($_POST['participou_retiro_integracao'] ?? -1);
+    $dadosResponsaveis = resolverDadosResponsaveisPessoa($repo, $_POST);
+    $dadosConjuge = resolverDadosConjugePessoa($repo, $_POST);
+    $menorDeIdade = $idade !== null && $idade <= 18;
+
+    $_POST = preencherContatoEnderecoDeMenorComResponsavel($_POST, $dadosResponsaveis['responsavel_1'] ?? null, $menorDeIdade);
+
+    $_POST['responsavel_1_cpf'] = $dadosResponsaveis['responsavel_1_cpf'];
+    $_POST['responsavel_1_nome'] = $dadosResponsaveis['responsavel_1_nome'];
+    $_POST['responsavel_2_cpf'] = $dadosResponsaveis['responsavel_2_cpf'];
+    $_POST['responsavel_2_nome'] = $dadosResponsaveis['responsavel_2_nome'];
+    $_POST['adicionar_segundo_responsavel'] = $dadosResponsaveis['adicionar_segundo_responsavel'];
+    $_POST['conjuge_cpf'] = $dadosConjuge['conjuge_cpf'];
+    $_POST['nome_conjuge'] = $dadosConjuge['nome_conjuge'];
+
+    $email = trim($_POST['email'] ?? '');
     $telefoneFixo = limparTelefonePessoa($_POST['telefone_fixo'] ?? '');
     $telefoneMovel = limparTelefonePessoa($_POST['telefone_movel'] ?? '');
     $enderecoCep = limparCepPessoa($_POST['endereco_cep'] ?? '');
@@ -165,19 +239,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $enderecoBairro = normalizarTextoPessoa($_POST['endereco_bairro'] ?? '');
     $enderecoCidade = normalizarTextoPessoa($_POST['endereco_cidade'] ?? '');
     $enderecoUf = strtoupper(normalizarTextoPessoa($_POST['endereco_uf'] ?? ''));
-    $concluiuIntegracao = (int) ($_POST['concluiu_integracao'] ?? -1);
-    $participouRetiroIntegracao = (int) ($_POST['participou_retiro_integracao'] ?? -1);
-    $dadosResponsaveis = resolverDadosResponsaveisPessoa($repo, $_POST);
-    $dadosConjuge = resolverDadosConjugePessoa($repo, $_POST);
-    $menorDeIdade = $idade !== null && $idade < 18;
-
-    $_POST['responsavel_1_cpf'] = $dadosResponsaveis['responsavel_1_cpf'];
-    $_POST['responsavel_1_nome'] = $dadosResponsaveis['responsavel_1_nome'];
-    $_POST['responsavel_2_cpf'] = $dadosResponsaveis['responsavel_2_cpf'];
-    $_POST['responsavel_2_nome'] = $dadosResponsaveis['responsavel_2_nome'];
-    $_POST['adicionar_segundo_responsavel'] = $dadosResponsaveis['adicionar_segundo_responsavel'];
-    $_POST['conjuge_cpf'] = $dadosConjuge['conjuge_cpf'];
-    $_POST['nome_conjuge'] = $dadosConjuge['nome_conjuge'];
 
     $estadosValidos = ['solteiro', 'casado', 'uniao_estavel', 'divorciado', 'viuvo'];
     $generosValidos = ['masculino', 'feminino'];
@@ -196,7 +257,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $erro = 'O CPF deve conter exatamente 11 digitos.';
     } elseif ($email !== '' && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $erro = 'Informe um e-mail valido.';
-    } elseif ($email !== '' && $repo->buscarPorEmail($email) !== null) {
+    } elseif (
+        $email !== ''
+        && ($emailExistente = $repo->buscarPorEmail($email)) !== null
+        && (
+            !$menorDeIdade
+            || !emailMenorPermitidoPorResponsavelPessoa($email, $dadosResponsaveis)
+        )
+    ) {
         $erro = 'Ja existe uma pessoa cadastrada com esse e-mail.';
     } elseif (!in_array($genero, $generosValidos, true)) {
         $erro = 'Selecione um genero valido.';

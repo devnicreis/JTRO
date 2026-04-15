@@ -34,6 +34,7 @@ $ultimasReunioes   = [];
 $grupoSelecionado  = null;
 $membrosFiltrados  = [];
 $totalLideresNoGrupo = 0;
+$filhosDoGrupo = [];
 
 if (!$isAdmin && count($gruposAtivosLista) === 1) {
     $grupoSelecionadoId = $gruposAtivosLista[0]['id'];
@@ -65,6 +66,7 @@ if ($grupoSelecionadoId > 0) {
         ]);
         $resumoPresenca  = $presencaRepo->buscarResumoPresencaPorGrupo($grupoSelecionadoId);
         $resumoMembros   = $presencaRepo->buscarResumoPorMembroDoGrupo($grupoSelecionadoId);
+        $filhosDoGrupo   = $presencaRepo->listarFilhosDoGrupo($grupoSelecionadoId, 9);
         $faltosos        = $presencaRepo->buscarMembrosComFaltasConsecutivas($grupoSelecionadoId, 2);
         $ultimasReunioes = $presencaRepo->listarUltimasReunioesDoGrupo($grupoSelecionadoId, 10);
 

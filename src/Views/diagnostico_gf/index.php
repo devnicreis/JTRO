@@ -76,6 +76,17 @@
             <div class="card-resumo-label">Líderes no GF</div>
             <div class="numero"><?php echo (int) $totalLideresNoGrupo; ?></div>
         </div>
+        <div class="card-resumo card-resumo-tooltip card-resumo-violeta-suave" tabindex="0">
+            <div class="card-resumo-label">Filhos</div>
+            <div class="numero"><?php echo count($filhosDoGrupo); ?></div>
+            <?php if (!empty($filhosDoGrupo)): ?>
+                <div class="card-tooltip">
+                    <?php foreach ($filhosDoGrupo as $filho): ?>
+                        <div class="card-tooltip-item"><?php echo htmlspecialchars($filho['nome']); ?></div>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
+        </div>
     </div>
 
     <!-- Barra visual de presença -->

@@ -639,6 +639,55 @@ class PresencaRepository
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    public function listarFilhosDoGrupo(int $grupoId, int $idadeMaxima = 9): array
+    {
+        $idadeMaxima = max(0, $idadeMaxima);
+
+        $stmt = $this->connection->prepare("
+            WITH integrantes AS (
+                SELECT gm.pessoa_id
+                FROM grupo_membros gm
+                WHERE gm.grupo_familiar_id = :grupo_id
+                UNION
+                SELECT gl.pessoa_id
+                FROM grupo_lideres gl
+                WHERE gl.grupo_familiar_id = :grupo_id
+            )
+            SELECT DISTINCT
+                filho.id,
+                filho.nome,
+                filho.data_nascimento
+            FROM pessoas filho
+            WHERE filho.ativo = 1
+              AND filho.data_nascimento IS NOT NULL
+              AND CAST((julianday('now', 'localtime') - julianday(filho.data_nascimento)) / 365.2425 AS INTEGER)
+                    BETWEEN 0 AND :idade_maxima
+              AND (
+                    filho.responsavel_1_pessoa_id IN (SELECT pessoa_id FROM integrantes)
+                 OR filho.responsavel_2_pessoa_id IN (SELECT pessoa_id FROM integrantes)
+                 OR EXISTS (
+                        SELECT 1
+                        FROM integrantes i
+                        INNER JOIN pessoas responsavel ON responsavel.id = i.pessoa_id
+                        WHERE responsavel.cpf = filho.responsavel_1_cpf
+                    )
+                 OR EXISTS (
+                        SELECT 1
+                        FROM integrantes i
+                        INNER JOIN pessoas responsavel ON responsavel.id = i.pessoa_id
+                        WHERE responsavel.cpf = filho.responsavel_2_cpf
+                    )
+              )
+            ORDER BY filho.nome ASC
+        ");
+        $stmt->execute([
+            ':grupo_id' => $grupoId,
+            ':idade_maxima' => $idadeMaxima,
+        ]);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
     public function contarReunioes(): int
     {
         return (int) $this->connection->query("SELECT COUNT(*) FROM reunioes")->fetchColumn();

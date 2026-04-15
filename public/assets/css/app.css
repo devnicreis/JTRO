@@ -1021,6 +1021,8 @@ tbody tr:hover td { background: var(--color-bg); }
 .card-resumo-roxo  .card-resumo-label, .card-resumo-roxo  .numero { color: var(--color-purple); }
 .card-resumo-amber .card-resumo-label, .card-resumo-amber .numero { color: var(--color-amber); }
 .card-resumo-terracota .card-resumo-label, .card-resumo-terracota .numero { color: #9b5628; }
+.card-resumo-violeta-suave { background: #f1eafe; }
+.card-resumo-violeta-suave .card-resumo-label, .card-resumo-violeta-suave .numero { color: #6a48b3; }
 
 /* Tooltip nos cards */
 .card-resumo-tooltip { position: relative; cursor: default; }
@@ -1039,7 +1041,9 @@ tbody tr:hover td { background: var(--color-bg); }
     pointer-events: none;
 }
 
-.card-resumo-tooltip:hover .card-tooltip { display: block; }
+.card-resumo-tooltip:hover .card-tooltip,
+.card-resumo-tooltip:focus .card-tooltip,
+.card-resumo-tooltip:focus-within .card-tooltip { display: block; }
 
 .card-tooltip-item {
     font-size: 12px; color: var(--color-text-secondary);
@@ -1095,7 +1099,7 @@ tbody tr:hover td { background: var(--color-bg); }
 .diag-barra-legendas { display: flex; align-items: center; gap: 12px; font-size: 13px; flex-wrap: wrap; }
 
 .diag-grid-layout { display: grid; grid-template-columns: 1.6fr 1fr; gap: 20px; align-items: start; }
-.diag-cards-resumo { grid-template-columns: repeat(5, minmax(0,1fr)); margin-bottom: 20px; }
+.diag-cards-resumo { grid-template-columns: repeat(6, minmax(0,1fr)); margin-bottom: 20px; }
 
 .diag-membros-wrapper { width: 100%; overflow-x: hidden; }
 .diag-membros-wrapper table { width: 100%; table-layout: fixed; }
@@ -1134,6 +1138,29 @@ tbody tr:hover td { background: var(--color-bg); }
 .quadro-ultimas-reunioes tbody tr:hover td { background: var(--color-blue-light) !important; }
 .quadro-ultimas-reunioes .tabela-acoes { width: auto; min-width: unset; }
 .quadro-ultimas-reunioes .tabela-acoes .botao-link { width: 100%; min-height: 30px; font-size: 12px; padding: 0 10px; }
+
+.quadro-ultimas-reunioes-dashboard .tabela-wrapper table,
+.quadro-ultimas-reunioes-dashboard .tabela-reunioes-lider {
+    font-size: 12px;
+}
+
+.quadro-ultimas-reunioes-dashboard thead th {
+    font-size: 11px;
+    padding: 8px 10px;
+    letter-spacing: 0.25px;
+}
+
+.quadro-ultimas-reunioes-dashboard tbody td {
+    padding: 8px 10px;
+    line-height: 1.35;
+}
+
+.quadro-ultimas-reunioes-dashboard .tabela-acoes .botao-link,
+.quadro-ultimas-reunioes-dashboard .acoes-reuniao-lider .botao-link {
+    min-height: 28px;
+    font-size: 11px;
+    padding: 0 8px;
+}
 
 @media (max-width: 1100px) {
     .diag-cards-resumo { grid-template-columns: repeat(2, minmax(0,1fr)); }

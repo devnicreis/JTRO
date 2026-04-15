@@ -58,6 +58,10 @@
         </div>
     <?php endif; ?>
 
+    <?php if (($erroSenha ?? '') !== ''): ?>
+        <div class="erro"><?php echo htmlspecialchars($erroSenha); ?></div>
+    <?php endif; ?>
+
     <form method="POST" action="/meu_perfil.php<?php echo $forcarTroca ? '?forcar_troca=1' : ''; ?>">
         <input type="hidden" name="acao" value="alterar_senha">
 

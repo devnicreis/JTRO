@@ -15,6 +15,7 @@ $usuarioId = Auth::id();
 
 $mensagem = '';
 $erro = '';
+$erroSenha = '';
 
 $pessoa = $repo->buscarPorId($usuarioId);
 
@@ -86,11 +87,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $confirmarSenha = $_POST['confirmar_senha'] ?? '';
 
         if (!$forcarTroca && !password_verify($senhaAtual, $pessoa['senha_hash'] ?? '')) {
-            $erro = 'A senha atual está incorreta.';
+            $erroSenha = 'A senha atual está incorreta.';
         } elseif ($novaSenha !== $confirmarSenha) {
-            $erro = 'A confirmação da nova senha não confere.';
+            $erroSenha = 'A confirmação da nova senha não confere.';
         } elseif (!preg_match('/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,}$/', $novaSenha)) {
-            $erro = 'A nova senha deve ter pelo menos 8 caracteres, com letra minúscula, maiúscula, número e símbolo.';
+            $erroSenha = 'A nova senha deve ter pelo menos 8 caracteres, com letra minúscula, maiúscula, número e símbolo.';
         } else {
             $repo->atualizarSenhaEObrigacao($usuarioId, $novaSenha, false);
             $pessoa = $repo->buscarPorId($usuarioId);

@@ -2,7 +2,7 @@ CREATE TABLE IF NOT EXISTS pessoas (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     nome TEXT NOT NULL,
     cpf TEXT NOT NULL UNIQUE,
-    email TEXT UNIQUE,
+    email TEXT,
     cargo TEXT NOT NULL,
     genero TEXT,
     data_nascimento TEXT,

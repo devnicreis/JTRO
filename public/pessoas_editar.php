@@ -57,6 +57,28 @@ function calcularIdadePessoaEdicaoValor(string $data): ?int
     return $dt->diff(new DateTime('today'))->y;
 }
 
+function emailMenorPermitidoPorResponsavelPessoaEdicao(string $email, array $dadosResponsaveis): bool
+{
+    $emailNormalizado = mb_strtolower(trim($email));
+    if ($emailNormalizado === '') {
+        return false;
+    }
+
+    foreach (['responsavel_1', 'responsavel_2'] as $chaveResponsavel) {
+        $responsavel = $dadosResponsaveis[$chaveResponsavel] ?? null;
+        if (!is_array($responsavel)) {
+            continue;
+        }
+
+        $emailResponsavel = mb_strtolower(trim((string) ($responsavel['email'] ?? '')));
+        if ($emailResponsavel !== '' && $emailResponsavel === $emailNormalizado) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 function resolverDadosResponsaveisPessoaEdicao(PessoaRepository $repo, array $fonte, int $pessoaIdIgnorado): array
 {
     $responsavel1Cpf = normalizarCpfPessoaEdicao((string) ($fonte['responsavel_1_cpf'] ?? ''));
@@ -67,18 +89,22 @@ function resolverDadosResponsaveisPessoaEdicao(PessoaRepository $repo, array $fo
     $segundoResponsavelAtivo = $segundoResponsavelMarcado || $responsavel2Cpf !== '' || $responsavel2Nome !== '';
 
     $responsavel1PessoaId = null;
+    $responsavel1 = null;
     if ($responsavel1Cpf !== '') {
         $responsavel = $repo->buscarResponsavelPorCpf($responsavel1Cpf, $pessoaIdIgnorado);
         if ($responsavel !== null) {
+            $responsavel1 = $responsavel;
             $responsavel1PessoaId = (int) $responsavel['id'];
             $responsavel1Nome = normalizarNomePessoaEdicao((string) ($responsavel['nome'] ?? ''));
         }
     }
 
     $responsavel2PessoaId = null;
+    $responsavel2 = null;
     if ($segundoResponsavelAtivo && $responsavel2Cpf !== '') {
         $responsavel = $repo->buscarResponsavelPorCpf($responsavel2Cpf, $pessoaIdIgnorado);
         if ($responsavel !== null) {
+            $responsavel2 = $responsavel;
             $responsavel2PessoaId = (int) $responsavel['id'];
             $responsavel2Nome = normalizarNomePessoaEdicao((string) ($responsavel['nome'] ?? ''));
         }
@@ -88,11 +114,43 @@ function resolverDadosResponsaveisPessoaEdicao(PessoaRepository $repo, array $fo
         'responsavel_1_cpf' => $responsavel1Cpf,
         'responsavel_1_nome' => $responsavel1Nome,
         'responsavel_1_pessoa_id' => $responsavel1PessoaId,
+        'responsavel_1' => $responsavel1,
         'responsavel_2_cpf' => $segundoResponsavelAtivo ? $responsavel2Cpf : '',
         'responsavel_2_nome' => $segundoResponsavelAtivo ? $responsavel2Nome : '',
         'responsavel_2_pessoa_id' => $segundoResponsavelAtivo ? $responsavel2PessoaId : null,
+        'responsavel_2' => $segundoResponsavelAtivo ? $responsavel2 : null,
         'adicionar_segundo_responsavel' => $segundoResponsavelAtivo ? '1' : '0',
     ];
+}
+
+function preencherContatoEnderecoDeMenorComResponsavelEdicao(array $fonte, ?array $responsavel, bool $menorDeIdade): array
+{
+    if (!$menorDeIdade || $responsavel === null) {
+        return $fonte;
+    }
+
+    $campos = [
+        'email',
+        'telefone_fixo',
+        'telefone_movel',
+        'endereco_cep',
+        'endereco_logradouro',
+        'endereco_numero',
+        'endereco_complemento',
+        'endereco_bairro',
+        'endereco_cidade',
+        'endereco_uf',
+    ];
+
+    foreach ($campos as $campo) {
+        $valorAtual = trim((string) ($fonte[$campo] ?? ''));
+        $valorResponsavel = trim((string) ($responsavel[$campo] ?? ''));
+        if ($valorAtual === '' && $valorResponsavel !== '') {
+            $fonte[$campo] = $valorResponsavel;
+        }
+    }
+
+    return $fonte;
 }
 
 function resolverDadosConjugePessoaEdicao(PessoaRepository $repo, array $fonte, int $pessoaIdIgnorado): array
@@ -149,7 +207,6 @@ if (!$pessoa) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $nome = normalizarNomePessoaEdicao($_POST['nome'] ?? '');
     $cpf = trim($_POST['cpf'] ?? '');
-    $email = trim($_POST['email'] ?? '');
     $cargo = $_POST['cargo'] ?? '';
     $genero = trim($_POST['genero'] ?? '');
     $dataNascimento = trim($_POST['data_nascimento'] ?? '');
@@ -159,6 +216,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $liderGrupoFamiliar = isset($_POST['lider_grupo_familiar']) ? 1 : 0;
     $liderDepartamento = isset($_POST['lider_departamento']) ? 1 : 0;
     $grupoFamiliarId = (int) ($_POST['grupo_familiar_id'] ?? 0);
+    $concluiuIntegracao = (int) ($_POST['concluiu_integracao'] ?? -1);
+    $participouRetiroIntegracao = (int) ($_POST['participou_retiro_integracao'] ?? -1);
+    $novaSenha = $_POST['nova_senha'] ?? '';
+    $confirmarSenha = $_POST['confirmar_senha'] ?? '';
+    $dadosResponsaveis = resolverDadosResponsaveisPessoaEdicao($repo, $_POST, $id);
+    $dadosConjuge = resolverDadosConjugePessoaEdicao($repo, $_POST, $id);
+    $menorDeIdade = $idade !== null && $idade <= 18;
+
+    $_POST = preencherContatoEnderecoDeMenorComResponsavelEdicao($_POST, $dadosResponsaveis['responsavel_1'] ?? null, $menorDeIdade);
+
+    $_POST['responsavel_1_cpf'] = $dadosResponsaveis['responsavel_1_cpf'];
+    $_POST['responsavel_1_nome'] = $dadosResponsaveis['responsavel_1_nome'];
+    $_POST['responsavel_2_cpf'] = $dadosResponsaveis['responsavel_2_cpf'];
+    $_POST['responsavel_2_nome'] = $dadosResponsaveis['responsavel_2_nome'];
+    $_POST['adicionar_segundo_responsavel'] = $dadosResponsaveis['adicionar_segundo_responsavel'];
+    $_POST['conjuge_cpf'] = $dadosConjuge['conjuge_cpf'];
+    $_POST['nome_conjuge'] = $dadosConjuge['nome_conjuge'];
+
+    $email = trim($_POST['email'] ?? '');
     $telefoneFixo = limparTelefonePessoaEdicao($_POST['telefone_fixo'] ?? '');
     $telefoneMovel = limparTelefonePessoaEdicao($_POST['telefone_movel'] ?? '');
     $enderecoCep = limparCepPessoaEdicao($_POST['endereco_cep'] ?? '');
@@ -168,21 +244,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $enderecoBairro = normalizarTextoPessoaEdicao($_POST['endereco_bairro'] ?? '');
     $enderecoCidade = normalizarTextoPessoaEdicao($_POST['endereco_cidade'] ?? '');
     $enderecoUf = strtoupper(normalizarTextoPessoaEdicao($_POST['endereco_uf'] ?? ''));
-    $concluiuIntegracao = (int) ($_POST['concluiu_integracao'] ?? -1);
-    $participouRetiroIntegracao = (int) ($_POST['participou_retiro_integracao'] ?? -1);
-    $novaSenha = $_POST['nova_senha'] ?? '';
-    $confirmarSenha = $_POST['confirmar_senha'] ?? '';
-    $dadosResponsaveis = resolverDadosResponsaveisPessoaEdicao($repo, $_POST, $id);
-    $dadosConjuge = resolverDadosConjugePessoaEdicao($repo, $_POST, $id);
-    $menorDeIdade = $idade !== null && $idade < 18;
-
-    $_POST['responsavel_1_cpf'] = $dadosResponsaveis['responsavel_1_cpf'];
-    $_POST['responsavel_1_nome'] = $dadosResponsaveis['responsavel_1_nome'];
-    $_POST['responsavel_2_cpf'] = $dadosResponsaveis['responsavel_2_cpf'];
-    $_POST['responsavel_2_nome'] = $dadosResponsaveis['responsavel_2_nome'];
-    $_POST['adicionar_segundo_responsavel'] = $dadosResponsaveis['adicionar_segundo_responsavel'];
-    $_POST['conjuge_cpf'] = $dadosConjuge['conjuge_cpf'];
-    $_POST['nome_conjuge'] = $dadosConjuge['nome_conjuge'];
 
     $estadosValidos = ['solteiro', 'casado', 'uniao_estavel', 'divorciado', 'viuvo'];
     $generosValidos = ['masculino', 'feminino'];
@@ -203,7 +264,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $erro = 'Ja existe outra pessoa cadastrada com esse CPF.';
     } elseif ($email !== '' && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $erro = 'Informe um e-mail valido.';
-    } elseif ($email !== '' && $repo->buscarPorEmailExcetoId($email, $id) !== null) {
+    } elseif (
+        $email !== ''
+        && ($emailExistente = $repo->buscarPorEmailExcetoId($email, $id)) !== null
+        && (
+            !$menorDeIdade
+            || !emailMenorPermitidoPorResponsavelPessoaEdicao($email, $dadosResponsaveis)
+        )
+    ) {
         $erro = 'Ja existe outra pessoa cadastrada com esse e-mail.';
     } elseif (!in_array($genero, $generosValidos, true)) {
         $erro = 'Selecione um genero valido.';

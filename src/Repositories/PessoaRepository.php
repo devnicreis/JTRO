@@ -548,7 +548,25 @@ class PessoaRepository
 
     public function buscarResponsavelPorCpf(string $cpf, ?int $ignorarId = null): ?array
     {
-        $sql = "SELECT id, nome, cpf, ativo FROM pessoas WHERE cpf = :cpf";
+        $sql = "
+            SELECT
+                id,
+                nome,
+                cpf,
+                ativo,
+                email,
+                telefone_fixo,
+                telefone_movel,
+                endereco_cep,
+                endereco_logradouro,
+                endereco_numero,
+                endereco_complemento,
+                endereco_bairro,
+                endereco_cidade,
+                endereco_uf
+            FROM pessoas
+            WHERE cpf = :cpf
+        ";
         $params = [':cpf' => $cpf];
 
         if ($ignorarId !== null && $ignorarId > 0) {

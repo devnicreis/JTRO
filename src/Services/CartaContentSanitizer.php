@@ -12,6 +12,10 @@ class CartaContentSanitizer
             return '';
         }
 
+        if (self::isPlainText($html)) {
+            return self::plainTextToHtml($html);
+        }
+
         if (!class_exists('DOMDocument')) {
             return trim(strip_tags($html, '<p><br><strong><em><u><ol><ul><li><a>'));
         }
@@ -135,5 +139,28 @@ class CartaContentSanitizer
         }
 
         $parent->removeChild($element);
+    }
+
+    private static function isPlainText(string $content): bool
+    {
+        return strip_tags($content) === $content;
+    }
+
+    private static function plainTextToHtml(string $content): string
+    {
+        $normalized = str_replace(["\r\n", "\r"], "\n", trim($content));
+        if ($normalized === '') {
+            return '';
+        }
+
+        $blocks = preg_split("/\n{2,}/", $normalized) ?: [];
+        $paragraphs = [];
+
+        foreach ($blocks as $block) {
+            $safe = htmlspecialchars($block, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+            $paragraphs[] = '<p>' . nl2br($safe, false) . '</p>';
+        }
+
+        return implode('', $paragraphs);
     }
 }
