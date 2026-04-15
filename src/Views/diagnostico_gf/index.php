@@ -77,7 +77,7 @@
             <div class="numero"><?php echo (int) $totalLideresNoGrupo; ?></div>
         </div>
         <div class="card-resumo card-resumo-tooltip card-resumo-violeta-suave" tabindex="0">
-            <div class="card-resumo-label">Filhos</div>
+            <div class="card-resumo-label">Filhos (de 0 a 9 anos)</div>
             <div class="numero"><?php echo count($filhosDoGrupo); ?></div>
             <?php if (!empty($filhosDoGrupo)): ?>
                 <div class="card-tooltip">

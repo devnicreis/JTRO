@@ -105,7 +105,7 @@ $dataExtenso = $ts ? date('j', $ts) . ' de ' . $meses[date('n',$ts)-1] . ' de ' 
 </div>
 
 <!-- Estilos do Quill para renderização -->
-<link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+<link href="/assets/vendor/quill/quill.snow.css" rel="stylesheet">
 
 <style>
 @media print {

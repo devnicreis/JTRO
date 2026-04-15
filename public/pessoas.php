@@ -217,7 +217,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $participouRetiroIntegracao = (int) ($_POST['participou_retiro_integracao'] ?? -1);
     $dadosResponsaveis = resolverDadosResponsaveisPessoa($repo, $_POST);
     $dadosConjuge = resolverDadosConjugePessoa($repo, $_POST);
-    $menorDeIdade = $idade !== null && $idade <= 18;
+    $menorDeIdade = $idade !== null && $idade < 18;
 
     $_POST = preencherContatoEnderecoDeMenorComResponsavel($_POST, $dadosResponsaveis['responsavel_1'] ?? null, $menorDeIdade);
 

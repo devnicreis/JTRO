@@ -4,6 +4,13 @@
 <?php
 $estadosCivis = opcoesEstadoCivil();
 $generos = opcoesGenero();
+$idadeMinLimite = 0;
+$idadeMaxLimite = 120;
+$idadeMinAtual = ($filtros['idade_min'] ?? '') !== '' ? max($idadeMinLimite, (int) $filtros['idade_min']) : $idadeMinLimite;
+$idadeMaxAtual = ($filtros['idade_max'] ?? '') !== '' ? min($idadeMaxLimite, (int) $filtros['idade_max']) : $idadeMaxLimite;
+if ($idadeMinAtual > $idadeMaxAtual) {
+    [$idadeMinAtual, $idadeMaxAtual] = [$idadeMaxAtual, $idadeMinAtual];
+}
 ?>
 
 <div class="page-header">
@@ -26,6 +33,7 @@ $generos = opcoesGenero();
                 <th>E-mail</th>
                 <th>Perfil</th>
                 <th>Data de nasc.</th>
+                <th>Idade</th>
                 <th>Estado civil</th>
                 <th>G&ecirc;nero</th>
                 <th>C&ocirc;njuge</th>
@@ -53,6 +61,17 @@ $generos = opcoesGenero();
                     </select>
                 </th>
                 <th><input class="tabela-filtro-campo" form="filtrosPessoasTabela" type="date" name="data_nascimento" value="<?php echo htmlspecialchars($filtros['data_nascimento'] ?? ''); ?>"></th>
+                <th>
+                    <div class="idade-range-wrap" data-min="<?php echo (int) $idadeMinLimite; ?>" data-max="<?php echo (int) $idadeMaxLimite; ?>">
+                        <input type="hidden" form="filtrosPessoasTabela" name="idade_min" id="idade_min" value="<?php echo htmlspecialchars((string) ($filtros['idade_min'] ?? '')); ?>">
+                        <input type="hidden" form="filtrosPessoasTabela" name="idade_max" id="idade_max" value="<?php echo htmlspecialchars((string) ($filtros['idade_max'] ?? '')); ?>">
+                        <div class="idade-range-track"></div>
+                        <div class="idade-range-progress" id="idade-range-progress"></div>
+                        <input type="range" id="idade-min-range" min="<?php echo (int) $idadeMinLimite; ?>" max="<?php echo (int) $idadeMaxLimite; ?>" value="<?php echo (int) $idadeMinAtual; ?>">
+                        <input type="range" id="idade-max-range" min="<?php echo (int) $idadeMinLimite; ?>" max="<?php echo (int) $idadeMaxLimite; ?>" value="<?php echo (int) $idadeMaxAtual; ?>">
+                    </div>
+                    <div class="idade-range-valores" id="idade-range-valores"></div>
+                </th>
                 <th>
                     <select class="tabela-filtro-campo" form="filtrosPessoasTabela" name="estado_civil">
                         <option value="">Todos</option>
@@ -139,7 +158,7 @@ $generos = opcoesGenero();
         <tbody>
             <?php if (count($pessoas) === 0): ?>
                 <tr>
-                    <td colspan="19" class="tabela-vazia">Nenhuma pessoa encontrada para o filtro atual.</td>
+                    <td colspan="20" class="tabela-vazia">Nenhuma pessoa encontrada para o filtro atual.</td>
                 </tr>
             <?php endif; ?>
             <?php foreach ($pessoas as $pessoa): ?>
@@ -149,13 +168,9 @@ $generos = opcoesGenero();
                     <td><?php echo htmlspecialchars($pessoa['cpf']); ?></td>
                     <td><?php echo htmlspecialchars($pessoa['email'] ?: '—'); ?></td>
                     <td><?php echo htmlspecialchars(ucfirst((string) $pessoa['cargo'])); ?></td>
-                    <td>
-                        <?php echo htmlspecialchars(formatarDataBr($pessoa['data_nascimento'] ?? null)); ?>
-                        <?php $idade = calcularIdade($pessoa['data_nascimento'] ?? null); ?>
-                        <?php if ($idade !== null): ?>
-                            <div class="notif-detalhe"><?php echo $idade; ?> anos</div>
-                        <?php endif; ?>
-                    </td>
+                    <?php $idade = calcularIdade($pessoa['data_nascimento'] ?? null); ?>
+                    <td><?php echo htmlspecialchars(formatarDataBr($pessoa['data_nascimento'] ?? null)); ?></td>
+                    <td><?php echo $idade !== null ? htmlspecialchars((string) $idade . ' anos') : '&mdash;'; ?></td>
                     <td><?php echo htmlspecialchars(labelEstadoCivil($pessoa['estado_civil'] ?? null)); ?></td>
                     <td><?php echo htmlspecialchars(labelGenero($pessoa['genero'] ?? null)); ?></td>
                     <td><?php echo htmlspecialchars($pessoa['nome_conjuge'] ?: '—'); ?></td>
@@ -207,5 +222,61 @@ $generos = opcoesGenero();
         </tbody>
     </table>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const wrap = document.querySelector('.idade-range-wrap');
+    if (!wrap) return;
+
+    const minRange = document.getElementById('idade-min-range');
+    const maxRange = document.getElementById('idade-max-range');
+    const minInput = document.getElementById('idade_min');
+    const maxInput = document.getElementById('idade_max');
+    const progress = document.getElementById('idade-range-progress');
+    const label = document.getElementById('idade-range-valores');
+
+    if (!minRange || !maxRange || !minInput || !maxInput || !progress || !label) {
+        return;
+    }
+
+    const hardMin = parseInt(wrap.dataset.min || '0', 10);
+    const hardMax = parseInt(wrap.dataset.max || '120', 10);
+
+    function atualizarRangeIdade() {
+        let min = parseInt(minRange.value, 10);
+        let max = parseInt(maxRange.value, 10);
+
+        if (min > max) {
+            const troca = min;
+            min = max;
+            max = troca;
+            minRange.value = String(min);
+            maxRange.value = String(max);
+        }
+
+        const total = hardMax - hardMin;
+        const inicio = ((min - hardMin) / total) * 100;
+        const fim = ((max - hardMin) / total) * 100;
+
+        progress.style.left = inicio + '%';
+        progress.style.width = (fim - inicio) + '%';
+
+        if (min === hardMin && max === hardMax) {
+            minInput.value = '';
+            maxInput.value = '';
+            label.textContent = 'Todas';
+            return;
+        }
+
+        minInput.value = String(min);
+        maxInput.value = String(max);
+        label.textContent = min + ' a ' + max + ' anos';
+    }
+
+    minRange.addEventListener('input', atualizarRangeIdade);
+    maxRange.addEventListener('input', atualizarRangeIdade);
+    atualizarRangeIdade();
+});
+</script>
 
 <?php require_once __DIR__ . '/../layouts/footer.php'; ?>

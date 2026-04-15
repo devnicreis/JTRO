@@ -444,7 +444,7 @@ textarea { min-height: 100px; resize: vertical; }
 
 /* Botão global — exclui componentes especiais */
 button[type="submit"],
-button:not(.nav-item):not(.nav-item-trigger):not(.notif-btn):not(.notif-tab):not(.notif-acao-btn):not(.notif-marcar-todos) {
+button:not(.nav-item):not(.nav-item-trigger):not(.notif-btn):not(.notif-tab):not(.notif-acao-btn):not(.notif-marcar-todos):not([class^="ql-"]):not([class*=" ql-"]) {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -462,7 +462,7 @@ button:not(.nav-item):not(.nav-item-trigger):not(.notif-btn):not(.notif-tab):not
 }
 
 button[type="submit"]:hover,
-button:not(.nav-item):not(.nav-item-trigger):not(.notif-btn):not(.notif-tab):not(.notif-acao-btn):not(.notif-marcar-todos):hover { opacity: 0.88; }
+button:not(.nav-item):not(.nav-item-trigger):not(.notif-btn):not(.notif-tab):not(.notif-acao-btn):not(.notif-marcar-todos):not([class^="ql-"]):not([class*=" ql-"]):hover { opacity: 0.88; }
 
 .form-acao { margin: 0; padding: 0; border: none; background: transparent; display: inline; }
 
@@ -737,6 +737,75 @@ tbody tr:hover td { background: var(--color-bg); }
     width: 100%;
     justify-content: center;
 }
+.idade-range-wrap {
+    position: relative;
+    width: 100%;
+    min-width: 220px;
+    height: 30px;
+    margin-top: 4px;
+}
+.idade-range-track,
+.idade-range-progress {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    height: 6px;
+    border-radius: 999px;
+}
+.idade-range-track {
+    background: var(--color-border);
+}
+.idade-range-progress {
+    background: var(--color-blue-mid);
+    left: 0;
+    width: 100%;
+}
+.idade-range-wrap input[type="range"] {
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 100%;
+    margin: 0;
+    pointer-events: none;
+    background: transparent;
+    -webkit-appearance: none;
+    appearance: none;
+}
+.idade-range-wrap input[type="range"]::-webkit-slider-thumb {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 1px solid #fff;
+    background: var(--color-blue);
+    box-shadow: var(--shadow-sm);
+    pointer-events: auto;
+    -webkit-appearance: none;
+    appearance: none;
+    cursor: pointer;
+}
+.idade-range-wrap input[type="range"]::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 1px solid #fff;
+    background: var(--color-blue);
+    box-shadow: var(--shadow-sm);
+    pointer-events: auto;
+    cursor: pointer;
+}
+.idade-range-wrap input[type="range"]::-webkit-slider-runnable-track,
+.idade-range-wrap input[type="range"]::-moz-range-track {
+    background: transparent;
+}
+.idade-range-valores {
+    margin-top: 7px;
+    font-size: 12px;
+    color: var(--color-text-muted);
+    line-height: 1.2;
+}
 .tabela-filtro-input-curto { min-width: 72px; }
 .tabela-filtro-select-curto { min-width: 96px; }
 .tabela-tooltip {
@@ -871,7 +940,7 @@ tbody tr:hover td { background: var(--color-bg); }
 .tabela-pessoas th:nth-child(4), .tabela-pessoas td:nth-child(4) { width: 220px; }
 .tabela-pessoas th:nth-child(5), .tabela-pessoas td:nth-child(5) { width: 120px; }
 .tabela-pessoas th:nth-child(6), .tabela-pessoas td:nth-child(6) { width: 150px; }
-.tabela-pessoas th:nth-child(7), .tabela-pessoas td:nth-child(7) { width: 170px; }
+.tabela-pessoas th:nth-child(7), .tabela-pessoas td:nth-child(7) { width: 260px; min-width: 260px; }
 .tabela-pessoas th:nth-child(8), .tabela-pessoas td:nth-child(8) { width: 340px; }
 .tabela-pessoas th:nth-child(9), .tabela-pessoas td:nth-child(9) { width: 180px; }
 .tabela-pessoas th:nth-child(10), .tabela-pessoas td:nth-child(10) { width: 150px; }
@@ -1586,6 +1655,50 @@ tbody tr:hover td { background: var(--color-bg); }
     flex-direction: column;
     gap: 6px;
 }
+.cantina-mes-separador td {
+    background: var(--color-bg);
+    border-top: 1px solid var(--color-border);
+    border-bottom: 1px solid var(--color-border);
+    padding-top: 9px !important;
+    padding-bottom: 9px !important;
+}
+.cantina-mes-separador-conteudo {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+}
+.cantina-mes-separador-titulo {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+.cantina-mes-toggle {
+    min-height: 24px !important;
+    width: 24px;
+    padding: 0 !important;
+    border-radius: 999px !important;
+    border: 1px solid var(--color-border) !important;
+    background: #fff !important;
+    color: var(--color-text-secondary) !important;
+    font-size: 12px !important;
+}
+.cantina-mes-toggle:hover {
+    background: var(--color-blue-light) !important;
+    border-color: var(--color-blue-mid) !important;
+    color: var(--color-blue) !important;
+}
+.cantina-mes-linha-oculta {
+    display: none;
+}
+.cantina-linha-mes-atual td {
+    background: #fcfbf8;
+}
 
 /* ============================================================
    Tela de Login
@@ -2152,27 +2265,11 @@ tbody tr:hover td { background: var(--color-bg); }
     color: var(--color-text-secondary);
     line-height: 1.8;
 }
- 
-/* ── Reset botões Quill (evita herdar estilos globais de button) ── */
-.ql-toolbar button,
-.ql-toolbar button:hover,
-.ql-toolbar button.ql-active,
-.ql-toolbar button:focus {
-    background: transparent !important;
-    color: inherit !important;
-    border: none !important;
-    padding: 3px 5px !important;
-    min-height: unset !important;
-    width: 28px !important;
-    height: 28px !important;
-    display: inline-flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    opacity: 1 !important;
+#editor-fallback {
+    border-radius: var(--radius-md);
 }
- 
-.ql-toolbar { border-radius: var(--radius-md) var(--radius-md) 0 0 !important; }
-.ql-container { border-radius: 0 0 var(--radius-md) var(--radius-md) !important; font-family: 'Plus Jakarta Sans', sans-serif !important; font-size: 14px !important; }
+.ql-toolbar.ql-snow { border-radius: var(--radius-md) var(--radius-md) 0 0; }
+.ql-container.ql-snow { border-radius: 0 0 var(--radius-md) var(--radius-md); font-family: 'Plus Jakarta Sans', sans-serif; font-size: 14px; }
 .ql-editor { min-height: 200px; }
 
 /* ============================================================

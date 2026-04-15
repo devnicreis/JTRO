@@ -222,7 +222,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $confirmarSenha = $_POST['confirmar_senha'] ?? '';
     $dadosResponsaveis = resolverDadosResponsaveisPessoaEdicao($repo, $_POST, $id);
     $dadosConjuge = resolverDadosConjugePessoaEdicao($repo, $_POST, $id);
-    $menorDeIdade = $idade !== null && $idade <= 18;
+    $menorDeIdade = $idade !== null && $idade < 18;
 
     $_POST = preencherContatoEnderecoDeMenorComResponsavelEdicao($_POST, $dadosResponsaveis['responsavel_1'] ?? null, $menorDeIdade);
 

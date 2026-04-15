@@ -2,8 +2,16 @@
 
 class CartaContentSanitizer
 {
-    private const ALLOWED_TAGS = ['p', 'br', 'strong', 'em', 'u', 'ol', 'ul', 'li', 'a'];
+    private const ALLOWED_TAGS = ['p', 'h1', 'h2', 'br', 'strong', 'em', 'u', 's', 'ol', 'ul', 'li', 'a', 'span'];
     private const REMOVE_WITH_CONTENT = ['script', 'style', 'iframe', 'object', 'embed', 'svg', 'math'];
+    private const ALLOWED_SPAN_CLASSES = [
+        'ql-size-small',
+        'ql-size-large',
+        'ql-size-huge',
+        'ql-font-serif',
+        'ql-font-monospace',
+    ];
+    private const INLINE_TAGS = ['br', 'strong', 'em', 'u', 's', 'a', 'span'];
 
     public static function sanitizeHtml(?string $html): string
     {
@@ -17,7 +25,7 @@ class CartaContentSanitizer
         }
 
         if (!class_exists('DOMDocument')) {
-            return trim(strip_tags($html, '<p><br><strong><em><u><ol><ul><li><a>'));
+            return trim(strip_tags($html, '<p><h1><h2><br><strong><em><u><s><ol><ul><li><a><span>'));
         }
 
         $dom = new DOMDocument('1.0', 'UTF-8');
@@ -89,6 +97,11 @@ class CartaContentSanitizer
             self::sanitizeNode($child);
 
             if (!in_array($tagName, self::ALLOWED_TAGS, true)) {
+                if ($tagName === 'div' && self::canConvertDivToParagraph($child)) {
+                    self::replaceElementTag($child, 'p');
+                    continue;
+                }
+
                 self::unwrapElement($child);
                 continue;
             }
@@ -123,6 +136,18 @@ class CartaContentSanitizer
                 continue;
             }
 
+            if ($tagName === 'span' && strtolower($attributeName) === 'class') {
+                $classes = preg_split('/\s+/', trim($attributeValue)) ?: [];
+                $classesPermitidas = array_values(array_filter($classes, static function (string $class): bool {
+                    return in_array($class, self::ALLOWED_SPAN_CLASSES, true);
+                }));
+
+                if ($classesPermitidas !== []) {
+                    $element->setAttribute('class', implode(' ', $classesPermitidas));
+                    continue;
+                }
+            }
+
             $element->removeAttribute($attributeName);
         }
     }
@@ -139,6 +164,37 @@ class CartaContentSanitizer
         }
 
         $parent->removeChild($element);
+    }
+
+    private static function canConvertDivToParagraph(DOMElement $element): bool
+    {
+        foreach ($element->childNodes as $child) {
+            if (!$child instanceof DOMElement) {
+                continue;
+            }
+
+            if (!in_array(strtolower($child->tagName), self::INLINE_TAGS, true)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static function replaceElementTag(DOMElement $element, string $tagName): void
+    {
+        $parent = $element->parentNode;
+        $document = $element->ownerDocument;
+        if ($parent === null || !$document instanceof DOMDocument) {
+            return;
+        }
+
+        $replacement = $document->createElement($tagName);
+        while ($element->firstChild !== null) {
+            $replacement->appendChild($element->firstChild);
+        }
+
+        $parent->replaceChild($replacement, $element);
     }
 
     private static function isPlainText(string $content): bool

@@ -377,7 +377,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function atualizarResponsaveis() {
         if (!blocoResponsaveis || !responsavel1Cpf || !responsavel1Nome) return;
         const idade = idadeAtual();
-        const menorDeIdade = idade !== null && idade <= 18;
+        const menorDeIdade = idade !== null && idade < 18;
 
         blocoResponsaveis.style.display = menorDeIdade ? '' : 'none';
         responsavel1Cpf.required = menorDeIdade;

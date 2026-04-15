@@ -95,6 +95,11 @@ class PessoaRepository
         $grupoFamiliarFiltro = ($filtros['grupo_familiar_id'] ?? '') !== ''
             ? (int) $filtros['grupo_familiar_id']
             : null;
+        $idadeMinFiltro = ($filtros['idade_min'] ?? '') !== '' ? max(0, (int) $filtros['idade_min']) : null;
+        $idadeMaxFiltro = ($filtros['idade_max'] ?? '') !== '' ? max(0, (int) $filtros['idade_max']) : null;
+        if ($idadeMinFiltro !== null && $idadeMaxFiltro !== null && $idadeMinFiltro > $idadeMaxFiltro) {
+            [$idadeMinFiltro, $idadeMaxFiltro] = [$idadeMaxFiltro, $idadeMinFiltro];
+        }
         $sql = "
             SELECT
                 p.*,
@@ -239,6 +244,31 @@ class PessoaRepository
         $stmt->execute($params);
 
         $linhas = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        if ($idadeMinFiltro !== null || $idadeMaxFiltro !== null) {
+            $hoje = new DateTime('today');
+            $linhas = array_values(array_filter($linhas, static function (array $linha) use ($idadeMinFiltro, $idadeMaxFiltro, $hoje): bool {
+                $dataNascimento = trim((string) ($linha['data_nascimento'] ?? ''));
+                if ($dataNascimento === '') {
+                    return false;
+                }
+
+                $nascimento = DateTime::createFromFormat('Y-m-d', $dataNascimento);
+                if (!$nascimento || $nascimento->format('Y-m-d') !== $dataNascimento) {
+                    return false;
+                }
+
+                $idade = $nascimento->diff($hoje)->y;
+                if ($idadeMinFiltro !== null && $idade < $idadeMinFiltro) {
+                    return false;
+                }
+                if ($idadeMaxFiltro !== null && $idade > $idadeMaxFiltro) {
+                    return false;
+                }
+
+                return true;
+            }));
+        }
 
         if ($grupoFamiliarFiltro !== null) {
             $linhas = array_values(array_filter($linhas, static function (array $linha) use ($grupoFamiliarFiltro): bool {
