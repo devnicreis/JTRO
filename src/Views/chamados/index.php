@@ -19,7 +19,7 @@ $telasSuporteChamado = opcoesTelasSuporte();
     <div class="mensagem">
         <?php echo htmlspecialchars($mensagem); ?>
         <?php if ($numeroChamadoCriado !== null): ?>
-            <div class="notif-detalhe" style="margin-top:6px;">O número de sua solicitação é: <?php echo htmlspecialchars($numeroChamadoCriado); ?>.</div>
+            <div class="notif-detalhe" style="margin-top:6px;">O número do chamado é: <?php echo htmlspecialchars($numeroChamadoCriado); ?>.</div>
             <div class="notif-detalhe"><a href="/chamados.php">Consultar meus chamados</a> / <a href="/index.php">Voltar à tela inicial</a></div>
         <?php endif; ?>
     </div>
@@ -30,6 +30,7 @@ $telasSuporteChamado = opcoesTelasSuporte();
 <?php endif; ?>
 
 <?php if (!$isAdmin): ?>
+    <?php if ($previewChamado === null): ?>
     <div class="presencas-card">
         <h2>Abrir um chamado</h2>
 
@@ -162,9 +163,8 @@ $telasSuporteChamado = opcoesTelasSuporte();
             <button type="submit" name="acao" value="pre_visualizar">Próximo Passo</button>
         </form>
     </div>
-
-    <?php if ($previewChamado !== null): ?>
-        <div class="presencas-card">
+    <?php else: ?>
+    <div class="presencas-card">
             <h2>Resumo de sua solicitação</h2>
 
             <div class="campo">
@@ -196,6 +196,7 @@ $telasSuporteChamado = opcoesTelasSuporte();
                     <input type="hidden" name="<?php echo htmlspecialchars($chave); ?>" value="<?php echo htmlspecialchars((string) $valor); ?>">
                 <?php endforeach; ?>
                 <button type="submit" name="acao" value="abrir_chamado">Fazer solicitação</button>
+                <button type="submit" name="acao" value="voltar_edicao" class="botao-link botao-secundario">Voltar e editar</button>
                 <a class="botao-link botao-secundario" href="/chamados.php">Cancelar solicitação</a>
             </form>
         </div>
@@ -397,3 +398,5 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
+
+<?php require __DIR__ . '/../layouts/footer.php'; ?>

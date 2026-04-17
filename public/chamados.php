@@ -164,6 +164,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $isAdmin && ($_POST['acao'] ?? '') 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$isAdmin) {
     $acao = $_POST['acao'] ?? '';
 
+    if ($acao === 'voltar_edicao') {
+        $previewChamado = null;
+    }
+
     if (in_array($acao, ['pre_visualizar', 'abrir_chamado'], true)) {
         try {
             $validacao = validarChamadoLider($formChamado, $pessoasPermitidas, $gruposPermitidos);
@@ -187,7 +191,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$isAdmin) {
                     'resumo_solicitacao' => $previewChamado['resumo_solicitacao'],
                 ]);
 
-                $mensagem = 'Sua solicitação foi encaminhada a ' . $previewChamado['destino_label'] . ' com sucesso!';
+                $mensagem = 'Sua solicitação foi encaminhada ao setor ' . $previewChamado['destino_label'] . ' com sucesso.';
                 $auditoria->registrar('criar', 'chamado', null, 'Chamado ' . $numeroChamadoCriado . ' aberto.', $usuarioId, null, null);
                 $previewChamado = null;
                 $formChamado = carregarDadosChamado([]);
