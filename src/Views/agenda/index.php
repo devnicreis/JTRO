@@ -33,7 +33,7 @@
     <div class="agenda-sidebar-cal">
 
         <!-- Mini calendário -->
-        <div class="agenda-mini-cal presencas-card" style="padding:14px 16px; margin-bottom:16px;">
+        <div class="agenda-mini-cal presencas-card agenda-card-cal" style="padding:14px 16px; margin-bottom:16px;">
             <?php
             $nomeMeses = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
             $diasSemana = ['D','S','T','Q','Q','S','S'];
@@ -82,7 +82,7 @@
         </div>
 
         <!-- Filtro por departamento -->
-        <div class="presencas-card" style="padding:14px 16px;">
+        <div class="presencas-card agenda-card-filtros" style="padding:14px 16px;">
             <div style="font-size:11px; font-weight:500; color:var(--color-text-muted); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:10px;">Departamentos</div>
             <?php
             $todos = array_merge(['Todos'], AgendaRepository::DEPARTAMENTOS);

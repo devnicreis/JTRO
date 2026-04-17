@@ -5,7 +5,14 @@
     <meta charset="UTF-8">
     <title><?php echo htmlspecialchars($pageTitle ?? 'JTRO'); ?></title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#185FA5">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="JTRO">
     <?php echo Auth::csrfMetaTag(); ?>
+    <link rel="manifest" href="/manifest.webmanifest">
+    <link rel="icon" type="image/png" sizes="192x192" href="/assets/icons/pwa-192.png">
+    <link rel="apple-touch-icon" href="/assets/icons/pwa-192.png">
     <link rel="stylesheet" href="/assets/css/app.css">
 </head>
 
@@ -139,8 +146,15 @@
     $agendaPaginas = ['agenda', 'agenda_criar', 'agenda_editar'];
     ?>
 
+    <button class="mobile-nav-toggle" id="mobileNavToggle" type="button" aria-label="Abrir menu" aria-controls="jtroSidebar" aria-expanded="false">
+        <span></span>
+        <span></span>
+        <span></span>
+    </button>
+    <div class="mobile-nav-overlay" id="mobileNavOverlay" hidden></div>
+
     <div class="jtro-layout">
-        <aside class="jtro-sidebar">
+        <aside class="jtro-sidebar" id="jtroSidebar">
             <div class="sidebar-logo">
                 <div class="sidebar-logo-topo">
                     <img src="/assets/icons/logo-com-nome-lado.png" alt="Logo JTRO" class="sidebar-logo-img" onerror="this.style.display='none'">

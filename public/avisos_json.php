@@ -82,6 +82,7 @@ foreach ($avisoRepo->listarAvisosSistema($usuarioId) as $avisoSistema) {
         'texto'     => $avisoSistema['titulo'],
         'detalhe'   => $avisoSistema['mensagem'],
         'link'      => $avisoSistema['link'] ?? null,
+        'cta_label' => !empty($avisoSistema['link']) ? 'ABRIR DETALHES' : null,
         'lido'      => isset($chavesLidasMap[$avisoSistema['chave_aviso']]),
         'timestamp' => $timestamp,
     ];
@@ -99,6 +100,7 @@ if (!$isAdmin) {
             'texto'     => 'Nova Carta Semanal disponível',
             'detalhe'   => date('d/m/Y', $ts),
             'link'      => '/carta_visualizar.php?id=' . (int)$carta['id'],
+            'cta_label' => 'ACESSAR CARTA COMPLETA',
             'lido'      => isset($chavesLidasMap[$chave]),
             'timestamp' => $ts,
         ];

@@ -4,7 +4,14 @@
     <meta charset="UTF-8">
     <title>Redefinir senha - JTRO</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#185FA5">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="JTRO">
     <?php echo Auth::csrfMetaTag(); ?>
+    <link rel="manifest" href="/manifest.webmanifest">
+    <link rel="icon" type="image/png" sizes="192x192" href="/assets/icons/pwa-192.png">
+    <link rel="apple-touch-icon" href="/assets/icons/pwa-192.png">
     <link rel="stylesheet" href="/assets/css/app.css">
 </head>
 <body>

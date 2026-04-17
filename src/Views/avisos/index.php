@@ -32,7 +32,7 @@
                                 <div class="aviso-item-titulo"><?php echo htmlspecialchars($carta['pregacao_titulo'] ?? 'Carta do Pastor'); ?></div>
                                 <div class="aviso-item-detalhe">
                                     <span><strong>Data:</strong> <?php echo htmlspecialchars(formatarDataBr($carta['data_carta'])); ?></span>
-                                    <span><a href="/carta_visualizar.php?id=<?php echo (int)$carta['id']; ?>" style="color:var(--color-blue); font-size:12px;">Ler carta completa →</a></span>
+                                    <span><a href="/carta_visualizar.php?id=<?php echo (int)$carta['id']; ?>" class="aviso-link-acao">ACESSAR CARTA COMPLETA</a></span>
                                 </div>
 
                             <?php elseif ($aviso['tipo'] === 'grupo_alarmante'): ?>
@@ -119,6 +119,7 @@
                                 <div class="aviso-item-titulo aviso-titulo-lido"><?php echo htmlspecialchars($carta['pregacao_titulo'] ?? 'Carta do Pastor'); ?></div>
                                 <div class="aviso-item-detalhe">
                                     <span>Carta Semanal · <?php echo htmlspecialchars(formatarDataBr($carta['data_carta'])); ?></span>
+                                    <span><a href="/carta_visualizar.php?id=<?php echo (int)$carta['id']; ?>" class="aviso-link-acao">ACESSAR CARTA COMPLETA</a></span>
                                 </div>
 
                             <?php elseif ($aviso['tipo'] === 'grupo_alarmante'): ?>
@@ -224,6 +225,7 @@ function registrarBotoes(container) {
 
                             const titulo  = item.querySelector('.aviso-item-titulo')?.textContent.trim() ?? '';
                             const detalhe = item.querySelector('.aviso-item-detalhe span')?.textContent.trim() ?? '';
+                            const acaoLink = item.querySelector('.aviso-link-acao')?.outerHTML ?? '';
 
                             const novoItem = document.createElement('div');
                             novoItem.className      = 'aviso-item aviso-lido';
@@ -232,7 +234,7 @@ function registrarBotoes(container) {
                             novoItem.style.transform = 'translateX(-8px)';
                             novoItem.innerHTML =
                                 '<div class="aviso-item-titulo aviso-titulo-lido">' + esc(titulo) + '</div>' +
-                                '<div class="aviso-item-detalhe"><span>' + esc(detalhe) + '</span></div>' +
+                                '<div class="aviso-item-detalhe"><span>' + esc(detalhe) + '</span>' + acaoLink + '</div>' +
                                 '<button class="aviso-btn-acao aviso-btn-desfazer" ' +
                                     'data-chave="' + esc(chave) + '" data-acao="marcar_nao_lido" type="button">' +
                                     'Marcar como não lida</button>';

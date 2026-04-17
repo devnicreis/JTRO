@@ -46,6 +46,66 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // ── Sino de notificações ───────────────────────────────────
+    // Menu lateral mobile (off-canvas)
+    const mobileNavToggle = document.getElementById('mobileNavToggle');
+    const mobileNavOverlay = document.getElementById('mobileNavOverlay');
+    const mobileSidebar = document.getElementById('jtroSidebar');
+
+    if (mobileNavToggle && mobileNavOverlay && mobileSidebar) {
+        mobileNavOverlay.hidden = true;
+        const closeMobileNav = function () {
+            document.body.classList.remove('mobile-nav-open');
+            mobileNavToggle.setAttribute('aria-expanded', 'false');
+            mobileNavOverlay.hidden = true;
+        };
+
+        const openMobileNav = function () {
+            document.body.classList.add('mobile-nav-open');
+            mobileNavToggle.setAttribute('aria-expanded', 'true');
+            mobileNavOverlay.hidden = false;
+        };
+
+        mobileNavToggle.addEventListener('click', function () {
+            if (document.body.classList.contains('mobile-nav-open')) {
+                closeMobileNav();
+                return;
+            }
+
+            openMobileNav();
+        });
+
+        mobileNavOverlay.addEventListener('click', closeMobileNav);
+
+        mobileSidebar.querySelectorAll('a').forEach(function (link) {
+            link.addEventListener('click', function () {
+                if (window.innerWidth <= 900) {
+                    closeMobileNav();
+                }
+            });
+        });
+
+        document.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape') {
+                closeMobileNav();
+            }
+        });
+
+        window.addEventListener('resize', function () {
+            if (window.innerWidth > 900) {
+                closeMobileNav();
+            }
+        });
+    }
+
+    // Registro do Service Worker (PWA)
+    if ('serviceWorker' in navigator && window.isSecureContext) {
+        window.addEventListener('load', function () {
+            navigator.serviceWorker.register('/sw.js').catch(function (error) {
+                console.warn('[JTRO] Falha ao registrar Service Worker:', error);
+            });
+        });
+    }
+
     const notifWrap       = document.getElementById('notifWrap');
     const notifBtn        = document.getElementById('notifBtn');
     const notifDropdown   = document.getElementById('notifDropdown');
@@ -175,12 +235,15 @@ document.addEventListener('DOMContentLoaded', function () {
             const tempo   = aviso.timestamp ? '<span class="notif-tempo">' + esc(tempoRelativo(aviso.timestamp)) + '</span>' : '';
             const detalhe = aviso.detalhe   ? '<div class="notif-detalhe">' + esc(aviso.detalhe) + '</div>' : '';
             const motivo  = aviso.motivo    ? '<div class="notif-motivo">'  + esc(aviso.motivo)  + '</div>' : '';
+            const linkCta = aviso.link
+                ? '<a class="notif-link-btn" href="' + esc(aviso.link) + '">' + esc(aviso.cta_label || 'ABRIR DETALHES') + '</a>'
+                : '';
 
             return '<div class="notif-item" data-chave="' + esc(aviso.chave) + '">' +
                 '<div class="notif-dot notif-dot-' + esc(aviso.tipo) + '"></div>' +
                 '<div class="notif-item-corpo">' +
                 '<div class="notif-texto">' + esc(aviso.texto) + '</div>' +
-                detalhe + motivo + tempo +
+                detalhe + motivo + tempo + linkCta +
                 '<button class="notif-acao-btn" data-chave="' + esc(aviso.chave) + '" data-lido="' + aviso.lido + '" type="button">' +
                 (aviso.lido ? 'Marcar como não lido' : 'Marcar como lido') +
                 '</button>' +

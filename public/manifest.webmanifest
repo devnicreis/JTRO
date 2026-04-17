@@ -1,0 +1,27 @@
+{
+  "id": "/",
+  "name": "JTRO - The Relational Organizer",
+  "short_name": "JTRO",
+  "description": "Sistema web para organizacao e acompanhamento de grupos familiares.",
+  "start_url": "/login.php",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f7f6f3",
+  "theme_color": "#185FA5",
+  "lang": "pt-BR",
+  "icons": [
+    {
+      "src": "/assets/icons/pwa-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/icons/pwa-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
