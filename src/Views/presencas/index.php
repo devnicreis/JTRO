@@ -77,7 +77,7 @@
 
             <div class="campo">
                 <label for="observacoes">Observações <span style="font-weight:400; color:var(--color-text-muted);">(opcional)</span></label>
-                <textarea id="observacoes" name="observacoes" maxlength="255" style="min-height:70px;"><?php echo htmlspecialchars($_POST['observacoes'] ?? ''); ?></textarea>
+                <textarea id="observacoes" name="observacoes" maxlength="255" class="textarea-auto-grow" style="min-height:70px;"><?php echo htmlspecialchars($_POST['observacoes'] ?? ''); ?></textarea>
             </div>
 
             <div class="tabela-wrapper" style="margin-top:4px; margin-bottom:20px;">
@@ -92,17 +92,24 @@
                     </thead>
                     <tbody>
                         <?php foreach ($membrosGrupo as $membro): ?>
-                            <?php $prefixo = 'presencas[' . $membro['id'] . ']'; ?>
+                            <?php
+                            $prefixo = 'presencas[' . $membro['id'] . ']';
+                            $statusPresenca = (string) ($_POST['presencas'][$membro['id']]['status'] ?? '');
+                            $presenteTempo = (string) ($_POST['presencas'][$membro['id']]['presente_tempo'] ?? '');
+                            if ($statusPresenca === 'presente' && $presenteTempo === '') {
+                                $presenteTempo = 'no_horario';
+                            }
+                            ?>
                             <tr class="linha-presenca" data-linha-id="<?php echo $membro['id']; ?>">
                                 <td><?php echo htmlspecialchars($membro['nome']); ?></td>
                                 <td>
                                     <div class="presenca-switch-wrap">
                                         <input type="radio" id="pres_<?php echo $membro['id']; ?>" name="<?php echo $prefixo; ?>[status]" value="presente" class="presenca-radio"
-                                               <?php echo (($_POST['presencas'][$membro['id']]['status'] ?? '') === 'presente') ? 'checked' : ''; ?>>
+                                               <?php echo $statusPresenca === 'presente' ? 'checked' : ''; ?>>
                                         <label for="pres_<?php echo $membro['id']; ?>" class="presenca-toggle presenca-toggle-pres">Presente</label>
 
                                         <input type="radio" id="aus_<?php echo $membro['id']; ?>" name="<?php echo $prefixo; ?>[status]" value="ausente" class="presenca-radio"
-                                               <?php echo (($_POST['presencas'][$membro['id']]['status'] ?? '') === 'ausente') ? 'checked' : ''; ?>>
+                                               <?php echo $statusPresenca === 'ausente' ? 'checked' : ''; ?>>
                                         <label for="aus_<?php echo $membro['id']; ?>" class="presenca-toggle presenca-toggle-aus">Ausente</label>
                                     </div>
                                 </td>
@@ -110,8 +117,8 @@
                                     <div class="campo-detalhe-presenca">
                                         <select name="<?php echo $prefixo; ?>[presente_tempo]" class="select-presente">
                                             <option value="">No horário / Atrasado</option>
-                                            <option value="no_horario" <?php echo (($_POST['presencas'][$membro['id']]['presente_tempo'] ?? '') === 'no_horario') ? 'selected' : ''; ?>>No horário</option>
-                                            <option value="atrasado" <?php echo (($_POST['presencas'][$membro['id']]['presente_tempo'] ?? '') === 'atrasado') ? 'selected' : ''; ?>>Atrasado</option>
+                                            <option value="no_horario" <?php echo $presenteTempo === 'no_horario' ? 'selected' : ''; ?>>No horário</option>
+                                            <option value="atrasado" <?php echo $presenteTempo === 'atrasado' ? 'selected' : ''; ?>>Atrasado</option>
                                         </select>
                                         <select name="<?php echo $prefixo; ?>[ausencia_tipo]" class="select-ausencia">
                                             <option value="">Justificada / Injustificada</option>
@@ -165,7 +172,7 @@
                 </div>
                 <div class="campo">
                     <label for="observacoes">Observações</label>
-                    <textarea id="observacoes" name="observacoes" maxlength="255" style="min-height:70px;"><?php echo htmlspecialchars($reuniao['observacoes'] ?? ''); ?></textarea>
+                    <textarea id="observacoes" name="observacoes" maxlength="255" class="textarea-auto-grow" style="min-height:70px;"><?php echo htmlspecialchars($reuniao['observacoes'] ?? ''); ?></textarea>
                 </div>
             </div>
 
@@ -195,17 +202,24 @@
                     </thead>
                     <tbody>
                         <?php foreach ($listaPresencas as $presenca): ?>
-                            <?php $prefixo = 'presencas[' . $presenca['id'] . ']'; ?>
+                            <?php
+                            $prefixo = 'presencas[' . $presenca['id'] . ']';
+                            $statusPresenca = (string) ($presenca['status'] ?? '');
+                            $presenteTempo = (string) ($presenca['presente_tempo'] ?? '');
+                            if ($statusPresenca === 'presente' && $presenteTempo === '') {
+                                $presenteTempo = 'no_horario';
+                            }
+                            ?>
                             <tr class="linha-presenca" data-linha-id="<?php echo $presenca['id']; ?>">
                                 <td><?php echo htmlspecialchars($presenca['nome']); ?></td>
                                 <td>
                                     <div class="presenca-switch-wrap">
                                         <input type="radio" id="pres_<?php echo $presenca['id']; ?>" name="<?php echo $prefixo; ?>[status]" value="presente" class="presenca-radio"
-                                               <?php echo ($presenca['status'] === 'presente') ? 'checked' : ''; ?>>
+                                               <?php echo $statusPresenca === 'presente' ? 'checked' : ''; ?>>
                                         <label for="pres_<?php echo $presenca['id']; ?>" class="presenca-toggle presenca-toggle-pres">Presente</label>
 
                                         <input type="radio" id="aus_<?php echo $presenca['id']; ?>" name="<?php echo $prefixo; ?>[status]" value="ausente" class="presenca-radio"
-                                               <?php echo ($presenca['status'] === 'ausente') ? 'checked' : ''; ?>>
+                                               <?php echo $statusPresenca === 'ausente' ? 'checked' : ''; ?>>
                                         <label for="aus_<?php echo $presenca['id']; ?>" class="presenca-toggle presenca-toggle-aus">Ausente</label>
                                     </div>
                                 </td>
@@ -213,8 +227,8 @@
                                     <div class="campo-detalhe-presenca">
                                         <select name="<?php echo $prefixo; ?>[presente_tempo]" class="select-presente">
                                             <option value="">No horário / Atrasado</option>
-                                            <option value="no_horario" <?php echo (($presenca['presente_tempo'] ?? '') === 'no_horario') ? 'selected' : ''; ?>>No horário</option>
-                                            <option value="atrasado" <?php echo (($presenca['presente_tempo'] ?? '') === 'atrasado') ? 'selected' : ''; ?>>Atrasado</option>
+                                            <option value="no_horario" <?php echo $presenteTempo === 'no_horario' ? 'selected' : ''; ?>>No horário</option>
+                                            <option value="atrasado" <?php echo $presenteTempo === 'atrasado' ? 'selected' : ''; ?>>Atrasado</option>
                                         </select>
                                         <select name="<?php echo $prefixo; ?>[ausencia_tipo]" class="select-ausencia">
                                             <option value="">Justificada / Injustificada</option>
@@ -293,6 +307,18 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    function ajustarAlturaTextarea(textarea) {
+        textarea.style.height = 'auto';
+        textarea.style.height = textarea.scrollHeight + 'px';
+    }
+
+    document.querySelectorAll('.textarea-auto-grow').forEach(function(textarea) {
+        ajustarAlturaTextarea(textarea);
+        textarea.addEventListener('input', function() {
+            ajustarAlturaTextarea(textarea);
+        });
+    });
+
     function sincronizarLinha(tr) {
         const status = tr.querySelector('input[type="radio"][value="presente"]:checked')
             ? 'presente'
@@ -304,6 +330,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const mostrarPresente = status === 'presente';
         const mostrarAusencia = status === 'ausente';
+
+        if (mostrarPresente && selectPresente.value === '') {
+            selectPresente.value = 'no_horario';
+        }
 
         selectPresente.style.display = mostrarPresente ? '' : 'none';
         selectAusencia.style.display = mostrarAusencia ? '' : 'none';

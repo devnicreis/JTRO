@@ -65,13 +65,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$presentes = $repo->listarPresentesDaReuniao($reuniaoId);
-$pedidosSalvos = $repo->listarPedidosOracaoPorReuniao($reuniaoId);
-
-$pedidosMap = [];
-foreach ($pedidosSalvos as $item) {
-    $pedidosMap[(int) $item['pessoa_id']] = $item['pedido'];
-}
+$camposPedidos = $repo->listarCamposPedidosOracaoDaReuniao($reuniaoId);
 
 $pageTitle = 'Pedidos de Oração - JTRO';
 

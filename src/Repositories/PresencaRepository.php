@@ -98,7 +98,10 @@ class PresencaRepository
         ];
 
         if ($status === Presenca::STATUS_PRESENTE) {
-            $presenteTempo = $presenca['presente_tempo'] ?? '';
+            $presenteTempo = (string) ($presenca['presente_tempo'] ?? '');
+            if ($presenteTempo === '') {
+                $presenteTempo = 'no_horario';
+            }
             if (!in_array($presenteTempo, ['no_horario', 'atrasado'], true)) {
                 throw new InvalidArgumentException('Informe se a presença foi no horário ou atrasada.');
             }
@@ -131,6 +134,127 @@ class PresencaRepository
         }
 
         return $resultado;
+    }
+
+    private function normalizarModoPedidosOracao(?string $modo): string
+    {
+        return $modo === 'casal_compartilhado' ? 'casal_compartilhado' : 'individual';
+    }
+
+    private function pessoaEstaEmUniaoConjugal(array $pessoa): bool
+    {
+        $estadoCivil = (string) ($pessoa['estado_civil'] ?? '');
+        return in_array($estadoCivil, ['casado', 'uniao_estavel'], true);
+    }
+
+    private function resolverConjugePresenteId(array $pessoa, array $presentesMap): ?int
+    {
+        $conjugePessoaId = (int) ($pessoa['conjuge_pessoa_id'] ?? 0);
+        if ($conjugePessoaId > 0 && isset($presentesMap[$conjugePessoaId])) {
+            return $conjugePessoaId;
+        }
+
+        $conjugeCpf = trim((string) ($pessoa['conjuge_cpf'] ?? ''));
+        if ($conjugeCpf === '') {
+            return null;
+        }
+
+        foreach ($presentesMap as $id => $presente) {
+            if ($id === (int) ($pessoa['pessoa_id'] ?? 0)) {
+                continue;
+            }
+
+            if (trim((string) ($presente['cpf'] ?? '')) === $conjugeCpf) {
+                return (int) $id;
+            }
+        }
+
+        return null;
+    }
+
+    private function podemCompartilharPedidoOracao(array $pessoaA, array $pessoaB): bool
+    {
+        if (!$this->pessoaEstaEmUniaoConjugal($pessoaA) || !$this->pessoaEstaEmUniaoConjugal($pessoaB)) {
+            return false;
+        }
+
+        $idA = (int) ($pessoaA['pessoa_id'] ?? 0);
+        $idB = (int) ($pessoaB['pessoa_id'] ?? 0);
+        if ($idA <= 0 || $idB <= 0 || $idA === $idB) {
+            return false;
+        }
+
+        $cpfA = trim((string) ($pessoaA['cpf'] ?? ''));
+        $cpfB = trim((string) ($pessoaB['cpf'] ?? ''));
+        $conjugeIdA = (int) ($pessoaA['conjuge_pessoa_id'] ?? 0);
+        $conjugeIdB = (int) ($pessoaB['conjuge_pessoa_id'] ?? 0);
+        $conjugeCpfA = trim((string) ($pessoaA['conjuge_cpf'] ?? ''));
+        $conjugeCpfB = trim((string) ($pessoaB['conjuge_cpf'] ?? ''));
+
+        return $conjugeIdA === $idB
+            || $conjugeIdB === $idA
+            || ($conjugeCpfA !== '' && $cpfB !== '' && $conjugeCpfA === $cpfB)
+            || ($conjugeCpfB !== '' && $cpfA !== '' && $conjugeCpfB === $cpfA);
+    }
+
+    private function montarCamposPedidosOracao(array $presentes, array $pedidosMap, bool $modoCompartilhado): array
+    {
+        $campos = [];
+        $presentesMap = [];
+
+        foreach ($presentes as $presente) {
+            $presentesMap[(int) $presente['pessoa_id']] = $presente;
+        }
+
+        $processados = [];
+        foreach ($presentes as $presente) {
+            $pessoaId = (int) $presente['pessoa_id'];
+            if ($pessoaId <= 0 || isset($processados[$pessoaId])) {
+                continue;
+            }
+
+            $idsCampo = [$pessoaId];
+            $rotulo = (string) $presente['nome'];
+
+            if ($modoCompartilhado && $this->pessoaEstaEmUniaoConjugal($presente)) {
+                $conjugeId = $this->resolverConjugePresenteId($presente, $presentesMap);
+                if ($conjugeId !== null && isset($presentesMap[$conjugeId])) {
+                    $conjuge = $presentesMap[$conjugeId];
+                    if (!isset($processados[$conjugeId]) && $this->podemCompartilharPedidoOracao($presente, $conjuge)) {
+                        $idsCampo = [$pessoaId, $conjugeId];
+                        sort($idsCampo, SORT_NUMERIC);
+                        $rotulo = $presentesMap[$idsCampo[0]]['nome'] . ' e ' . $presentesMap[$idsCampo[1]]['nome'];
+                    }
+                }
+            }
+
+            foreach ($idsCampo as $idCampo) {
+                $processados[$idCampo] = true;
+            }
+
+            $campoId = count($idsCampo) === 2
+                ? 'casal_' . $idsCampo[0] . '_' . $idsCampo[1]
+                : 'pessoa_' . $idsCampo[0];
+
+            $pedidoAtual = '';
+            foreach ($idsCampo as $idCampo) {
+                $valorAtual = trim((string) ($pedidosMap[$idCampo] ?? ''));
+                if ($valorAtual !== '') {
+                    $pedidoAtual = $valorAtual;
+                    break;
+                }
+            }
+
+            $campos[] = [
+                'campo_id' => $campoId,
+                'pessoa_ids' => $idsCampo,
+                'rotulo' => $rotulo,
+                'pedido' => $pedidoAtual,
+                'compartilhado_casal' => count($idsCampo) === 2,
+            ];
+        }
+
+        return $campos;
     }
 
     private function calcularMotivoAlteracao(array $grupo, string $data, string $horario, string $local): ?string
@@ -403,6 +527,7 @@ class PresencaRepository
                 r.aula_integracao_codigo,
                 r.motivo_alteracao,
                 r.observacoes,
+                r.pedidos_oracao_modo,
                 r.finalizada,
                 gf.nome AS grupo_nome,
                 gf.perfil_grupo,
@@ -1150,8 +1275,28 @@ class PresencaRepository
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    public function listarCamposPedidosOracaoDaReuniao(int $reuniaoId): array
+    {
+        $reuniao = $this->buscarReuniao($reuniaoId);
+        if (!$reuniao) {
+            return [];
+        }
+
+        $pedidosMap = [];
+        foreach ($this->listarPedidosOracaoPorReuniao($reuniaoId) as $item) {
+            $pedidosMap[(int) $item['pessoa_id']] = $item['pedido'];
+        }
+
+        $modoCompartilhado = $this->normalizarModoPedidosOracao($reuniao['pedidos_oracao_modo'] ?? null) === 'casal_compartilhado';
+        $presentes = $this->listarPresentesDaReuniao($reuniaoId);
+
+        return $this->montarCamposPedidosOracao($presentes, $pedidosMap, $modoCompartilhado);
+    }
+
     public function salvarPedidosOracao(int $reuniaoId, array $pedidos): void
     {
+        $campos = $this->listarCamposPedidosOracaoDaReuniao($reuniaoId);
+
         $this->connection->beginTransaction();
 
         try {
@@ -1164,15 +1309,47 @@ class PresencaRepository
                     updated_at = excluded.updated_at
             ");
 
-            foreach ($pedidos as $pessoaId => $pedido) {
-                $pedido = trim((string) $pedido);
-                $stmt->execute([
-                    ':reuniao_id' => $reuniaoId,
-                    ':pessoa_id' => (int) $pessoaId,
-                    ':pedido' => $pedido !== '' ? $pedido : null,
-                    ':created_at' => date('Y-m-d H:i:s'),
-                    ':updated_at' => date('Y-m-d H:i:s')
-                ]);
+            $agora = date('Y-m-d H:i:s');
+
+            foreach ($campos as $campo) {
+                $campoId = (string) ($campo['campo_id'] ?? '');
+                $pessoaIds = array_map('intval', (array) ($campo['pessoa_ids'] ?? []));
+                if ($campoId === '' || count($pessoaIds) === 0) {
+                    continue;
+                }
+
+                $pedidoCampo = null;
+                if (array_key_exists($campoId, $pedidos)) {
+                    $pedidoCampo = $pedidos[$campoId];
+                } else {
+                    foreach ($pessoaIds as $pessoaId) {
+                        $chavePessoa = (string) $pessoaId;
+                        if (array_key_exists($chavePessoa, $pedidos)) {
+                            $pedidoCampo = $pedidos[$chavePessoa];
+                            break;
+                        }
+                        if (array_key_exists($pessoaId, $pedidos)) {
+                            $pedidoCampo = $pedidos[$pessoaId];
+                            break;
+                        }
+                    }
+                }
+
+                $pedidoTexto = trim((string) ($pedidoCampo ?? ''));
+
+                foreach ($pessoaIds as $pessoaId) {
+                    if ($pessoaId <= 0) {
+                        continue;
+                    }
+
+                    $stmt->execute([
+                        ':reuniao_id' => $reuniaoId,
+                        ':pessoa_id' => $pessoaId,
+                        ':pedido' => $pedidoTexto !== '' ? $pedidoTexto : null,
+                        ':created_at' => $agora,
+                        ':updated_at' => $agora,
+                    ]);
+                }
             }
 
             $this->connection->commit();
@@ -1185,7 +1362,13 @@ class PresencaRepository
     public function listarPresentesDaReuniao(int $reuniaoId): array
     {
         $stmt = $this->connection->prepare("
-            SELECT p.pessoa_id, pe.nome
+            SELECT
+                p.pessoa_id,
+                pe.nome,
+                pe.cpf,
+                pe.estado_civil,
+                pe.conjuge_pessoa_id,
+                pe.conjuge_cpf
             FROM presencas p
             INNER JOIN pessoas pe ON pe.id = p.pessoa_id
             WHERE p.reuniao_id = :reuniao_id
@@ -1249,10 +1432,10 @@ class PresencaRepository
         try {
             $stmt = $this->connection->prepare("
                 INSERT INTO reunioes (
-                    grupo_familiar_id, data, horario, local, aula_integracao_codigo, motivo_alteracao, observacoes, finalizada
+                    grupo_familiar_id, data, horario, local, aula_integracao_codigo, motivo_alteracao, observacoes, pedidos_oracao_modo, finalizada
                 )
                 VALUES (
-                    :grupo_familiar_id, :data, :horario, :local, :aula_integracao_codigo, :motivo_alteracao, :observacoes, 1
+                    :grupo_familiar_id, :data, :horario, :local, :aula_integracao_codigo, :motivo_alteracao, :observacoes, :pedidos_oracao_modo, 1
                 )
             ");
             $stmt->bindValue(':grupo_familiar_id', $grupoId, PDO::PARAM_INT);
@@ -1262,6 +1445,7 @@ class PresencaRepository
             $stmt->bindValue(':aula_integracao_codigo', $aulaIntegracaoCodigo, $aulaIntegracaoCodigo !== null ? PDO::PARAM_STR : PDO::PARAM_NULL);
             $stmt->bindValue(':motivo_alteracao', $motivoAlteracao, $motivoAlteracao !== null ? PDO::PARAM_STR : PDO::PARAM_NULL);
             $stmt->bindValue(':observacoes', $observacoes !== '' ? $observacoes : null, $observacoes !== '' ? PDO::PARAM_STR : PDO::PARAM_NULL);
+            $stmt->bindValue(':pedidos_oracao_modo', 'casal_compartilhado');
             $stmt->execute();
 
             $reuniaoId = (int) $this->connection->lastInsertId();

@@ -83,6 +83,7 @@ CREATE TABLE IF NOT EXISTS reunioes (
     aula_integracao_codigo TEXT,
     motivo_alteracao TEXT,
     observacoes TEXT,
+    pedidos_oracao_modo TEXT NOT NULL DEFAULT 'individual',
     finalizada INTEGER NOT NULL DEFAULT 1,
     FOREIGN KEY (grupo_familiar_id) REFERENCES grupos_familiares(id)
 );

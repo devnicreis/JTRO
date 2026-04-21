@@ -51,14 +51,16 @@ class ReuniaoRepository
                     horario,
                     local,
                     motivo_alteracao,
-                    observacoes
+                    observacoes,
+                    pedidos_oracao_modo
                 ) VALUES (
                     :grupo_familiar_id,
                     :data,
                     :horario,
                     :local,
                     :motivo_alteracao,
-                    :observacoes
+                    :observacoes,
+                    :pedidos_oracao_modo
                 )
             ");
 
@@ -68,7 +70,8 @@ class ReuniaoRepository
                 ':horario' => $horario,
                 ':local' => $local,
                 ':motivo_alteracao' => $motivoAlteracao !== '' ? $motivoAlteracao : null,
-                ':observacoes' => $observacoes !== '' ? $observacoes : null
+                ':observacoes' => $observacoes !== '' ? $observacoes : null,
+                ':pedidos_oracao_modo' => 'casal_compartilhado',
             ]);
 
             $reuniaoId = (int) $this->connection->lastInsertId();

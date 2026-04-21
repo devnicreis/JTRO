@@ -78,6 +78,7 @@ class Database
         self::ensurePessoaResponsibleColumns($connection);
         self::ensurePessoaGenderAndSpouseColumns($connection);
         self::ensurePessoaEmailIsNotUnique($connection);
+        self::ensureReuniaoPedidosOracaoModeColumn($connection);
         self::$legacyMigrationsApplied = true;
     }
 
@@ -325,6 +326,20 @@ class Database
         } finally {
             $connection->exec('PRAGMA foreign_keys = ON');
         }
+    }
+
+    private static function ensureReuniaoPedidosOracaoModeColumn(PDO $connection): void
+    {
+        if (!self::tableHasColumn($connection, 'reunioes', 'pedidos_oracao_modo')) {
+            $connection->exec("ALTER TABLE reunioes ADD COLUMN pedidos_oracao_modo TEXT NOT NULL DEFAULT 'individual'");
+        }
+
+        $connection->exec("
+            UPDATE reunioes
+            SET pedidos_oracao_modo = 'individual'
+            WHERE pedidos_oracao_modo IS NULL
+               OR TRIM(pedidos_oracao_modo) = ''
+        ");
     }
 
     private static function tableHasUniqueConstraintOnColumn(PDO $connection, string $table, string $column): bool

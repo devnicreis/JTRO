@@ -154,13 +154,6 @@ class AvisoRepository
         $dataBase = $dataBase ?: date('Y-m-d');
         $prefixoHoje = 'aniversario_' . date('Ymd', strtotime($dataBase)) . '_';
 
-        $stmtLimpar = $this->connection->prepare("
-            DELETE FROM avisos_sistema
-            WHERE chave_aviso LIKE 'aniversario_%'
-              AND chave_aviso NOT LIKE :prefixo_hoje
-        ");
-        $stmtLimpar->execute([':prefixo_hoje' => $prefixoHoje . '%']);
-
         $stmt = $this->connection->prepare("
             SELECT p.id, p.nome, p.grupo_familiar_id, gf.nome AS grupo_familiar_nome
             FROM pessoas p
