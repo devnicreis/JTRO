@@ -185,6 +185,20 @@
             No Google Calendar: Configurações → selecione o calendário → Exportar. Um arquivo <strong>.ics</strong> será baixado. Faça o upload aqui.
         </p>
         <form method="POST" action="/agenda.php" enctype="multipart/form-data">
+            <?php
+            $categoriasImportacao = $departamentosImportacao ?? AgendaRepository::DEPARTAMENTOS;
+            $categoriaSelecionada = $departamentoImportacao ?? 'Pastoral';
+            ?>
+            <div class="campo">
+                <label>Categoria das agendas</label>
+                <select name="departamento" required>
+                    <?php foreach ($categoriasImportacao as $categoria): ?>
+                        <option value="<?php echo htmlspecialchars($categoria); ?>" <?php echo $categoriaSelecionada === $categoria ? 'selected' : ''; ?>>
+                            <?php echo htmlspecialchars($categoria); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
             <div class="campo">
                 <label>Arquivo .ics</label>
                 <input type="file" name="ics" accept=".ics" required>

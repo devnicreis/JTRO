@@ -179,10 +179,14 @@ class AgendaRepository
         return $this->adicionarAlias($rows);
     }
 
-    public function importarIcs(string $conteudo, int $criadoPor): array
+    public function importarIcs(string $conteudo, int $criadoPor, string $departamento = 'Pastoral'): array
     {
         $importados = 0;
         $ignorados  = 0;
+
+        if (!in_array($departamento, self::DEPARTAMENTOS, true)) {
+            throw new RuntimeException('Departamento invalido para importacao.');
+        }
 
         if (strlen($conteudo) > self::MAX_IMPORT_BYTES) {
             throw new RuntimeException('O arquivo .ics excede o limite permitido.');
@@ -230,7 +234,7 @@ class AgendaRepository
             if (!$data) { $ignorados++; continue; }
 
             try {
-                $this->criar($summary, $data, $horario ?? '00:00', $horarioFim, 'Pastoral', $descricao, $criadoPor);
+                $this->criar($summary, $data, $horario ?? '00:00', $horarioFim, $departamento, $descricao, $criadoPor);
                 $importados++;
             } catch (Exception $e) {
                 $ignorados++;

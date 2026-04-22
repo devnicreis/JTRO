@@ -9,6 +9,8 @@ const AGENDA_IMPORT_MAX_BYTES = 1048576;
 
 $repo = new AgendaRepository();
 $isAdmin = Auth::isAdmin();
+$departamentosImportacao = AgendaRepository::DEPARTAMENTOS;
+$departamentoImportacao = 'Pastoral';
 
 $mensagem = '';
 $erro = '';
@@ -27,6 +29,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $isAdmin) {
 // POST: importar ICS (admin)
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $isAdmin && isset($_FILES['ics'])) {
     $file = $_FILES['ics'];
+    $departamentoImportacao = trim((string) ($_POST['departamento'] ?? 'Pastoral'));
 
     if (($file['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_OK) {
         $nomeArquivo = strtolower((string) ($file['name'] ?? ''));
@@ -36,13 +39,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $isAdmin && isset($_FILES['ics'])) 
             $erro = 'Envie um arquivo .ics valido.';
         } elseif ($tamanhoArquivo <= 0 || $tamanhoArquivo > AGENDA_IMPORT_MAX_BYTES) {
             $erro = 'O arquivo .ics deve ter no maximo 1 MB.';
+        } elseif (!in_array($departamentoImportacao, $departamentosImportacao, true)) {
+            $erro = 'Selecione uma categoria valida para importar.';
         } else {
             $conteudo = file_get_contents((string) ($file['tmp_name'] ?? ''));
 
             if ($conteudo === false || trim($conteudo) === '') {
                 $erro = 'Nao foi possivel ler o arquivo .ics enviado.';
             } else {
-                [$imp, $ign] = $repo->importarIcs($conteudo, Auth::id());
+                [$imp, $ign] = $repo->importarIcs($conteudo, Auth::id(), $departamentoImportacao);
                 $mensagem = "Importacao concluida: {$imp} evento(s) importado(s), {$ign} ignorado(s) (duplicados ou invalidos).";
             }
         }
