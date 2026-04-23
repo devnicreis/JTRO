@@ -1,0 +1,42 @@
+<?php
+
+require_once __DIR__ . '/../src/Core/Auth.php';
+require_once __DIR__ . '/../src/Repositories/PessoaRepository.php';
+
+Auth::requireLogin();
+
+header('Content-Type: application/json; charset=utf-8');
+
+$cpf = preg_replace('/\D+/', '', (string) ($_GET['cpf'] ?? ''));
+$ignorarId = (int) ($_GET['ignorar_id'] ?? 0);
+
+if ($cpf === '' || strlen($cpf) !== 11) {
+    http_response_code(400);
+    echo json_encode(['encontrado' => false, 'erro' => 'CPF invalido.']);
+    exit;
+}
+
+$repo = new PessoaRepository();
+$responsavel = $repo->buscarResponsavelPorCpf($cpf, $ignorarId > 0 ? $ignorarId : null);
+
+if ($responsavel === null) {
+    echo json_encode(['encontrado' => false]);
+    exit;
+}
+
+echo json_encode([
+    'encontrado' => true,
+    'pessoa_id' => (int) ($responsavel['id'] ?? 0),
+    'nome' => (string) ($responsavel['nome'] ?? ''),
+    'email' => (string) ($responsavel['email'] ?? ''),
+    'telefone_fixo' => (string) ($responsavel['telefone_fixo'] ?? ''),
+    'telefone_movel' => (string) ($responsavel['telefone_movel'] ?? ''),
+    'endereco_cep' => (string) ($responsavel['endereco_cep'] ?? ''),
+    'endereco_logradouro' => (string) ($responsavel['endereco_logradouro'] ?? ''),
+    'endereco_numero' => (string) ($responsavel['endereco_numero'] ?? ''),
+    'endereco_complemento' => (string) ($responsavel['endereco_complemento'] ?? ''),
+    'endereco_bairro' => (string) ($responsavel['endereco_bairro'] ?? ''),
+    'endereco_cidade' => (string) ($responsavel['endereco_cidade'] ?? ''),
+    'endereco_uf' => (string) ($responsavel['endereco_uf'] ?? ''),
+]);
+

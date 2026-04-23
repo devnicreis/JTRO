@@ -6,7 +6,7 @@ class AgendaRepository
 {
     private PDO $connection;
     private const MAX_IMPORT_BYTES = 1048576;
-    private const MAX_IMPORT_EVENTS = 500;
+    private const MAX_IMPORT_EVENTS = 5000;
 
     public const DEPARTAMENTOS = [
         'Evento Geral',
@@ -183,6 +183,8 @@ class AgendaRepository
     {
         $importados = 0;
         $ignorados  = 0;
+        $totalOcorrencias = 0;
+        $chavesImportadasNoLote = [];
 
         if (!in_array($departamento, self::DEPARTAMENTOS, true)) {
             throw new RuntimeException('Departamento invalido para importacao.');
@@ -215,29 +217,77 @@ class AgendaRepository
                 }
             } elseif ($atual !== null && str_contains($linha, ':')) {
                 [$chave, $valor] = explode(':', $linha, 2);
-                $chave = preg_replace('/;.*/', '', $chave);
-                $atual[$chave] = $this->decodificarIcs($valor);
+                $this->adicionarPropriedadeIcs($atual, $chave, $valor);
             }
         }
 
+        $mapaExcecoesRecorrencia = $this->construirMapaExcecoesRecorrencia($eventos);
+
         foreach ($eventos as $ev) {
-            $dtstart   = $ev['DTSTART']     ?? null;
-            $dtend     = $ev['DTEND']       ?? null;
-            $summary   = $ev['SUMMARY']     ?? '(sem título)';
-            $descricao = $ev['DESCRIPTION'] ?? null;
+            $uid       = trim((string) $this->primeiroValorPropriedade($ev['UID'] ?? null));
+            $dtstart   = $this->primeiroValorPropriedade($ev['DTSTART'] ?? null);
+            $dtend     = $this->primeiroValorPropriedade($ev['DTEND'] ?? null);
+            $summary   = $this->primeiroValorPropriedade($ev['SUMMARY'] ?? '(sem titulo)');
+            $descricao = $this->primeiroValorPropriedade($ev['DESCRIPTION'] ?? null);
+            $rrule     = $this->primeiroValorPropriedade($ev['RRULE'] ?? null);
 
-            if (!$dtstart) { $ignorados++; continue; }
-
-            [$data, $horario]  = $this->parsearDt($dtstart);
-            [, $horarioFim]    = $dtend ? $this->parsearDt($dtend) : [null, null];
-
-            if (!$data) { $ignorados++; continue; }
-
-            try {
-                $this->criar($summary, $data, $horario ?? '00:00', $horarioFim, $departamento, $descricao, $criadoPor);
-                $importados++;
-            } catch (Exception $e) {
+            if (!$dtstart) {
                 $ignorados++;
+                continue;
+            }
+
+            [, $horarioFim] = $dtend ? $this->parsearDt((string) $dtend) : [null, null];
+            $ocorrencias = $this->expandirOcorrenciasEvento(
+                (string) $dtstart,
+                is_string($rrule) ? $rrule : null,
+                $ev['RDATE'] ?? null
+            );
+
+            if (empty($ocorrencias)) {
+                $ignorados++;
+                continue;
+            }
+
+            $exdates = $this->mapearExdates($ev['EXDATE'] ?? null);
+            $isEventoMestreRecorrente = is_string($rrule) && $rrule !== '';
+
+            foreach ($ocorrencias as $oc) {
+                $totalOcorrencias++;
+                if ($totalOcorrencias > self::MAX_IMPORT_EVENTS) {
+                    throw new RuntimeException('O arquivo .ics ultrapassa o limite de eventos suportados.');
+                }
+
+                $chaveOcorrencia = $this->gerarChaveOcorrencia($oc['data'], $oc['horario']);
+                if (isset($exdates[$chaveOcorrencia])) {
+                    $ignorados++;
+                    continue;
+                }
+
+                if (
+                    $isEventoMestreRecorrente &&
+                    $uid !== '' &&
+                    isset($mapaExcecoesRecorrencia[$uid][$chaveOcorrencia])
+                ) {
+                    $ignorados++;
+                    continue;
+                }
+
+                $gravou = $this->registrarEventoImportado(
+                    (string) $summary,
+                    $oc['data'],
+                    $oc['horario'],
+                    $horarioFim,
+                    $departamento,
+                    is_string($descricao) ? $descricao : null,
+                    $criadoPor,
+                    $chavesImportadasNoLote
+                );
+
+                if ($gravou) {
+                    $importados++;
+                } else {
+                    $ignorados++;
+                }
             }
         }
 
@@ -271,6 +321,482 @@ class AgendaRepository
         }
 
         return [$data, $horario];
+    }
+
+    private function adicionarPropriedadeIcs(array &$evento, string $chaveBruta, string $valorBruto): void
+    {
+        $chave = preg_replace('/;.*/', '', $chaveBruta);
+        $valor = $this->decodificarIcs($valorBruto);
+
+        if (!isset($evento[$chave])) {
+            if (in_array($chave, ['EXDATE', 'RDATE'], true)) {
+                $evento[$chave] = [$valor];
+            } else {
+                $evento[$chave] = $valor;
+            }
+            return;
+        }
+
+        if (!is_array($evento[$chave])) {
+            $evento[$chave] = [$evento[$chave]];
+        }
+        $evento[$chave][] = $valor;
+    }
+
+    private function primeiroValorPropriedade(mixed $valor): mixed
+    {
+        if (is_array($valor)) {
+            return $valor[0] ?? null;
+        }
+        return $valor;
+    }
+
+    private function normalizarListaPropriedade(mixed $valor): array
+    {
+        if ($valor === null) {
+            return [];
+        }
+
+        if (!is_array($valor)) {
+            return [$valor];
+        }
+
+        return $valor;
+    }
+
+    private function construirMapaExcecoesRecorrencia(array $eventos): array
+    {
+        $mapa = [];
+
+        foreach ($eventos as $ev) {
+            $uid = trim((string) $this->primeiroValorPropriedade($ev['UID'] ?? null));
+            $recurrenceId = $this->primeiroValorPropriedade($ev['RECURRENCE-ID'] ?? null);
+            if ($uid === '' || !is_string($recurrenceId) || $recurrenceId === '') {
+                continue;
+            }
+
+            [$data, $horario] = $this->parsearDt($recurrenceId);
+            if (!$data) {
+                continue;
+            }
+
+            $mapa[$uid][$this->gerarChaveOcorrencia($data, $horario)] = true;
+        }
+
+        return $mapa;
+    }
+
+    private function mapearExdates(mixed $valorExdate): array
+    {
+        $exdates = [];
+
+        foreach ($this->normalizarListaPropriedade($valorExdate) as $item) {
+            if (!is_string($item)) {
+                continue;
+            }
+
+            foreach (explode(',', $item) as $valorData) {
+                $valorData = trim($valorData);
+                if ($valorData === '') {
+                    continue;
+                }
+
+                [$data, $horario] = $this->parsearDt($valorData);
+                if ($data) {
+                    $exdates[$this->gerarChaveOcorrencia($data, $horario)] = true;
+                }
+            }
+        }
+
+        return $exdates;
+    }
+
+    private function expandirOcorrenciasEvento(string $dtstart, ?string $rrule, mixed $rdate): array
+    {
+        [$dataBase, $horarioBase] = $this->parsearDt($dtstart);
+        if (!$dataBase) {
+            return [];
+        }
+
+        $ocorrencias = [[
+            'data' => $dataBase,
+            'horario' => $this->normalizarHorario($horarioBase),
+        ]];
+
+        if ($rrule !== null && trim($rrule) !== '') {
+            foreach ($this->gerarDatasRecorrencia($dataBase, $rrule) as $dataRecorrente) {
+                $ocorrencias[] = [
+                    'data' => $dataRecorrente,
+                    'horario' => $this->normalizarHorario($horarioBase),
+                ];
+            }
+        }
+
+        foreach ($this->normalizarListaPropriedade($rdate) as $item) {
+            if (!is_string($item)) {
+                continue;
+            }
+
+            foreach (explode(',', $item) as $valorData) {
+                $valorData = trim($valorData);
+                if ($valorData === '') {
+                    continue;
+                }
+
+                [$dataRdate, $horarioRdate] = $this->parsearDt($valorData);
+                if (!$dataRdate) {
+                    continue;
+                }
+
+                $ocorrencias[] = [
+                    'data' => $dataRdate,
+                    'horario' => $this->normalizarHorario($horarioRdate ?: $horarioBase),
+                ];
+            }
+        }
+
+        $resultado = [];
+        $chaves = [];
+        foreach ($ocorrencias as $oc) {
+            $chave = $this->gerarChaveOcorrencia($oc['data'], $oc['horario']);
+            if (isset($chaves[$chave])) {
+                continue;
+            }
+            $chaves[$chave] = true;
+            $resultado[] = $oc;
+        }
+
+        usort($resultado, function (array $a, array $b): int {
+            return strcmp($a['data'] . ' ' . $a['horario'], $b['data'] . ' ' . $b['horario']);
+        });
+
+        return $resultado;
+    }
+
+    private function parsearRrule(string $rrule): array
+    {
+        $partes = explode(';', strtoupper(trim($rrule)));
+        $regra = [];
+
+        foreach ($partes as $parte) {
+            if (!str_contains($parte, '=')) {
+                continue;
+            }
+            [$chave, $valor] = explode('=', $parte, 2);
+            $regra[trim($chave)] = trim($valor);
+        }
+
+        return $regra;
+    }
+
+    private function gerarDatasRecorrencia(string $dataInicio, string $rrule): array
+    {
+        $inicio = DateTimeImmutable::createFromFormat('!Y-m-d', $dataInicio);
+        if (!$inicio) {
+            return [$dataInicio];
+        }
+
+        $regra = $this->parsearRrule($rrule);
+        $freq = $regra['FREQ'] ?? '';
+        if ($freq === '') {
+            return [$dataInicio];
+        }
+
+        $interval = max(1, (int) ($regra['INTERVAL'] ?? 1));
+        $count = isset($regra['COUNT']) ? max(1, (int) $regra['COUNT']) : null;
+        $until = isset($regra['UNTIL']) ? $this->parsearDataIcs($regra['UNTIL']) : null;
+        $fim = $until ?: $inicio->modify('+5 years');
+
+        $byMonth = [];
+        if (!empty($regra['BYMONTH'])) {
+            foreach (explode(',', $regra['BYMONTH']) as $valor) {
+                $mes = (int) trim($valor);
+                if ($mes >= 1 && $mes <= 12) {
+                    $byMonth[] = $mes;
+                }
+            }
+        }
+
+        $byMonthDay = [];
+        if (!empty($regra['BYMONTHDAY'])) {
+            foreach (explode(',', $regra['BYMONTHDAY']) as $valor) {
+                $dia = (int) trim($valor);
+                if ($dia !== 0 && $dia >= -31 && $dia <= 31) {
+                    $byMonthDay[] = $dia;
+                }
+            }
+        }
+
+        $byDay = $this->parsearByDay($regra['BYDAY'] ?? null);
+
+        $datas = [];
+        $cursor = $inicio;
+
+        while ($cursor <= $fim) {
+            $match = $cursor->format('Y-m-d') === $dataInicio
+                || $this->dataAtendeRecorrencia($cursor, $inicio, $freq, $interval, $byMonth, $byMonthDay, $byDay);
+
+            if ($match) {
+                $datas[] = $cursor->format('Y-m-d');
+
+                if ($count !== null && count($datas) >= $count) {
+                    break;
+                }
+
+                if (count($datas) >= self::MAX_IMPORT_EVENTS) {
+                    break;
+                }
+            }
+
+            $cursor = $cursor->modify('+1 day');
+        }
+
+        return $datas;
+    }
+
+    private function dataAtendeRecorrencia(
+        DateTimeImmutable $data,
+        DateTimeImmutable $inicio,
+        string $freq,
+        int $interval,
+        array $byMonth,
+        array $byMonthDay,
+        array $byDay
+    ): bool {
+        $diasDiff = (int) $inicio->diff($data)->format('%r%a');
+        if ($diasDiff < 0) {
+            return false;
+        }
+
+        $base = false;
+        if ($freq === 'DAILY') {
+            $base = ($diasDiff % $interval) === 0;
+        } elseif ($freq === 'WEEKLY') {
+            $semanas = intdiv($diasDiff, 7);
+            $base = ($semanas % $interval) === 0;
+        } elseif ($freq === 'MONTHLY') {
+            $meses = (((int) $data->format('Y')) * 12 + (int) $data->format('n'))
+                - (((int) $inicio->format('Y')) * 12 + (int) $inicio->format('n'));
+            $base = $meses >= 0 && ($meses % $interval) === 0;
+        } elseif ($freq === 'YEARLY') {
+            $anos = (int) $data->format('Y') - (int) $inicio->format('Y');
+            $base = $anos >= 0 && ($anos % $interval) === 0;
+        }
+
+        if (!$base) {
+            return false;
+        }
+
+        if (!empty($byMonth) && !in_array((int) $data->format('n'), $byMonth, true)) {
+            return false;
+        }
+
+        if (!empty($byMonthDay) && !$this->bateByMonthDay($data, $byMonthDay)) {
+            return false;
+        }
+
+        if (!empty($byDay) && !$this->bateByDay($data, $byDay, $freq)) {
+            return false;
+        }
+
+        if ($freq === 'WEEKLY' && empty($byDay)) {
+            return (int) $data->format('N') === (int) $inicio->format('N');
+        }
+
+        if ($freq === 'MONTHLY' && empty($byDay) && empty($byMonthDay)) {
+            return (int) $data->format('j') === (int) $inicio->format('j');
+        }
+
+        if ($freq === 'YEARLY' && empty($byDay) && empty($byMonthDay)) {
+            if (empty($byMonth)) {
+                return $data->format('m-d') === $inicio->format('m-d');
+            }
+
+            return (int) $data->format('j') === (int) $inicio->format('j');
+        }
+
+        return true;
+    }
+
+    private function bateByMonthDay(DateTimeImmutable $data, array $byMonthDay): bool
+    {
+        $diaAtual = (int) $data->format('j');
+        $ultimoDia = (int) $data->format('t');
+
+        foreach ($byMonthDay as $diaRegra) {
+            $diaAlvo = $diaRegra > 0 ? $diaRegra : ($ultimoDia + $diaRegra + 1);
+            if ($diaAtual === $diaAlvo) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function bateByDay(DateTimeImmutable $data, array $byDay, string $freq): bool
+    {
+        $diaSemana = (int) $data->format('N');
+        $diaDoMes = (int) $data->format('j');
+        $ultimoDiaMes = (int) $data->format('t');
+
+        foreach ($byDay as $regraDia) {
+            if ($regraDia['weekday'] !== $diaSemana) {
+                continue;
+            }
+
+            $ord = $regraDia['ord'];
+            if ($ord === null) {
+                return true;
+            }
+
+            if (!in_array($freq, ['MONTHLY', 'YEARLY'], true)) {
+                return true;
+            }
+
+            if ($ord > 0) {
+                $ocorrenciaNoMes = intdiv($diaDoMes - 1, 7) + 1;
+                if ($ocorrenciaNoMes === $ord) {
+                    return true;
+                }
+            } else {
+                $ocorrenciaDoFim = intdiv($ultimoDiaMes - $diaDoMes, 7) + 1;
+                if ($ocorrenciaDoFim === abs($ord)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private function parsearByDay(?string $valor): array
+    {
+        if (!$valor) {
+            return [];
+        }
+
+        $resultado = [];
+        foreach (explode(',', strtoupper($valor)) as $item) {
+            $item = trim($item);
+            if ($item === '') {
+                continue;
+            }
+
+            if (!preg_match('/^([+-]?\\d+)?(MO|TU|WE|TH|FR|SA|SU)$/', $item, $matches)) {
+                continue;
+            }
+
+            $ord = ($matches[1] ?? '') !== '' ? (int) $matches[1] : null;
+            $weekday = $this->diaSemanaNumero($matches[2]);
+            if ($weekday === null) {
+                continue;
+            }
+
+            $resultado[] = [
+                'ord' => $ord,
+                'weekday' => $weekday,
+            ];
+        }
+
+        return $resultado;
+    }
+
+    private function diaSemanaNumero(string $sigla): ?int
+    {
+        return match ($sigla) {
+            'MO' => 1,
+            'TU' => 2,
+            'WE' => 3,
+            'TH' => 4,
+            'FR' => 5,
+            'SA' => 6,
+            'SU' => 7,
+            default => null,
+        };
+    }
+
+    private function parsearDataIcs(string $valor): ?DateTimeImmutable
+    {
+        $valor = trim($valor);
+        if (!preg_match('/(\\d{8})/', $valor, $matches)) {
+            return null;
+        }
+
+        $data = DateTimeImmutable::createFromFormat('!Ymd', $matches[1]);
+        return $data ?: null;
+    }
+
+    private function gerarChaveOcorrencia(string $data, ?string $horario): string
+    {
+        return $data . '|' . $this->normalizarHorario($horario);
+    }
+
+    private function normalizarHorario(?string $horario): string
+    {
+        if ($horario === null || trim($horario) === '') {
+            return '00:00';
+        }
+        return substr(trim($horario), 0, 5);
+    }
+
+    private function registrarEventoImportado(
+        string $titulo,
+        string $data,
+        string $horario,
+        ?string $horarioFim,
+        string $departamento,
+        ?string $descricao,
+        int $criadoPor,
+        array &$chavesImportadasNoLote
+    ): bool {
+        $chaveDuplicidade = $this->gerarChaveDuplicidade($titulo, $data, $horario, $horarioFim);
+        if (isset($chavesImportadasNoLote[$chaveDuplicidade])) {
+            return false;
+        }
+
+        if ($this->eventoJaExisteNoBanco($titulo, $data, $horario, $horarioFim)) {
+            return false;
+        }
+
+        try {
+            $this->criar($titulo, $data, $horario, $horarioFim, $departamento, $descricao, $criadoPor);
+            $chavesImportadasNoLote[$chaveDuplicidade] = true;
+            return true;
+        } catch (Exception $e) {
+            return false;
+        }
+    }
+
+    private function gerarChaveDuplicidade(string $titulo, string $data, string $horario, ?string $horarioFim): string
+    {
+        $tituloNormalizado = strtolower(trim(preg_replace('/\\s+/', ' ', $titulo)));
+        return implode('|', [
+            $data,
+            $this->normalizarHorario($horario),
+            $this->normalizarHorario($horarioFim),
+            $tituloNormalizado,
+        ]);
+    }
+
+    private function eventoJaExisteNoBanco(string $titulo, string $data, string $horario, ?string $horarioFim): bool
+    {
+        $stmt = $this->connection->prepare("
+            SELECT 1
+            FROM eventos
+            WHERE data = :data
+              AND hora_inicio = :hora_inicio
+              AND IFNULL(hora_fim, '') = IFNULL(:hora_fim, '')
+              AND titulo = :titulo COLLATE NOCASE
+            LIMIT 1
+        ");
+        $stmt->execute([
+            ':data' => $data,
+            ':hora_inicio' => $this->normalizarHorario($horario),
+            ':hora_fim' => $horarioFim ? $this->normalizarHorario($horarioFim) : null,
+            ':titulo' => trim($titulo),
+        ]);
+
+        return (bool) $stmt->fetchColumn();
     }
 
     private function decodificarIcs(string $valor): string

@@ -47,8 +47,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $isAdmin && isset($_FILES['ics'])) 
             if ($conteudo === false || trim($conteudo) === '') {
                 $erro = 'Nao foi possivel ler o arquivo .ics enviado.';
             } else {
-                [$imp, $ign] = $repo->importarIcs($conteudo, Auth::id(), $departamentoImportacao);
-                $mensagem = "Importacao concluida: {$imp} evento(s) importado(s), {$ign} ignorado(s) (duplicados ou invalidos).";
+                try {
+                    [$imp, $ign] = $repo->importarIcs($conteudo, Auth::id(), $departamentoImportacao);
+                    $mensagem = "Importacao concluida: {$imp} evento(s) importado(s), {$ign} ignorado(s) (duplicados ou invalidos).";
+                } catch (Throwable $e) {
+                    $erro = $e->getMessage() !== '' ? $e->getMessage() : 'Erro ao importar o arquivo .ics.';
+                }
             }
         }
     } else {
