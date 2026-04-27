@@ -614,6 +614,53 @@ class PessoaRepository
         return $resultado ?: null;
     }
 
+    public function buscarResponsaveisPorNome(string $nome, ?int $ignorarId = null, int $limite = 10): array
+    {
+        $nomeNormalizado = trim($nome);
+        if ($nomeNormalizado === '') {
+            return [];
+        }
+
+        $sql = "
+            SELECT
+                id,
+                nome,
+                cpf,
+                ativo,
+                email,
+                telefone_fixo,
+                telefone_movel,
+                endereco_cep,
+                endereco_logradouro,
+                endereco_numero,
+                endereco_complemento,
+                endereco_bairro,
+                endereco_cidade,
+                endereco_uf
+            FROM pessoas
+            WHERE LOWER(nome) LIKE :nome
+        ";
+        $params = [
+            ':nome' => '%' . mb_strtolower($nomeNormalizado) . '%',
+        ];
+
+        if ($ignorarId !== null && $ignorarId > 0) {
+            $sql .= " AND id != :ignorar_id";
+            $params[':ignorar_id'] = $ignorarId;
+        }
+
+        $sql .= " ORDER BY nome ASC LIMIT :limite";
+
+        $stmt = $this->connection->prepare($sql);
+        foreach ($params as $chave => $valor) {
+            $stmt->bindValue($chave, $valor, is_int($valor) ? PDO::PARAM_INT : PDO::PARAM_STR);
+        }
+        $stmt->bindValue(':limite', max(1, min($limite, 30)), PDO::PARAM_INT);
+        $stmt->execute();
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
     public function buscarPorEmailAtivo(string $email): ?array
     {
         $sql = "SELECT * FROM pessoas WHERE LOWER(COALESCE(email, '')) = :email AND ativo = 1 LIMIT 1";

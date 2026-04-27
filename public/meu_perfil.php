@@ -84,6 +84,26 @@ function emailMenorPermitidoPorResponsavelMeuPerfil(string $email, array $dadosR
     return false;
 }
 
+function emailCompartilhadoComDependentePermitidoMeuPerfil(array $pessoaComMesmoEmail, string $cpfPessoaAtual, int $idPessoaAtual): bool
+{
+    $cpfAtual = normalizarCpfMeuPerfil($cpfPessoaAtual);
+    if ($cpfAtual === '') {
+        return false;
+    }
+
+    $responsavel1Cpf = normalizarCpfMeuPerfil((string) ($pessoaComMesmoEmail['responsavel_1_cpf'] ?? ''));
+    $responsavel2Cpf = normalizarCpfMeuPerfil((string) ($pessoaComMesmoEmail['responsavel_2_cpf'] ?? ''));
+    $responsavel1PessoaId = (int) ($pessoaComMesmoEmail['responsavel_1_pessoa_id'] ?? 0);
+    $responsavel2PessoaId = (int) ($pessoaComMesmoEmail['responsavel_2_pessoa_id'] ?? 0);
+
+    if ($responsavel1PessoaId === $idPessoaAtual || $responsavel2PessoaId === $idPessoaAtual) {
+        return true;
+    }
+
+    return ($responsavel1Cpf !== '' && $responsavel1Cpf === $cpfAtual)
+        || ($responsavel2Cpf !== '' && $responsavel2Cpf === $cpfAtual);
+}
+
 function resolverDadosResponsaveisMeuPerfil(PessoaRepository $repo, array $fonte, int $pessoaIdIgnorado): array
 {
     $responsavel1Cpf = normalizarCpfMeuPerfil((string) ($fonte['responsavel_1_cpf'] ?? ''));
@@ -261,8 +281,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $email !== ''
             && ($emailExistente = $repo->buscarPorEmailExcetoId($email, $usuarioId)) !== null
             && (
-                !$menorDeIdade
-                || !emailMenorPermitidoPorResponsavelMeuPerfil($email, $dadosResponsaveis)
+                (
+                    !$menorDeIdade
+                    || !emailMenorPermitidoPorResponsavelMeuPerfil($email, $dadosResponsaveis)
+                )
+                && !emailCompartilhadoComDependentePermitidoMeuPerfil($emailExistente, $cpf, $usuarioId)
             )
         ) {
             $erro = 'Ja existe outra pessoa cadastrada com esse e-mail.';
@@ -384,7 +407,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $erro = 'Informe um e-mail.';
         } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             $erro = 'Informe um e-mail valido.';
-        } elseif ($repo->buscarPorEmailExcetoId($email, $usuarioId) !== null) {
+        } elseif (
+            ($emailExistente = $repo->buscarPorEmailExcetoId($email, $usuarioId)) !== null
+            && !emailCompartilhadoComDependentePermitidoMeuPerfil($emailExistente, (string) ($pessoa['cpf'] ?? ''), $usuarioId)
+        ) {
             $erro = 'Esse e-mail ja esta sendo usado por outra pessoa.';
         } else {
             try {

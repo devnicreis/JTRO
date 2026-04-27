@@ -25,14 +25,17 @@ $turnstileEnabled = $turnstile->isEnabled();
 $turnstileSiteKey = $turnstile->getSiteKey();
 $cpfPreenchido = preg_replace('/\D+/', '', trim($_POST['cpf'] ?? ''));
 $ipAddressAtual = RequestContext::clientIp();
-$janelaExibicao = date('Y-m-d H:i:s', time() - (15 * 60));
+$janelaBloqueioSegundos = 5 * 60;
+$maxTentativasPorCpf = 5;
+$maxTentativasPorIp = 15;
+$janelaExibicao = date('Y-m-d H:i:s', time() - $janelaBloqueioSegundos);
 
-$enviarAlertaBloqueio = static function (string $cpf, ?string $ipAddress) use ($attemptRepo, $repo, $alertService): void {
+$enviarAlertaBloqueio = static function (string $cpf, ?string $ipAddress) use ($attemptRepo, $repo, $alertService, $janelaBloqueioSegundos): void {
     if ($cpf === '') {
         return;
     }
 
-    $janelaAlerta = date('Y-m-d H:i:s', time() - 86400);
+    $janelaAlerta = date('Y-m-d H:i:s', time() - $janelaBloqueioSegundos);
     $alertaRecente = $attemptRepo->houveAlertaPorCpfDesde($cpf, $janelaAlerta);
 
     if ($alertaRecente) {
@@ -48,7 +51,18 @@ $enviarAlertaBloqueio = static function (string $cpf, ?string $ipAddress) use ($
         $alertService->enviarAlertaBloqueio($pessoaBloqueada, $ipAddress);
         $attemptRepo->registrar($cpf, $ipAddress, 'alert_sent');
     } catch (Throwable $exception) {
-        error_log('[JTRO] Falha ao enviar alerta de bloqueio de login: ' . $exception->getMessage());
+        try {
+            $attemptRepo->registrar($cpf, $ipAddress, 'alert_error');
+        } catch (Throwable $repoException) {
+            error_log('[JTRO] Falha ao registrar status de alerta de login: ' . $repoException->getMessage());
+        }
+
+        error_log(sprintf(
+            '[JTRO] Falha ao enviar alerta de bloqueio de login (cpf=%s, ip=%s): %s',
+            $cpf,
+            $ipAddress ?? 'desconhecido',
+            $exception->getMessage()
+        ));
     }
 };
 
@@ -66,8 +80,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $falhasCpf = $cpf !== '' ? $attemptRepo->contarFalhasPorCpfDesde($cpf, $janelaTentativas) : 0;
     $falhasIp = $ipAddress !== null ? $attemptRepo->contarFalhasPorIpDesde($ipAddress, $janelaTentativas) : 0;
-    $bloqueadoPorCpf = $falhasCpf >= 4;
-    $bloqueadoPorIp = $falhasIp >= 15;
+    $bloqueadoPorCpf = $falhasCpf >= $maxTentativasPorCpf;
+    $bloqueadoPorIp = $falhasIp >= $maxTentativasPorIp;
 
     if ($cpf === '' || $senha === '') {
         $erro = 'Preencha CPF e senha.';
@@ -77,7 +91,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $enviarAlertaBloqueio($cpf, $ipAddress);
         }
 
-        $erro = 'Muitas tentativas de login. Aguarde 15 minutos e tente novamente.';
+        $erro = 'Muitas tentativas de login. Aguarde 5 minutos e tente novamente.';
     } elseif ($turnstileEnabled) {
         try {
             $turnstileValidation = $turnstile->validateSubmission($_POST['cf-turnstile-response'] ?? null, $ipAddress);
@@ -97,15 +111,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $attemptRepo->registrar($cpf, $ipAddress, 'failed');
             $falhasCpfApos = $cpf !== '' ? ($falhasCpf + 1) : 0;
             $falhasIpApos = $ipAddress !== null ? ($falhasIp + 1) : 0;
-            $bloqueadoAgoraPorCpf = $falhasCpfApos >= 4;
-            $bloqueadoAgoraPorIp = $falhasIpApos >= 15;
+            $bloqueadoAgoraPorCpf = $falhasCpfApos >= $maxTentativasPorCpf;
+            $bloqueadoAgoraPorIp = $falhasIpApos >= $maxTentativasPorIp;
 
             if ($bloqueadoAgoraPorCpf || $bloqueadoAgoraPorIp) {
                 $attemptRepo->registrar($cpf !== '' ? $cpf : 'desconhecido', $ipAddress, 'blocked');
                 if ($bloqueadoAgoraPorCpf) {
                     $enviarAlertaBloqueio($cpf, $ipAddress);
                 }
-                $erro = 'Muitas tentativas de login. Aguarde 15 minutos e tente novamente.';
+                $erro = 'Muitas tentativas de login. Aguarde 5 minutos e tente novamente.';
             } else {
                 $erro = 'CPF/Senha incorretos.';
             }

@@ -56,18 +56,16 @@ foreach ($avisoRepo->listarAvisosSistema($usuarioId) as $avisoSistema) {
     ];
 }
 
-// Cartas publicadas — apenas para líderes
-if (!$isAdmin) {
-    foreach ($cartaRepo->listarPublicadas() as $carta) {
-        $ts = strtotime($carta['data_carta'] ?? $carta['created_at']);
-        $avisos[] = [
-            'chave'  => 'carta_nova_' . $carta['id'],
-            'tipo'   => 'carta_nova',
-            'titulo' => 'Carta Semanal disponível',
-            'carta'  => $carta,
-            'ts'     => $ts,
-        ];
-    }
+// Cartas publicadas para todos os perfis
+foreach ($cartaRepo->listarPublicadas() as $carta) {
+    $ts = strtotime($carta['data_carta'] ?? $carta['created_at']);
+    $avisos[] = [
+        'chave'  => 'carta_nova_' . $carta['id'],
+        'tipo'   => 'carta_nova',
+        'titulo' => 'Carta Semanal disponível',
+        'carta'  => $carta,
+        'ts'     => $ts,
+    ];
 }
 
 foreach ($gruposAlarmantes as $grupo) {

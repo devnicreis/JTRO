@@ -105,7 +105,8 @@ $cargoLabel = (($pessoa['cargo'] ?? '') === 'admin') ? 'Administrador' : 'Membro
                 </div>
                 <div class="campo">
                     <label for="nome_conjuge">Nome do conjuge/companheiro</label>
-                    <input type="text" id="nome_conjuge" name="nome_conjuge" pattern="^[\p{L}\s]+$" value="<?php echo htmlspecialchars($pessoa['nome_conjuge'] ?? ''); ?>">
+                    <input type="text" id="nome_conjuge" name="nome_conjuge" list="nome_conjuge_lista" pattern="^[\p{L}\s]+$" value="<?php echo htmlspecialchars($pessoa['nome_conjuge'] ?? ''); ?>">
+                    <datalist id="nome_conjuge_lista"></datalist>
                 </div>
             </div>
         </div>
@@ -120,7 +121,8 @@ $cargoLabel = (($pessoa['cargo'] ?? '') === 'admin') ? 'Administrador' : 'Membro
                 </div>
                 <div class="campo">
                     <label for="responsavel_1_nome">Nome do responsavel</label>
-                    <input type="text" id="responsavel_1_nome" name="responsavel_1_nome" pattern="^[\p{L}\s]+$" value="<?php echo htmlspecialchars($pessoa['responsavel_1_nome'] ?? ''); ?>">
+                    <input type="text" id="responsavel_1_nome" name="responsavel_1_nome" list="responsavel_1_nome_lista" pattern="^[\p{L}\s]+$" value="<?php echo htmlspecialchars($pessoa['responsavel_1_nome'] ?? ''); ?>">
+                    <datalist id="responsavel_1_nome_lista"></datalist>
                 </div>
             </div>
 
@@ -138,7 +140,8 @@ $cargoLabel = (($pessoa['cargo'] ?? '') === 'admin') ? 'Administrador' : 'Membro
                 </div>
                 <div class="campo">
                     <label for="responsavel_2_nome">Nome do segundo responsavel</label>
-                    <input type="text" id="responsavel_2_nome" name="responsavel_2_nome" pattern="^[\p{L}\s]+$" value="<?php echo htmlspecialchars($pessoa['responsavel_2_nome'] ?? ''); ?>">
+                    <input type="text" id="responsavel_2_nome" name="responsavel_2_nome" list="responsavel_2_nome_lista" pattern="^[\p{L}\s]+$" value="<?php echo htmlspecialchars($pessoa['responsavel_2_nome'] ?? ''); ?>">
+                    <datalist id="responsavel_2_nome_lista"></datalist>
                 </div>
             </div>
         </div>
@@ -445,6 +448,83 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    function montarItemBuscaNome(item) {
+        return (item.nome || '').trim();
+    }
+
+    function limparOpcoesDatalist(datalist) {
+        if (!datalist) return;
+        while (datalist.firstChild) {
+            datalist.removeChild(datalist.firstChild);
+        }
+    }
+
+    function configurarBuscaPorNome(inputBusca, inputCpf, inputNome, opcoes = {}) {
+        if (!inputBusca || !inputCpf || !inputNome) return;
+        const datalistId = inputBusca.getAttribute('list');
+        const datalist = datalistId ? document.getElementById(datalistId) : null;
+        if (!datalist) return;
+
+        let debounceTimer = null;
+        let ultimoResultado = [];
+
+        async function buscarSugestoes() {
+            const termo = (inputBusca.value || '').trim();
+            if (termo.length < 2) {
+                ultimoResultado = [];
+                limparOpcoesDatalist(datalist);
+                return;
+            }
+
+            try {
+                const resposta = await fetch('/meu_perfil_buscar_pessoa.php?nome=' + encodeURIComponent(termo) + '&ignorar_id=<?php echo (int) $pessoa['id']; ?>', {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+
+                if (!resposta.ok) return;
+
+                const dados = await resposta.json();
+                const resultados = Array.isArray(dados.resultados) ? dados.resultados : [];
+                ultimoResultado = resultados;
+                limparOpcoesDatalist(datalist);
+
+                resultados.forEach(function(item) {
+                    const option = document.createElement('option');
+                    option.value = montarItemBuscaNome(item);
+                    datalist.appendChild(option);
+                });
+            } catch (erro) {
+            }
+        }
+
+        function aplicarSelecao() {
+            const valorBusca = (inputBusca.value || '').trim();
+            if (valorBusca === '') return;
+
+            const candidatos = ultimoResultado.filter(function(item) {
+                return montarItemBuscaNome(item).toLowerCase() === valorBusca.toLowerCase();
+            });
+            const itemSelecionado = candidatos.length > 0 ? candidatos[0] : null;
+            const cpfSelecionado = itemSelecionado
+                ? String(itemSelecionado.cpf || '').replace(/\D/g, '')
+                : '';
+
+            if (cpfSelecionado.length !== 11) return;
+
+            inputCpf.value = cpfSelecionado;
+            buscarPessoaPorCpf(inputCpf, inputNome, opcoes);
+        }
+
+        inputBusca.addEventListener('input', function() {
+            if (debounceTimer) clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(buscarSugestoes, 220);
+        });
+        inputBusca.addEventListener('change', aplicarSelecao);
+        inputBusca.addEventListener('blur', aplicarSelecao);
+    }
+
     function normalizarDigitos(input) {
         if (!input) return;
         input.value = (input.value || '').replace(/\D/g, '');
@@ -476,7 +556,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const dados = await resposta.json();
             if (dados.encontrado && dados.nome) {
                 inputNome.value = dados.nome;
-                inputNome.readOnly = true;
+                inputNome.readOnly = false;
                 if (opcoes.preencherContatoEndereco) {
                     aplicarAutofillResponsavel(dados);
                 }
@@ -519,6 +599,10 @@ document.addEventListener('DOMContentLoaded', function() {
     if (responsavel2Cpf) responsavel2Cpf.addEventListener('blur', function() { buscarPessoaPorCpf(responsavel2Cpf, responsavel2Nome); });
     if (document.getElementById('telefone_fixo')) document.getElementById('telefone_fixo').addEventListener('blur', function() { normalizarDigitos(this); });
     if (document.getElementById('telefone_movel')) document.getElementById('telefone_movel').addEventListener('blur', function() { normalizarDigitos(this); });
+
+    configurarBuscaPorNome(inputConjugeNome, inputConjugeCpf, inputConjugeNome);
+    configurarBuscaPorNome(responsavel1Nome, responsavel1Cpf, responsavel1Nome, { preencherContatoEndereco: true });
+    configurarBuscaPorNome(responsavel2Nome, responsavel2Cpf, responsavel2Nome);
 
     if (inputConjugeCpf && inputConjugeCpf.value) buscarPessoaPorCpf(inputConjugeCpf, inputConjugeNome);
     if (responsavel1Cpf && responsavel1Cpf.value) buscarPessoaPorCpf(responsavel1Cpf, responsavel1Nome, { preencherContatoEndereco: true });

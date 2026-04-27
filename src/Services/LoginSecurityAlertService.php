@@ -32,7 +32,7 @@ class LoginSecurityAlertService
         $html = sprintf(
             '<p>Olá, %s.</p>'
             . '<p>Detectamos varias tentativas de acesso ao JTRO com o seu CPF em %s.</p>'
-            . '<p>Por segurança, o login foi temporariamente bloqueado por 15 minutos.</p>'
+            . '<p>Por segurança, o login foi temporariamente bloqueado por 5 minutos.</p>'
             . '<p>IP de origem: %s</p>'
             . '<p>Se não foi você, utilize apenas o fluxo normal de "Esqueci minha senha" ou entre em contato com %s.</p>',
             $this->escapeHtml($nome !== '' ? $nome : 'usuario'),

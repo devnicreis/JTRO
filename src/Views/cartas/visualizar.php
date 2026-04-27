@@ -87,8 +87,7 @@ $dataExtenso = $ts ? date('j', $ts) . ' de ' . $meses[date('n',$ts)-1] . ' de ' 
 
     <!-- Assinatura -->
     <div class="carta-vis-assinatura">
-        Continuem abençoados<br>
-        <strong><?php echo htmlspecialchars($carta['autor_nome'] ?? 'Pastor'); ?></strong>
+        Continuem abençoados
     </div>
 
     <!-- Ações -->

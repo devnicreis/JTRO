@@ -79,6 +79,20 @@ function emailMenorPermitidoPorResponsavelPessoa(string $email, array $dadosResp
     return false;
 }
 
+function emailCompartilhadoComDependentePermitidoPessoa(array $pessoaComMesmoEmail, string $cpfPessoaAtual): bool
+{
+    $cpfAtual = normalizarCpfPessoa($cpfPessoaAtual);
+    if ($cpfAtual === '') {
+        return false;
+    }
+
+    $responsavel1Cpf = normalizarCpfPessoa((string) ($pessoaComMesmoEmail['responsavel_1_cpf'] ?? ''));
+    $responsavel2Cpf = normalizarCpfPessoa((string) ($pessoaComMesmoEmail['responsavel_2_cpf'] ?? ''));
+
+    return ($responsavel1Cpf !== '' && $responsavel1Cpf === $cpfAtual)
+        || ($responsavel2Cpf !== '' && $responsavel2Cpf === $cpfAtual);
+}
+
 function resolverDadosResponsaveisPessoa(PessoaRepository $repo, array $fonte, ?int $pessoaIdIgnorado = null): array
 {
     $responsavel1Cpf = normalizarCpfPessoa((string) ($fonte['responsavel_1_cpf'] ?? ''));
@@ -261,8 +275,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $email !== ''
         && ($emailExistente = $repo->buscarPorEmail($email)) !== null
         && (
-            !$menorDeIdade
-            || !emailMenorPermitidoPorResponsavelPessoa($email, $dadosResponsaveis)
+            (
+                !$menorDeIdade
+                || !emailMenorPermitidoPorResponsavelPessoa($email, $dadosResponsaveis)
+            )
+            && !emailCompartilhadoComDependentePermitidoPessoa($emailExistente, $cpf)
         )
     ) {
         $erro = 'Ja existe uma pessoa cadastrada com esse e-mail.';

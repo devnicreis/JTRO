@@ -133,13 +133,11 @@
     }
 
     $totalCartasNaoLidas = 0;
-    if (!$isAdmin) {
-        require_once __DIR__ . '/../../Repositories/CartaRepository.php';
-        $cartaRepoHdr = new CartaRepository();
-        $usuarioIdHdr = (int) ($usuario['id'] ?? 0);
-        $chavesMapParaCarta = $chavesLidasMapHeader ?? array_fill_keys((new AvisoRepository())->listarChavesLidas($usuarioIdHdr), true);
-        $totalCartasNaoLidas = $cartaRepoHdr->contarNaoLidasPorUsuario($usuarioIdHdr, $chavesMapParaCarta);
-    }
+    require_once __DIR__ . '/../../Repositories/CartaRepository.php';
+    $cartaRepoHdr = new CartaRepository();
+    $usuarioIdHdr = (int) ($usuario['id'] ?? 0);
+    $chavesMapParaCarta = $chavesLidasMapHeader ?? array_fill_keys((new AvisoRepository())->listarChavesLidas($usuarioIdHdr), true);
+    $totalCartasNaoLidas = $cartaRepoHdr->contarNaoLidasPorUsuario($usuarioIdHdr, $chavesMapParaCarta);
 
     $totalAvisosNav = (int) ($totalAvisos ?? 0);
     $totalCartasBadge = $totalCartasNaoLidas;

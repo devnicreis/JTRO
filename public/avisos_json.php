@@ -22,7 +22,7 @@ $isAdmin      = Auth::isAdmin();
 $avisoRepo->sincronizarAvisosAniversarioDoDia();
 $avisoRepo->sincronizarAvisosCantina();
 
-// ── POST: marcar lido/não lido ─────────────────────────────
+// POST: marcar lido/não lido
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     Auth::requireCsrf($_SERVER['HTTP_X_CSRF_TOKEN'] ?? null);
 
@@ -58,7 +58,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     exit;
 }
 
-// ── GET: listar avisos ─────────────────────────────────────
+// GET: listar avisos
 $chavesLidas    = $avisoRepo->listarChavesLidas($usuarioId);
 $chavesLidasMap = array_fill_keys($chavesLidas, true);
 
@@ -88,23 +88,21 @@ foreach ($avisoRepo->listarAvisosSistema($usuarioId) as $avisoSistema) {
     ];
 }
 
-// Cartas novas não lidas (apenas para líderes — admin já gerencia as cartas)
-if (!$isAdmin) {
-    $cartasPublicadas = $cartaRepo->listarPublicadas();
-    foreach ($cartasPublicadas as $carta) {
-        $chave = 'carta_nova_' . $carta['id'];
-        $ts    = strtotime($carta['data_carta'] ?? $carta['created_at']);
-        $avisos[] = [
-            'chave'     => $chave,
-            'tipo'      => 'info',
-            'texto'     => 'Nova Carta Semanal disponível',
-            'detalhe'   => date('d/m/Y', $ts),
-            'link'      => '/carta_visualizar.php?id=' . (int)$carta['id'],
-            'cta_label' => 'ACESSAR CARTA COMPLETA',
-            'lido'      => isset($chavesLidasMap[$chave]),
-            'timestamp' => $ts,
-        ];
-    }
+// Cartas novas não lidas (todos os perfis)
+$cartasPublicadas = $cartaRepo->listarPublicadas();
+foreach ($cartasPublicadas as $carta) {
+    $chave = 'carta_nova_' . $carta['id'];
+    $ts    = strtotime($carta['data_carta'] ?? $carta['created_at']);
+    $avisos[] = [
+        'chave'     => $chave,
+        'tipo'      => 'info',
+        'texto'     => 'Nova Carta Semanal disponível',
+        'detalhe'   => date('d/m/Y', $ts),
+        'link'      => '/carta_visualizar.php?id=' . (int)$carta['id'],
+        'cta_label' => 'ACESSAR CARTA COMPLETA',
+        'lido'      => isset($chavesLidasMap[$chave]),
+        'timestamp' => $ts,
+    ];
 }
 
 foreach ($gruposAlarmantes as $g) {
