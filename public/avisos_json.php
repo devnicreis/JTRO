@@ -76,13 +76,19 @@ $avisos = [];
 
 foreach ($avisoRepo->listarAvisosSistema($usuarioId) as $avisoSistema) {
     $timestamp = strtotime($avisoSistema['created_at'] ?? 'now');
+    $subtipo = (string) ($avisoSistema['tipo'] ?? '');
+    $link = trim((string) ($avisoSistema['link'] ?? ''));
+    if ($subtipo === 'aniversario') {
+        $link = '';
+    }
+
     $avisos[] = [
         'chave'     => $avisoSistema['chave_aviso'],
-        'tipo'      => ($avisoSistema['tipo'] ?? '') === 'integracao_concluida' ? 'success' : 'info',
+        'tipo'      => $subtipo === 'integracao_concluida' ? 'success' : 'info',
         'texto'     => $avisoSistema['titulo'],
         'detalhe'   => $avisoSistema['mensagem'],
-        'link'      => $avisoSistema['link'] ?? null,
-        'cta_label' => !empty($avisoSistema['link']) ? 'ABRIR DETALHES' : null,
+        'link'      => $link !== '' ? $link : null,
+        'cta_label' => $link !== '' ? 'Abrir Detalhes' : null,
         'lido'      => isset($chavesLidasMap[$avisoSistema['chave_aviso']]),
         'timestamp' => $timestamp,
     ];
@@ -112,6 +118,8 @@ foreach ($gruposAlarmantes as $g) {
         'tipo'      => 'danger',
         'texto'     => 'GF com presença alarmante',
         'detalhe'   => $g['nome'],
+        'link'      => '/diagnostico_gf.php?grupo_id=' . (int) $g['id'],
+        'cta_label' => 'Abrir Detalhes',
         'lido'      => isset($chavesLidasMap[$chave]),
         'timestamp' => time(),
     ];
@@ -124,6 +132,8 @@ foreach ($membrosFaltosos as $m) {
         'tipo'      => 'warn',
         'texto'     => 'Faltas consecutivas',
         'detalhe'   => $m['nome'] . ' · GF ' . $m['grupo_nome'],
+        'link'      => '/diagnostico_gf.php?grupo_id=' . (int) $m['grupo_id'],
+        'cta_label' => 'Abrir Detalhes',
         'lido'      => isset($chavesLidasMap[$chave]),
         'timestamp' => strtotime('yesterday'),
     ];
@@ -150,3 +160,4 @@ usort($avisos, function($a, $b) {
 });
 
 echo json_encode(['avisos' => $avisos]);
+

@@ -187,7 +187,7 @@ class AvisoRepository
                     'aniversario',
                     'Aniversário de membro',
                     $nomePessoa . ' está fazendo aniversário hoje.' . ($grupoNome !== '' ? ' GF: ' . $grupoNome . '.' : ''),
-                    '/pessoas.php'
+                    null
                 );
             }
 
@@ -211,7 +211,7 @@ class AvisoRepository
                         'aniversario',
                         'Aniversário no seu GF',
                         $nomePessoa . ' está fazendo aniversário hoje.' . ($grupoNome !== '' ? ' GF: ' . $grupoNome . '.' : ''),
-                        '/pessoas.php'
+                        null
                     );
                 }
             }

@@ -236,7 +236,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const detalhe = aviso.detalhe   ? '<div class="notif-detalhe">' + esc(aviso.detalhe) + '</div>' : '';
             const motivo  = aviso.motivo    ? '<div class="notif-motivo">'  + esc(aviso.motivo)  + '</div>' : '';
             const linkCta = aviso.link
-                ? '<a class="notif-link-btn" href="' + esc(aviso.link) + '">' + esc(aviso.cta_label || 'ABRIR DETALHES') + '</a>'
+                ? '<div class="notif-acoes"><a class="notif-link-btn" href="' + esc(aviso.link) + '">' + esc(aviso.cta_label || 'Abrir Detalhes') + '</a>'
                 : '';
 
             return '<div class="notif-item" data-chave="' + esc(aviso.chave) + '">' +
@@ -246,7 +246,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 detalhe + motivo + tempo + linkCta +
                 '<button class="notif-acao-btn" data-chave="' + esc(aviso.chave) + '" data-lido="' + aviso.lido + '" type="button">' +
                 (aviso.lido ? 'Marcar como não lido' : 'Marcar como lido') +
-                '</button>' +
+                '</button>' + (aviso.link ? '</div>' : '') +
                 '</div></div>';
         }).join('');
 
@@ -280,4 +280,3 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
 });
-

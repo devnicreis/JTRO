@@ -5,15 +5,24 @@
 $perfisGrupo = opcoesPerfilGrupo();
 $dias = ['segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado', 'domingo'];
 $domingosFiltro = [1 => '1º Domingo', 2 => '2º Domingo', 3 => '3º Domingo', 4 => '4º Domingo', 5 => '5º Domingo'];
+$totalFiltrados = count($grupos);
+
+$parametrosExportacao = array_filter($filtros, static function ($valor): bool {
+    return $valor !== '' && $valor !== null;
+});
+$exportBaseQuery = http_build_query($parametrosExportacao);
+$exportXlsHref = '/grupos_familiares_cadastrados_exportar.php?formato=xls' . ($exportBaseQuery !== '' ? '&' . $exportBaseQuery : '');
+$exportPdfHref = '/grupos_familiares_cadastrados_exportar.php?formato=pdf' . ($exportBaseQuery !== '' ? '&' . $exportBaseQuery : '');
 ?>
 
 <div class="page-header">
     <h1>GFs Cadastrados</h1>
-    <p class="page-header-subtitulo">Consulte os grupos com rolagem lateral e vertical, mantendo cada dado em sua própria coluna.</p>
+    <p class="page-header-subtitulo">Total filtrado: <strong><?php echo (int) $totalFiltrados; ?></strong> GF<?php echo $totalFiltrados !== 1 ? 's' : ''; ?>.</p>
 </div>
 
-<div class="acoes" style="margin-bottom: 16px;">
+<div class="acoes" style="margin-bottom: 16px; gap: 10px;">
     <a href="/grupos_familiares.php" class="botao-link botao-secundario">Ir para cadastro</a>
+    <button type="button" class="botao-link botao-secundario" id="btnExportarGfs">EXPORTAR LISTA</button>
 </div>
 
 <form method="GET" action="/grupos_familiares_cadastrados.php" id="filtrosGruposTabela"></form>
@@ -109,11 +118,11 @@ $domingosFiltro = [1 => '1º Domingo', 2 => '2º Domingo', 3 => '3º Domingo', 4
                     <td><?php echo htmlspecialchars(ucfirst((string) $grupo['dia_semana'])); ?></td>
                     <td><?php echo htmlspecialchars($grupo['horario']); ?></td>
                     <td><?php echo htmlspecialchars(labelPerfilGrupo($grupo['perfil_grupo'] ?? null)); ?></td>
-                    <td><?php echo htmlspecialchars($grupo['local_padrao'] ?: '—'); ?></td>
+                    <td><?php echo !empty($grupo['local_padrao']) ? htmlspecialchars($grupo['local_padrao']) : '&mdash;'; ?></td>
                     <td><?php echo htmlspecialchars(labelSimNao((int) ($grupo['local_fixo'] ?? 0))); ?></td>
-                    <td><?php echo htmlspecialchars($grupo['item_celeiro'] ?: '—'); ?></td>
-                    <td><?php echo !empty($grupo['domingo_oracao_culto']) ? htmlspecialchars($domingosFiltro[(int) $grupo['domingo_oracao_culto']] ?? '—') : '—'; ?></td>
-                    <td><?php echo htmlspecialchars($grupo['lideres'] ?: '—'); ?></td>
+                    <td><?php echo !empty($grupo['item_celeiro']) ? htmlspecialchars($grupo['item_celeiro']) : '&mdash;'; ?></td>
+                    <td><?php echo !empty($grupo['domingo_oracao_culto']) ? htmlspecialchars($domingosFiltro[(int) $grupo['domingo_oracao_culto']] ?? '&mdash;') : '&mdash;'; ?></td>
+                    <td><?php echo !empty($grupo['lideres']) ? htmlspecialchars($grupo['lideres']) : '&mdash;'; ?></td>
                     <td>
                         <div><?php echo (int) ($grupo['total_membros'] ?? 0); ?></div>
                         <?php if (count($membrosLista) > 0): ?>
@@ -158,5 +167,52 @@ $domingosFiltro = [1 => '1º Domingo', 2 => '2º Domingo', 3 => '3º Domingo', 4
         </tbody>
     </table>
 </div>
+
+<div class="export-modal" id="exportModalGfs" hidden>
+    <div class="export-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="exportModalGfsTitulo">
+        <h3 id="exportModalGfsTitulo">Exportar lista de GFs</h3>
+        <p>Exportar como:</p>
+        <div class="acoes" style="margin-top: 12px;">
+            <a class="botao-link" href="<?php echo htmlspecialchars($exportPdfHref); ?>" target="_blank" rel="noopener">.PDF</a>
+            <a class="botao-link botao-secundario" href="<?php echo htmlspecialchars($exportXlsHref); ?>">.XLS</a>
+            <button type="button" class="botao-link botao-secundario" id="fecharExportModalGfs">Cancelar</button>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const botaoExportar = document.getElementById('btnExportarGfs');
+    const modal = document.getElementById('exportModalGfs');
+    const fechar = document.getElementById('fecharExportModalGfs');
+
+    if (!botaoExportar || !modal || !fechar) {
+        return;
+    }
+
+    function abrirModal() {
+        modal.hidden = false;
+    }
+
+    function fecharModal() {
+        modal.hidden = true;
+    }
+
+    botaoExportar.addEventListener('click', abrirModal);
+    fechar.addEventListener('click', fecharModal);
+
+    modal.addEventListener('click', function(event) {
+        if (event.target === modal) {
+            fecharModal();
+        }
+    });
+
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape' && !modal.hidden) {
+            fecharModal();
+        }
+    });
+});
+</script>
 
 <?php require_once __DIR__ . '/../layouts/footer.php'; ?>

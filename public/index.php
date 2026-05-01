@@ -29,7 +29,7 @@ if (isset($_GET['senha_alterada']) && $_GET['senha_alterada'] === '1') {
     $mensagem = 'Aceite de privacidade registrado com sucesso.';
 }
 
-$pageTitle = 'Dashboard - JTRO';
+$pageTitle = 'Tela Inicial - JTRO';
 
 $chavesLidas    = $avisoRepo->listarChavesLidas(Auth::id());
 $chavesLidasMap = array_fill_keys($chavesLidas, true);

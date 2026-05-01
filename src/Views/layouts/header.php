@@ -161,7 +161,7 @@
             </div>
 
             <div class="nav-secao">Visão geral</div>
-            <?php echo navItem('/index.php', 'Dashboard', 'index', $paginaAtual, $iconDashboard); ?>
+            <?php echo navItem('/index.php', 'Tela Inicial', 'index', $paginaAtual, $iconDashboard); ?>
 
             <div class="nav-secao">Gestão</div>
 

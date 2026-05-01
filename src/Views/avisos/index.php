@@ -45,6 +45,7 @@
                                     <span><strong>Líder(es):</strong> <?php echo htmlspecialchars($grupo['lideres'] ?? '—'); ?></span>
                                     <span><strong>Presença:</strong> <?php echo htmlspecialchars($grupo['resumo_presenca']['percentual_presencas']); ?>%</span>
                                     <span><strong>Dia:</strong> <?php echo htmlspecialchars($grupo['dia_semana']); ?> às <?php echo htmlspecialchars($grupo['horario']); ?></span>
+                                    <span><a href="/diagnostico_gf.php?grupo_id=<?php echo (int) $grupo['id']; ?>" class="aviso-link-acao">Abrir detalhes</a></span>
                                 </div>
 
                             <?php elseif ($aviso['tipo'] === 'faltas_consecutivas'): ?>
@@ -57,6 +58,7 @@
                                     <span><strong>GF:</strong> <?php echo htmlspecialchars($membro['grupo_nome']); ?></span>
                                     <span><strong>Líder(es):</strong> <?php echo htmlspecialchars($membro['lideres'] ?? '—'); ?></span>
                                     <span><strong>Faltas:</strong> <?php echo htmlspecialchars($membro['faltas_consecutivas']); ?> consecutivas</span>
+                                    <span><a href="/diagnostico_gf.php?grupo_id=<?php echo (int) $membro['grupo_id']; ?>" class="aviso-link-acao">Abrir detalhes</a></span>
                                 </div>
 
                             <?php elseif ($aviso['tipo'] === 'reuniao_fora_padrao'): ?>
@@ -82,7 +84,7 @@
                                     <?php if (!empty($aviso['created_at'])): ?>
                                         <span><strong>Data:</strong> <?php echo htmlspecialchars(formatarDataHoraBr($aviso['created_at'])); ?></span>
                                     <?php endif; ?>
-                                    <?php if (!empty($aviso['link'])): ?>
+                                    <?php if (!empty($aviso['link']) && ($aviso['subtipo'] ?? '') !== 'aniversario'): ?>
                                         <span><a href="<?php echo htmlspecialchars($aviso['link']); ?>" style="color:var(--color-blue); font-size:12px;">Abrir detalhes</a></span>
                                     <?php endif; ?>
                                 </div>
@@ -127,6 +129,7 @@
                                 <div class="aviso-item-titulo aviso-titulo-lido"><?php echo htmlspecialchars($grupo['nome']); ?></div>
                                 <div class="aviso-item-detalhe">
                                     <span>Diagnóstico alarmante · <?php echo htmlspecialchars($grupo['resumo_presenca']['percentual_presencas']); ?>% presença</span>
+                                    <span><a href="/diagnostico_gf.php?grupo_id=<?php echo (int) $grupo['id']; ?>" class="aviso-link-acao">Abrir detalhes</a></span>
                                 </div>
 
                             <?php elseif ($aviso['tipo'] === 'faltas_consecutivas'): ?>
@@ -134,6 +137,7 @@
                                 <div class="aviso-item-titulo aviso-titulo-lido"><?php echo htmlspecialchars($membro['nome']); ?></div>
                                 <div class="aviso-item-detalhe">
                                     <span><?php echo htmlspecialchars($membro['faltas_consecutivas']); ?> faltas · GF <?php echo htmlspecialchars($membro['grupo_nome']); ?></span>
+                                    <span><a href="/diagnostico_gf.php?grupo_id=<?php echo (int) $membro['grupo_id']; ?>" class="aviso-link-acao">Abrir detalhes</a></span>
                                 </div>
 
                             <?php elseif ($aviso['tipo'] === 'reuniao_fora_padrao'): ?>

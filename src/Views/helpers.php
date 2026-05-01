@@ -295,7 +295,7 @@ function opcoesTelasSuporte(): array
 {
     return [
         'login' => 'Login',
-        'dashboard' => 'Dashboard (tela inicial)',
+        'dashboard' => 'Tela Inicial',
         'diagnostico_gf' => 'Diagnóstico de GFs',
         'presencas' => 'Reuniões e Presenças',
         'agenda' => 'Agenda',

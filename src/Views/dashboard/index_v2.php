@@ -96,6 +96,31 @@ if (!function_exists('renderDashboardGruposFamiliaresV2')) {
                             </table>
                         </div>
                     <?php endif; ?>
+
+                    <?php
+                    $membrosIntegracaoVisiveis = array_values(array_filter(
+                        $grupo['resumo_membros'] ?? [],
+                        static function (array $membroIntegracao): bool {
+                            if ((int) ($membroIntegracao['pessoa_id'] ?? 0) <= 0) {
+                                return false;
+                            }
+                            return (int) ($membroIntegracao['lider_grupo_familiar'] ?? 0) !== 1
+                                && (int) ($membroIntegracao['lider_departamento'] ?? 0) !== 1;
+                        }
+                    ));
+                    ?>
+                    <?php if (($grupo['perfil_grupo'] ?? '') === 'integracao' && !empty($membrosIntegracaoVisiveis)): ?>
+                        <div class="acoes" style="margin-top: 12px; align-items: flex-start; flex-direction: column;">
+                            <strong style="font-size: 12px; color: var(--color-text-muted);">Aulas da Integração dos membros</strong>
+                            <div class="acoes" style="gap: 6px;">
+                                <?php foreach ($membrosIntegracaoVisiveis as $membroIntegracao): ?>
+                                    <a class="botao-link botao-secundario" href="/pessoas_integracao.php?id=<?php echo (int) $membroIntegracao['pessoa_id']; ?>">
+                                        <?php echo htmlspecialchars($membroIntegracao['nome']); ?>
+                                    </a>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
+                    <?php endif; ?>
                 </div>
             <?php endforeach; ?>
         </div>
@@ -258,9 +283,6 @@ $temAlertas = !empty($gruposAlarmantesAvisos) || !empty($membrosFaltososAvisos);
                             <tr>
                                 <th>GF</th>
                                 <th>Data</th>
-                                <th>Horário</th>
-                                <th>Pres.</th>
-                                <th>Aus.</th>
                                 <th class="tabela-acoes">Ação</th>
                             </tr>
                         </thead>
@@ -269,9 +291,6 @@ $temAlertas = !empty($gruposAlarmantesAvisos) || !empty($membrosFaltososAvisos);
                                 <tr>
                                     <td><?php echo htmlspecialchars($reuniao['grupo_nome']); ?></td>
                                     <td><?php echo htmlspecialchars(formatarDataBr($reuniao['data'])); ?></td>
-                                    <td><?php echo htmlspecialchars($reuniao['horario']); ?></td>
-                                    <td><?php echo htmlspecialchars($reuniao['total_presentes']); ?></td>
-                                    <td><?php echo htmlspecialchars($reuniao['total_ausentes']); ?></td>
                                     <td class="tabela-acoes">
                                         <div class="acoes">
                                             <a class="botao-link" href="/reuniao_visualizar.php?id=<?php echo (int) $reuniao['id']; ?>">Visualizar</a>
@@ -313,8 +332,7 @@ $temAlertas = !empty($gruposAlarmantesAvisos) || !empty($membrosFaltososAvisos);
                                 <tr>
                                     <th>GF</th>
                                     <th>Data</th>
-                                    <th>Horário</th>
-                                    <th class="tabela-acoes">Ações</th>
+                                    <th class="tabela-acoes">Ação</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -322,7 +340,6 @@ $temAlertas = !empty($gruposAlarmantesAvisos) || !empty($membrosFaltososAvisos);
                                     <tr>
                                         <td><?php echo htmlspecialchars($reuniao['grupo_nome']); ?></td>
                                         <td><?php echo htmlspecialchars(formatarDataBr($reuniao['data'])); ?></td>
-                                        <td><?php echo htmlspecialchars($reuniao['horario']); ?></td>
                                         <td class="tabela-acoes">
                                             <div class="acoes-reuniao-lider">
                                                 <a class="botao-link" href="/reuniao_visualizar.php?id=<?php echo (int) $reuniao['id']; ?>">Visualizar</a>

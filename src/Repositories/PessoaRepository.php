@@ -95,8 +95,17 @@ class PessoaRepository
         $grupoFamiliarFiltro = ($filtros['grupo_familiar_id'] ?? '') !== ''
             ? (int) $filtros['grupo_familiar_id']
             : null;
-        $idadeMinFiltro = ($filtros['idade_min'] ?? '') !== '' ? max(0, (int) $filtros['idade_min']) : null;
-        $idadeMaxFiltro = ($filtros['idade_max'] ?? '') !== '' ? max(0, (int) $filtros['idade_max']) : null;
+        $idadeMinInformada = trim((string) ($filtros['idade_min'] ?? '')) !== '';
+        $idadeMaxInformada = trim((string) ($filtros['idade_max'] ?? '')) !== '';
+        $idadeMinFiltro = $idadeMinInformada ? max(0, min(120, (int) $filtros['idade_min'])) : null;
+        $idadeMaxFiltro = $idadeMaxInformada ? max(0, min(120, (int) $filtros['idade_max'])) : null;
+
+        if ($idadeMinInformada && !$idadeMaxInformada) {
+            $idadeMaxFiltro = 120;
+        } elseif (!$idadeMinInformada && $idadeMaxInformada) {
+            $idadeMinFiltro = 0;
+        }
+
         if ($idadeMinFiltro !== null && $idadeMaxFiltro !== null && $idadeMinFiltro > $idadeMaxFiltro) {
             [$idadeMinFiltro, $idadeMaxFiltro] = [$idadeMaxFiltro, $idadeMinFiltro];
         }

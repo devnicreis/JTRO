@@ -4,22 +4,24 @@
 <?php
 $estadosCivis = opcoesEstadoCivil();
 $generos = opcoesGenero();
-$idadeMinLimite = 0;
-$idadeMaxLimite = 120;
-$idadeMinAtual = ($filtros['idade_min'] ?? '') !== '' ? max($idadeMinLimite, (int) $filtros['idade_min']) : $idadeMinLimite;
-$idadeMaxAtual = ($filtros['idade_max'] ?? '') !== '' ? min($idadeMaxLimite, (int) $filtros['idade_max']) : $idadeMaxLimite;
-if ($idadeMinAtual > $idadeMaxAtual) {
-    [$idadeMinAtual, $idadeMaxAtual] = [$idadeMaxAtual, $idadeMinAtual];
-}
+$totalFiltradas = count($pessoas);
+
+$parametrosExportacao = array_filter($filtros, static function ($valor): bool {
+    return $valor !== '' && $valor !== null;
+});
+$exportBaseQuery = http_build_query($parametrosExportacao);
+$exportXlsHref = '/pessoas_cadastradas_exportar.php?formato=xls' . ($exportBaseQuery !== '' ? '&' . $exportBaseQuery : '');
+$exportPdfHref = '/pessoas_cadastradas_exportar.php?formato=pdf' . ($exportBaseQuery !== '' ? '&' . $exportBaseQuery : '');
 ?>
 
 <div class="page-header">
     <h1>Pessoas Cadastradas</h1>
-    <p class="page-header-subtitulo">Use a rolagem da tabela para consultar os cadastros sem alongar a p&aacute;gina inteira.</p>
+    <p class="page-header-subtitulo">Total filtrado: <strong><?php echo (int) $totalFiltradas; ?></strong> pessoa<?php echo $totalFiltradas !== 1 ? 's' : ''; ?>.</p>
 </div>
 
-<div class="acoes" style="margin-bottom: 16px;">
+<div class="acoes" style="margin-bottom: 16px; gap: 10px;">
     <a href="/pessoas.php" class="botao-link botao-secundario">Ir para cadastro</a>
+    <button type="button" class="botao-link botao-secundario" id="btnExportarPessoas">EXPORTAR LISTA</button>
 </div>
 
 <form method="GET" action="/pessoas_cadastradas.php" id="filtrosPessoasTabela"></form>
@@ -62,15 +64,34 @@ if ($idadeMinAtual > $idadeMaxAtual) {
                 </th>
                 <th><input class="tabela-filtro-campo" form="filtrosPessoasTabela" type="date" name="data_nascimento" value="<?php echo htmlspecialchars($filtros['data_nascimento'] ?? ''); ?>"></th>
                 <th>
-                    <div class="idade-range-wrap" data-min="<?php echo (int) $idadeMinLimite; ?>" data-max="<?php echo (int) $idadeMaxLimite; ?>">
-                        <input type="hidden" form="filtrosPessoasTabela" name="idade_min" id="idade_min" value="<?php echo htmlspecialchars((string) ($filtros['idade_min'] ?? '')); ?>">
-                        <input type="hidden" form="filtrosPessoasTabela" name="idade_max" id="idade_max" value="<?php echo htmlspecialchars((string) ($filtros['idade_max'] ?? '')); ?>">
-                        <div class="idade-range-track"></div>
-                        <div class="idade-range-progress" id="idade-range-progress"></div>
-                        <input type="range" id="idade-min-range" min="<?php echo (int) $idadeMinLimite; ?>" max="<?php echo (int) $idadeMaxLimite; ?>" value="<?php echo (int) $idadeMinAtual; ?>">
-                        <input type="range" id="idade-max-range" min="<?php echo (int) $idadeMinLimite; ?>" max="<?php echo (int) $idadeMaxLimite; ?>" value="<?php echo (int) $idadeMaxAtual; ?>">
+                    <div class="idade-filtro-inline">
+                        <label class="idade-filtro-item" for="idade_min">De
+                            <input
+                                class="tabela-filtro-campo"
+                                id="idade_min"
+                                form="filtrosPessoasTabela"
+                                type="number"
+                                min="0"
+                                max="120"
+                                name="idade_min"
+                                value="<?php echo htmlspecialchars((string) ($filtros['idade_min'] ?? '')); ?>"
+                                placeholder="0">
+                            <span>anos</span>
+                        </label>
+                        <label class="idade-filtro-item" for="idade_max">At&eacute;
+                            <input
+                                class="tabela-filtro-campo"
+                                id="idade_max"
+                                form="filtrosPessoasTabela"
+                                type="number"
+                                min="0"
+                                max="120"
+                                name="idade_max"
+                                value="<?php echo htmlspecialchars((string) ($filtros['idade_max'] ?? '')); ?>"
+                                placeholder="120">
+                            <span>anos</span>
+                        </label>
                     </div>
-                    <div class="idade-range-valores" id="idade-range-valores"></div>
                 </th>
                 <th>
                     <select class="tabela-filtro-campo" form="filtrosPessoasTabela" name="estado_civil">
@@ -92,7 +113,7 @@ if ($idadeMinAtual > $idadeMaxAtual) {
                         <?php endforeach; ?>
                     </select>
                 </th>
-                <th><input class="tabela-filtro-campo" form="filtrosPessoasTabela" type="text" name="nome_conjuge" value="<?php echo htmlspecialchars($filtros['nome_conjuge'] ?? ''); ?>" placeholder="Cônjuge"></th>
+                <th><input class="tabela-filtro-campo" form="filtrosPessoasTabela" type="text" name="nome_conjuge" value="<?php echo htmlspecialchars($filtros['nome_conjuge'] ?? ''); ?>" placeholder="C&ocirc;njuge"></th>
                 <th>
                     <select class="tabela-filtro-campo" form="filtrosPessoasTabela" name="eh_lider">
                         <option value="">Todos</option>
@@ -125,7 +146,7 @@ if ($idadeMinAtual > $idadeMaxAtual) {
                     </select>
                 </th>
                 <th><input class="tabela-filtro-campo" form="filtrosPessoasTabela" type="text" name="telefone" value="<?php echo htmlspecialchars($filtros['telefone'] ?? ''); ?>" placeholder="Contato"></th>
-                <th><input class="tabela-filtro-campo" form="filtrosPessoasTabela" type="text" name="endereco" value="<?php echo htmlspecialchars($filtros['endereco'] ?? ''); ?>" placeholder="Endereço"></th>
+                <th><input class="tabela-filtro-campo" form="filtrosPessoasTabela" type="text" name="endereco" value="<?php echo htmlspecialchars($filtros['endereco'] ?? ''); ?>" placeholder="Endere&ccedil;o"></th>
                 <th>
                     <select class="tabela-filtro-campo" form="filtrosPessoasTabela" name="concluiu_integracao">
                         <option value="">Todos</option>
@@ -166,18 +187,18 @@ if ($idadeMinAtual > $idadeMaxAtual) {
                     <td><?php echo (int) $pessoa['id']; ?></td>
                     <td><?php echo htmlspecialchars($pessoa['nome']); ?></td>
                     <td><?php echo htmlspecialchars($pessoa['cpf']); ?></td>
-                    <td><?php echo htmlspecialchars($pessoa['email'] ?: '—'); ?></td>
+                    <td><?php echo !empty($pessoa['email']) ? htmlspecialchars($pessoa['email']) : '&mdash;'; ?></td>
                     <td><?php echo htmlspecialchars(ucfirst((string) $pessoa['cargo'])); ?></td>
                     <?php $idade = calcularIdade($pessoa['data_nascimento'] ?? null); ?>
                     <td><?php echo htmlspecialchars(formatarDataBr($pessoa['data_nascimento'] ?? null)); ?></td>
                     <td><?php echo $idade !== null ? htmlspecialchars((string) $idade . ' anos') : '&mdash;'; ?></td>
                     <td><?php echo htmlspecialchars(labelEstadoCivil($pessoa['estado_civil'] ?? null)); ?></td>
                     <td><?php echo htmlspecialchars(labelGenero($pessoa['genero'] ?? null)); ?></td>
-                    <td><?php echo htmlspecialchars($pessoa['nome_conjuge'] ?: '—'); ?></td>
+                    <td><?php echo !empty($pessoa['nome_conjuge']) ? htmlspecialchars($pessoa['nome_conjuge']) : '&mdash;'; ?></td>
                     <td><?php echo htmlspecialchars(labelSimNao((int) ($pessoa['eh_lider'] ?? 0))); ?></td>
                     <td><?php echo htmlspecialchars(labelSimNao((int) ($pessoa['lider_grupo_familiar'] ?? 0))); ?></td>
                     <td><?php echo htmlspecialchars(labelSimNao((int) ($pessoa['lider_departamento'] ?? 0))); ?></td>
-                    <td><?php echo htmlspecialchars($pessoa['grupo_familiar_nome'] ?: '—'); ?></td>
+                    <td><?php echo !empty($pessoa['grupo_familiar_nome']) ? htmlspecialchars($pessoa['grupo_familiar_nome']) : '&mdash;'; ?></td>
                     <td>
                         <div class="tabela-contatos">
                             <div class="tabela-contatos-linha">
@@ -185,7 +206,7 @@ if ($idadeMinAtual > $idadeMaxAtual) {
                                 <span><?php echo htmlspecialchars(formatarTelefone($pessoa['telefone_fixo'] ?? null)); ?></span>
                             </div>
                             <div class="tabela-contatos-linha">
-                                <span class="tabela-contatos-rotulo">Móvel</span>
+                                <span class="tabela-contatos-rotulo">M&oacute;vel</span>
                                 <span><?php echo htmlspecialchars(formatarTelefone($pessoa['telefone_movel'] ?? null)); ?></span>
                             </div>
                         </div>
@@ -206,7 +227,7 @@ if ($idadeMinAtual > $idadeMaxAtual) {
                     <td class="tabela-acoes">
                         <div class="acoes acoes-tabela-inline" style="flex-direction: column; gap: 6px;">
                             <a class="btn-gf btn-gf-editar" href="/pessoas_editar.php?id=<?php echo (int) $pessoa['id']; ?>">Editar</a>
-                            <a class="btn-gf btn-gf-integracao" href="/pessoas_integracao.php?id=<?php echo (int) $pessoa['id']; ?>">Aulas Integração</a>
+                            <a class="btn-gf btn-gf-integracao" href="/pessoas_integracao.php?id=<?php echo (int) $pessoa['id']; ?>">Aulas Integra&ccedil;&atilde;o</a>
                             <?php if ((int) $pessoa['ativo'] === 1): ?>
                                 <a class="btn-gf btn-gf-desativar" href="/pessoas_desativar.php?id=<?php echo (int) $pessoa['id']; ?>">Desativar</a>
                             <?php else: ?>
@@ -223,60 +244,53 @@ if ($idadeMinAtual > $idadeMaxAtual) {
     </table>
 </div>
 
+<div class="export-modal" id="exportModalPessoas" hidden>
+    <div class="export-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="exportModalPessoasTitulo">
+        <h3 id="exportModalPessoasTitulo">Exportar lista de pessoas</h3>
+        <p>Exportar como:</p>
+        <div class="acoes" style="margin-top: 12px;">
+            <a class="botao-link" href="<?php echo htmlspecialchars($exportPdfHref); ?>" target="_blank" rel="noopener">.PDF</a>
+            <a class="botao-link botao-secundario" href="<?php echo htmlspecialchars($exportXlsHref); ?>">.XLS</a>
+            <button type="button" class="botao-link botao-secundario" id="fecharExportModalPessoas">Cancelar</button>
+        </div>
+    </div>
+</div>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const wrap = document.querySelector('.idade-range-wrap');
-    if (!wrap) return;
+    const botaoExportar = document.getElementById('btnExportarPessoas');
+    const modal = document.getElementById('exportModalPessoas');
+    const fechar = document.getElementById('fecharExportModalPessoas');
 
-    const minRange = document.getElementById('idade-min-range');
-    const maxRange = document.getElementById('idade-max-range');
-    const minInput = document.getElementById('idade_min');
-    const maxInput = document.getElementById('idade_max');
-    const progress = document.getElementById('idade-range-progress');
-    const label = document.getElementById('idade-range-valores');
-
-    if (!minRange || !maxRange || !minInput || !maxInput || !progress || !label) {
+    if (!botaoExportar || !modal || !fechar) {
         return;
     }
 
-    const hardMin = parseInt(wrap.dataset.min || '0', 10);
-    const hardMax = parseInt(wrap.dataset.max || '120', 10);
-
-    function atualizarRangeIdade() {
-        let min = parseInt(minRange.value, 10);
-        let max = parseInt(maxRange.value, 10);
-
-        if (min > max) {
-            const troca = min;
-            min = max;
-            max = troca;
-            minRange.value = String(min);
-            maxRange.value = String(max);
-        }
-
-        const total = hardMax - hardMin;
-        const inicio = ((min - hardMin) / total) * 100;
-        const fim = ((max - hardMin) / total) * 100;
-
-        progress.style.left = inicio + '%';
-        progress.style.width = (fim - inicio) + '%';
-
-        if (min === hardMin && max === hardMax) {
-            minInput.value = '';
-            maxInput.value = '';
-            label.textContent = 'Todas';
-            return;
-        }
-
-        minInput.value = String(min);
-        maxInput.value = String(max);
-        label.textContent = min + ' a ' + max + ' anos';
+    function abrirModal() {
+        modal.hidden = false;
     }
 
-    minRange.addEventListener('input', atualizarRangeIdade);
-    maxRange.addEventListener('input', atualizarRangeIdade);
-    atualizarRangeIdade();
+    function fecharModal() {
+        modal.hidden = true;
+    }
+
+    botaoExportar.addEventListener('click', abrirModal);
+    fechar.addEventListener('click', fecharModal);
+
+    modal.addEventListener('click', function(event) {
+        if (event.target === modal) {
+            fecharModal();
+        }
+    });
+
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape' && !modal.hidden) {
+            fecharModal();
+        }
+    });
 });
 </script>
 
 <?php require_once __DIR__ . '/../layouts/footer.php'; ?>
+
+

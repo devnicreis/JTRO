@@ -792,6 +792,26 @@ tbody tr:hover td { background: var(--color-bg); }
     width: 100%;
     justify-content: center;
 }
+
+.idade-filtro-inline {
+    display: flex;
+    gap: 8px;
+    min-width: 220px;
+}
+
+.idade-filtro-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--color-text-muted);
+    margin: 0;
+}
+
+.idade-filtro-item .tabela-filtro-campo {
+    min-width: 64px;
+    text-align: center;
+}
 .idade-range-wrap {
     position: relative;
     width: 100%;
@@ -863,6 +883,34 @@ tbody tr:hover td { background: var(--color-bg); }
 }
 .tabela-filtro-input-curto { min-width: 72px; }
 .tabela-filtro-select-curto { min-width: 96px; }
+
+.export-modal[hidden] {
+    display: none !important;
+}
+
+.export-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 400;
+    background: rgba(0, 0, 0, 0.38);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+}
+
+.export-modal-dialog {
+    width: min(460px, 100%);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+    padding: 18px;
+}
+
+.export-modal-dialog h3 {
+    margin-bottom: 6px;
+}
 .tabela-tooltip {
     position: relative;
     display: inline-flex;
@@ -1250,12 +1298,9 @@ tbody tr:hover td { background: var(--color-bg); }
 .quadro-ultimas-reunioes thead { position: sticky; top: 0; z-index: 1; }
 .quadro-ultimas-reunioes thead th { background: var(--color-bg); white-space: nowrap; }
 
-.quadro-ultimas-reunioes th:nth-child(1), .quadro-ultimas-reunioes td:nth-child(1) { width: 22%; }
-.quadro-ultimas-reunioes th:nth-child(2), .quadro-ultimas-reunioes td:nth-child(2) { width: 20%; }
-.quadro-ultimas-reunioes th:nth-child(3), .quadro-ultimas-reunioes td:nth-child(3) { width: 16%; }
-.quadro-ultimas-reunioes th:nth-child(4), .quadro-ultimas-reunioes td:nth-child(4) { width: 10%; text-align: center; }
-.quadro-ultimas-reunioes th:nth-child(5), .quadro-ultimas-reunioes td:nth-child(5) { width: 10%; text-align: center; }
-.quadro-ultimas-reunioes th:nth-child(6), .quadro-ultimas-reunioes td:nth-child(6) { width: 22%; }
+.quadro-ultimas-reunioes th:nth-child(1), .quadro-ultimas-reunioes td:nth-child(1) { width: 40%; }
+.quadro-ultimas-reunioes th:nth-child(2), .quadro-ultimas-reunioes td:nth-child(2) { width: 28%; white-space: nowrap; }
+.quadro-ultimas-reunioes th:nth-child(3), .quadro-ultimas-reunioes td:nth-child(3) { width: 32%; }
 
 .quadro-ultimas-reunioes tbody tr:nth-child(odd)  td { background: var(--color-surface); }
 .quadro-ultimas-reunioes tbody tr:nth-child(even) td { background: #f4f2ee; }
@@ -1504,6 +1549,12 @@ tbody tr:hover td { background: var(--color-bg); }
     background: #d8e9fa;
     color: var(--color-blue-strong-hover);
     opacity: 1;
+}
+
+.notif-acoes {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
 }
 
 .notif-tempo { font-size: 11px; color: var(--color-text-muted); display: block; margin-top: 3px; margin-bottom: 4px; }
@@ -1982,6 +2033,7 @@ tbody tr:hover td { background: var(--color-bg); }
     .campo-endereco-complemento { grid-column: span 1; }
     .acoes-grid   { grid-template-columns: 1fr; }
     .jtro-main    { padding: 72px 16px 20px; }
+    .idade-filtro-inline { flex-direction: column; gap: 6px; min-width: 0; }
 }
 
 @media (max-width: 780px) {
@@ -2011,33 +2063,31 @@ tbody tr:hover td { background: var(--color-bg); }
         width: auto;
     }
 
-    /* Dashboard admin-líder: mantém legibilidade da tabela "Últimas reuniões" */
     .dashboard-admin-main .quadro-ultimas-reunioes-dashboard .tabela-wrapper {
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
+        overflow-x: hidden;
     }
 
     .dashboard-admin-main .quadro-ultimas-reunioes-dashboard .tabela-wrapper table {
-        min-width: 640px;
+        min-width: 0;
+        width: 100%;
         table-layout: fixed;
     }
 
     .dashboard-admin-main .quadro-ultimas-reunioes-dashboard thead th {
         font-size: 10px;
-        padding: 8px 12px;
+        padding: 8px 10px;
         white-space: nowrap;
     }
 
     .dashboard-admin-main .quadro-ultimas-reunioes-dashboard tbody td {
         font-size: 11px;
-        padding: 8px 12px;
-        white-space: nowrap;
+        padding: 8px 10px;
     }
 }
 
 /* ============================================================
    Dashboard do líder — últimas reuniões
-   Ajuste específico para tabela com 4 colunas
+   Ajuste específico para tabela com 3 colunas
    ============================================================ */
 
 .quadro-ultimas-reunioes-lider .tabela-wrapper-lider {
@@ -2060,24 +2110,18 @@ tbody tr:hover td { background: var(--color-bg); }
 
 .quadro-ultimas-reunioes-lider .tabela-reunioes-lider th:nth-child(1),
 .quadro-ultimas-reunioes-lider .tabela-reunioes-lider td:nth-child(1) {
-    width: 30%;
+    width: 42%;
 }
 
 .quadro-ultimas-reunioes-lider .tabela-reunioes-lider th:nth-child(2),
 .quadro-ultimas-reunioes-lider .tabela-reunioes-lider td:nth-child(2) {
-    width: 24%;
+    width: 25%;
     white-space: nowrap;
 }
 
 .quadro-ultimas-reunioes-lider .tabela-reunioes-lider th:nth-child(3),
 .quadro-ultimas-reunioes-lider .tabela-reunioes-lider td:nth-child(3) {
-    width: 18%;
-    white-space: nowrap;
-}
-
-.quadro-ultimas-reunioes-lider .tabela-reunioes-lider th:nth-child(4),
-.quadro-ultimas-reunioes-lider .tabela-reunioes-lider td:nth-child(4) {
-    width: 28%;
+    width: 33%;
 }
 
 .quadro-ultimas-reunioes-lider .tabela-reunioes-lider .tabela-acoes {

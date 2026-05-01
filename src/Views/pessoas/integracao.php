@@ -2,7 +2,7 @@
 <?php require_once __DIR__ . '/../helpers.php'; ?>
 
 <div class="menu">
-    <a href="/pessoas.php">&larr; Voltar para Pessoas</a>
+    <a href="/index.php">&larr; Voltar para In&iacute;cio</a>
 </div>
 
 <div class="page-header">

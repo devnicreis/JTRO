@@ -21,3 +21,7 @@ Thumbs.db
 *.rar
 *.zip
 *.7z
+
+# Guias internos de infraestrutura/deploy (não versionar em repositórios públicos)
+docs/cloudflare-producao.md
+docs/deploy-hostinger-vps.md
