@@ -6,6 +6,7 @@ require_once __DIR__ . '/../src/Repositories/GrupoFamiliarRepository.php';
 require_once __DIR__ . '/../src/Repositories/PresencaRepository.php';
 require_once __DIR__ . '/../src/Services/AuditoriaService.php';
 require_once __DIR__ . '/../src/Repositories/AvisoRepository.php';
+require_once __DIR__ . '/../vendor/autoload.php';
 
 date_default_timezone_set('America/Sao_Paulo');
 

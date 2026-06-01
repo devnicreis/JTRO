@@ -79,6 +79,7 @@ class Database
         self::ensurePessoaGenderAndSpouseColumns($connection);
         self::ensurePessoaEmailIsNotUnique($connection);
         self::ensureReuniaoPedidosOracaoModeColumn($connection);
+        self::ensurePresencaPontualidadeColumn($connection);
         self::$legacyMigrationsApplied = true;
     }
 
@@ -339,6 +340,20 @@ class Database
             SET pedidos_oracao_modo = 'individual'
             WHERE pedidos_oracao_modo IS NULL
                OR TRIM(pedidos_oracao_modo) = ''
+        ");
+    }
+
+    private static function ensurePresencaPontualidadeColumn(PDO $connection): void
+    {
+        if (!self::tableHasColumn($connection, 'presencas', 'pontualidade')) {
+            $connection->exec("ALTER TABLE presencas ADD COLUMN pontualidade TEXT DEFAULT 'no_horario'");
+        }
+
+        $connection->exec("
+            UPDATE presencas
+            SET pontualidade = COALESCE(NULLIF(TRIM(presente_tempo), ''), 'no_horario')
+            WHERE pontualidade IS NULL
+               OR TRIM(pontualidade) = ''
         ");
     }
 

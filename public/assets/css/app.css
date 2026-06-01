@@ -686,6 +686,8 @@ a.btn-gf-integracao, button.btn-gf-integracao {
 .badge-blue   { background: var(--color-blue-light);   color: var(--color-blue); }
 .badge-amber  { background: var(--color-amber-light);  color: var(--color-amber); }
 .badge-red    { background: var(--color-red-light);    color: var(--color-red); }
+.badge-teal   { background: var(--color-teal-light);   color: var(--color-teal); }
+.badge-purple { background: var(--color-purple-light); color: var(--color-purple); }
 
 /* ============================================================
    Tabelas
@@ -2795,8 +2797,251 @@ tbody tr:hover td { background: var(--color-bg); }
     margin-bottom: 0;
 }
 
+/* ============================================================
+   Relatorios - Central de Relatorios
+   ============================================================ */
+
+.relatorios-tabs {
+    display: inline-flex;
+    gap: 6px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: 5px;
+    background: var(--color-surface);
+    margin-bottom: 18px;
+}
+
+.relatorios-tab {
+    border: none;
+    background: transparent;
+    color: var(--color-text-secondary);
+    font-size: 13px;
+    font-weight: 500;
+    padding: 8px 15px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+.relatorios-tab:hover {
+    background: var(--color-bg);
+    color: var(--color-text-primary);
+}
+
+.relatorios-tab.ativo {
+    background: var(--color-blue);
+    color: #fff;
+}
+
+.relatorios-tab-panel {
+    display: none;
+}
+
+.relatorios-tab-panel.ativo {
+    display: block;
+}
+
+.relatorios-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.relatorio-card {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface);
+    padding: 16px;
+    transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+}
+
+.relatorio-card:hover {
+    border-color: #bfd8f3;
+    box-shadow: var(--shadow-sm);
+    transform: translateY(-1px);
+}
+
+.relatorio-card.aberto {
+    border-color: #9fc3ea;
+    box-shadow: var(--shadow-md);
+}
+
+.relatorio-card-topo {
+    border: none;
+    background: transparent;
+    width: 100%;
+    text-align: left;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    cursor: pointer;
+    padding: 0;
+}
+
+.relatorio-icone {
+    width: 42px;
+    height: 42px;
+    border-radius: var(--radius-md);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.relatorio-icone svg {
+    width: 20px;
+    height: 20px;
+}
+
+.relatorio-icone-azul {
+    background: var(--color-blue-light);
+    color: var(--color-blue);
+}
+
+.relatorio-icone-amber {
+    background: var(--color-amber-light);
+    color: var(--color-amber);
+}
+
+.relatorio-icone-verde {
+    background: var(--color-green-light);
+    color: var(--color-green);
+}
+
+.relatorio-icone-vermelho {
+    background: var(--color-red-light);
+    color: var(--color-red);
+}
+
+.relatorio-icone-teal {
+    background: var(--color-teal-light);
+    color: var(--color-teal);
+}
+
+.relatorio-icone-roxo {
+    background: var(--color-purple-light);
+    color: var(--color-purple);
+}
+
+.relatorio-conteudo {
+    display: flex;
+    flex-direction: column;
+}
+
+.relatorio-titulo {
+    font-family: 'Outfit', sans-serif;
+    font-size: 14.5px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    line-height: 1.3;
+}
+
+.relatorio-descricao {
+    margin-top: 3px;
+    font-size: 12.5px;
+    color: var(--color-text-muted);
+    line-height: 1.55;
+}
+
+.relatorio-chips {
+    margin-top: 12px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.relatorio-formulario {
+    display: none;
+    margin: 14px 0 0;
+    padding: 14px;
+    border-radius: var(--radius-md);
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+}
+
+.relatorio-card.aberto .relatorio-formulario {
+    display: block;
+}
+
+.relatorio-form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr auto;
+    gap: 10px;
+    align-items: end;
+}
+
+.relatorio-form-grid-gf {
+    grid-template-columns: 1fr 1fr;
+}
+
+.relatorio-campo-amplo {
+    grid-column: span 2;
+}
+
+.relatorio-btn {
+    border: none;
+    border-radius: var(--radius-md);
+    padding: 9px 14px;
+    color: #fff;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    min-height: 38px;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    transition: opacity 0.15s;
+    white-space: nowrap;
+}
+
+.relatorio-btn:hover {
+    opacity: 0.88;
+}
+
+.relatorio-btn-azul {
+    background: var(--color-blue);
+}
+
+.relatorio-btn-amber {
+    background: var(--color-amber);
+}
+
+.relatorio-btn-verde {
+    background: var(--color-green);
+}
+
+.relatorio-btn-vermelho {
+    background: var(--color-red);
+}
+
+.relatorio-btn-teal {
+    background: var(--color-teal);
+}
+
+.relatorio-btn-roxo {
+    background: var(--color-purple);
+}
+
 @media (max-width: 780px) {
     .legal-card {
         max-height: none;
+    }
+
+    .relatorios-tabs {
+        width: 100%;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .relatorios-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .relatorio-form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .relatorio-campo-amplo {
+        grid-column: span 1;
     }
 }

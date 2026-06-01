@@ -43,6 +43,7 @@
     $iconAgenda = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="12" height="11" rx="2"/><path d="M5 1v4M11 1v4M2 7h12"/><path d="M5 10h2M9 10h2M5 13h2"/></svg>';
     $iconCarta = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="3" width="14" height="10" rx="2"/><path d="M1 5l7 5 7-5"/></svg>';
     $iconChamados = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 9.5V3.5A1.5 1.5 0 013.5 2h4.8a1.5 1.5 0 011.06.44l2.2 2.2A1.5 1.5 0 0112 5.7v3.8"/><path d="M9 2v2.5A1.5 1.5 0 0010.5 6H13"/><path d="M4 12.5h4"/><path d="M6 10.5v4"/></svg>';
+    $iconRelatorios = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 13h12"/><path d="M4 11V8"/><path d="M8 11V5"/><path d="M12 11V3"/></svg>';
     $iconChevron = '<svg class="nav-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 7l3 3 3-3"/></svg>';
     $iconSair = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 8H2M6 5l-3 3 3 3"/><path d="M6 2h6a1 1 0 011 1v10a1 1 0 01-1 1H6"/></svg>';
 
@@ -219,6 +220,7 @@
             <?php echo navItem('/chamados.php', 'Chamados', 'chamados', $paginaAtual, $iconChamados); ?>
             <?php echo navItem('/avisos.php', 'Notificações', 'avisos', $paginaAtual, $iconNotificacoes, $totalAvisosNav); ?>
             <?php if ($isAdmin): ?>
+                <?php echo navItem('/relatorios.php', 'Relatorios', 'relatorios', $paginaAtual, $iconRelatorios); ?>
                 <?php echo navItem('/auditoria.php', 'Auditoria', 'auditoria', $paginaAtual, $iconAuditoria); ?>
             <?php endif; ?>
 
