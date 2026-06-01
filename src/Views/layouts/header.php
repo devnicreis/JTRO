@@ -215,12 +215,14 @@
             echo navItem('/agenda.php', 'Agenda', 'agenda', $agendaAtivo, $iconAgenda);
             ?>
             <?php echo navItem('/cartas.php', 'Carta Semanal', 'cartas', $paginaAtual, $iconCarta, $totalCartasBadge); ?>
+            <?php if ($isAdmin): ?>
+                <?php echo navItem('/relatorios.php', 'Relatórios', 'relatorios', $paginaAtual, $iconRelatorios); ?>
+            <?php endif; ?>
 
             <div class="nav-secao">Sistema</div>
             <?php echo navItem('/chamados.php', 'Chamados', 'chamados', $paginaAtual, $iconChamados); ?>
             <?php echo navItem('/avisos.php', 'Notificações', 'avisos', $paginaAtual, $iconNotificacoes, $totalAvisosNav); ?>
             <?php if ($isAdmin): ?>
-                <?php echo navItem('/relatorios.php', 'Relatorios', 'relatorios', $paginaAtual, $iconRelatorios); ?>
                 <?php echo navItem('/auditoria.php', 'Auditoria', 'auditoria', $paginaAtual, $iconAuditoria); ?>
             <?php endif; ?>
 

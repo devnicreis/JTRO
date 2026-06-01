@@ -1262,6 +1262,20 @@ class PresencaRepository
         return $stmt->fetchColumn() ?: '—';
     }
 
+    private function listarIdsLideresDoGrupo(int $grupoId): array
+    {
+        $stmt = $this->connection->prepare("
+            SELECT DISTINCT gl.pessoa_id
+            FROM grupo_lideres gl
+            INNER JOIN pessoas p ON p.id = gl.pessoa_id
+            WHERE gl.grupo_familiar_id = :grupo_id
+              AND p.ativo = 1
+        ");
+        $stmt->execute([':grupo_id' => $grupoId]);
+
+        return array_map('intval', $stmt->fetchAll(PDO::FETCH_COLUMN));
+    }
+
     public function listarPedidosOracaoPorReuniao(int $reuniaoId): array
     {
         $stmt = $this->connection->prepare("
@@ -1289,6 +1303,17 @@ class PresencaRepository
 
         $modoCompartilhado = $this->normalizarModoPedidosOracao($reuniao['pedidos_oracao_modo'] ?? null) === 'casal_compartilhado';
         $presentes = $this->listarPresentesDaReuniao($reuniaoId);
+        $grupoId = (int) ($reuniao['grupo_familiar_id'] ?? 0);
+
+        if ($grupoId > 0) {
+            $lideresMap = array_fill_keys($this->listarIdsLideresDoGrupo($grupoId), true);
+            if (!empty($lideresMap)) {
+                $presentes = array_values(array_filter(
+                    $presentes,
+                    static fn(array $presente): bool => !isset($lideresMap[(int) ($presente['pessoa_id'] ?? 0)])
+                ));
+            }
+        }
 
         return $this->montarCamposPedidosOracao($presentes, $pedidosMap, $modoCompartilhado);
     }

@@ -9,6 +9,7 @@ storage/*.sqlite
 storage/*.log
 storage/tmp_*
 database/delete.sql
+/vendor
 
 # Arquivos temporários do sistema
 Thumbs.db

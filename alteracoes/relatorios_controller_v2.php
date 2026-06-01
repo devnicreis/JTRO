@@ -8,13 +8,11 @@ require_once __DIR__ . '/../src/Core/Database.php';
 require_once __DIR__ . '/../src/Repositories/RelatorioRepository.php';
 require_once __DIR__ . '/../vendor/autoload.php'; // TCPDF via Composer
 
-if (method_exists('Auth', 'requireAuth')) {
-    Auth::requireAuth();
-} else {
-    Auth::requireLogin();
-}
+use App\Core\Auth;
+use App\Repositories\RelatorioRepository;
+
+Auth::requireAuth();
 Auth::requireAdmin();
-Auth::requireSenhaAtualizada();
 
 // ── GFs para o select ──────────────────────────────────────────────────────
 $gruposFamiliares = RelatorioRepository::listarGruposFamiliares();
@@ -62,7 +60,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 // ── Renderizar a view ──────────────────────────────────────────────────────
 $erro = $_SESSION['erro_rel'] ?? null;
 unset($_SESSION['erro_rel']);
-$paginaAtual = 'relatorios';
 
 require_once __DIR__ . '/../src/Views/relatorios/index.php';
 
@@ -173,8 +170,7 @@ function _renderCabecalho(TCPDF $pdf, array $dados): void
     $pdf->SetXY(14, 38);
     $pdf->Cell(55, 5, 'Emitido em: ' . date('d/m/Y') . ' às ' . date('H:i'), 0, 0, 'L');
     $pdf->SetX(75);
-    $usuarioSessao = $_SESSION['usuario']['nome'] ?? null;
-    $pdf->Cell(65, 5, 'Por: ' . ($usuarioSessao ?: 'Administrador'), 0, 0, 'L');
+    $pdf->Cell(65, 5, 'Por: ' . ($_SESSION['nome'] ?? 'Administrador'), 0, 0, 'L');
     $pdf->SetX(148);
     $pdf->Cell(48, 5, 'Uso restrito à liderança', 0, 0, 'R');
 }
@@ -508,9 +504,9 @@ function _renderDiagnosticoGF(TCPDF $pdf, array $d): void
             $pdf->SetY($pdf->GetY() + 2);
             $pdf->SetFont('helvetica', '', 6.5);
             $legendas = [
-                [[46,125,50],  'P  Presente'],
+                [[46,125,50],  'P Presente'],
                 [[133,79,11],  'J  Falta Justificada'],
-                [[163,45,45],  'A  Ausente'],
+                [[163,45,45],  ' A Ausente'],
                 [[180,180,180],'–  Sem Registro'],
             ];
             $xLeg = 14;

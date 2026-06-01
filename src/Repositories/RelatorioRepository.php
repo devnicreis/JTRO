@@ -38,62 +38,42 @@ class RelatorioRepository
         return false;
     }
 
-    private static function buscarInfoGrupoFamiliar(int $gfId): ?array
+    private static function nomeLideresSql(string $aliasGf = 'gf'): string
     {
-        $stmt = self::connection()->prepare("
-            SELECT
-                gf.id,
-                gf.nome AS gf_nome,
-                COALESCE(
-                    (
-                        SELECT GROUP_CONCAT(p.nome, ', ')
-                        FROM grupo_lideres gl
-                        INNER JOIN pessoas p ON p.id = gl.pessoa_id
-                        WHERE gl.grupo_familiar_id = gf.id
-                          AND p.ativo = 1
-                    ),
-                    'Sem lider cadastrado'
-                ) AS lider_nome
-            FROM grupos_familiares gf
-            WHERE gf.id = :gf_id
-            LIMIT 1
-        ");
-        $stmt->execute([':gf_id' => $gfId]);
-
-        return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+        return "COALESCE((
+            SELECT GROUP_CONCAT(p.nome, ', ')
+            FROM grupo_lideres gl
+            INNER JOIN pessoas p ON p.id = gl.pessoa_id
+            WHERE gl.grupo_familiar_id = {$aliasGf}.id
+              AND p.ativo = 1
+        ), 'Sem lider')";
     }
 
     public static function mapeamentoAssiduidadeGlobal(string $dataInicial, string $dataFinal): array
     {
         $conn = self::connection();
 
-        $stmtMembros = $conn->query("
-            SELECT COUNT(*) AS total_membros
-            FROM pessoas
-            WHERE ativo = 1
-        ");
+        $stmtMembros = $conn->query("SELECT COUNT(*) FROM pessoas WHERE ativo = 1");
         $totalMembros = (int) ($stmtMembros->fetchColumn() ?: 0);
 
         $stmtKpi = $conn->prepare("
             SELECT
                 SUM(CASE WHEN pr.status = 'presente' THEN 1 ELSE 0 END) AS total_presencas,
-                SUM(CASE WHEN pr.status = 'ausente' AND pr.ausencia_tipo = 'justificada' THEN 1 ELSE 0 END) AS faltas_justificadas,
-                SUM(CASE WHEN pr.status = 'ausente' AND COALESCE(pr.ausencia_tipo, 'injustificada') <> 'justificada' THEN 1 ELSE 0 END) AS faltas_injustificadas,
+                SUM(CASE WHEN pr.status = 'ausente' AND pr.ausencia_tipo = 'justificada' THEN 1 ELSE 0 END) AS faltas_just,
+                SUM(CASE WHEN pr.status = 'ausente' AND COALESCE(pr.ausencia_tipo, 'injustificada') <> 'justificada' THEN 1 ELSE 0 END) AS faltas_injust,
+                COUNT(DISTINCT r.id) AS total_reunioes,
                 COUNT(pr.id) AS total_registros
-            FROM presencas pr
-            INNER JOIN reunioes r ON r.id = pr.reuniao_id
+            FROM reunioes r
+            LEFT JOIN presencas pr ON pr.reuniao_id = r.id
             WHERE r.data BETWEEN :di AND :df
         ");
-        $stmtKpi->execute([
-            ':di' => $dataInicial,
-            ':df' => $dataFinal,
-        ]);
-        $kpis = $stmtKpi->fetch(PDO::FETCH_ASSOC) ?: [];
+        $stmtKpi->execute([':di' => $dataInicial, ':df' => $dataFinal]);
+        $kpi = $stmtKpi->fetch(PDO::FETCH_ASSOC) ?: [];
 
-        $totalRegistros = (int) ($kpis['total_registros'] ?? 0);
-        $totalPresencas = (int) ($kpis['total_presencas'] ?? 0);
-        $faltasJustificadas = (int) ($kpis['faltas_justificadas'] ?? 0);
-        $faltasInjustificadas = (int) ($kpis['faltas_injustificadas'] ?? 0);
+        $totalRegistros = (int) ($kpi['total_registros'] ?? 0);
+        $totalPresencas = (int) ($kpi['total_presencas'] ?? 0);
+        $faltasJust = (int) ($kpi['faltas_just'] ?? 0);
+        $faltasInjust = (int) ($kpi['faltas_injust'] ?? 0);
 
         $stmtMensal = $conn->prepare("
             SELECT
@@ -108,31 +88,24 @@ class RelatorioRepository
             GROUP BY strftime('%Y-%m', r.data)
             ORDER BY mes ASC
         ");
-        $stmtMensal->execute([
-            ':di' => $dataInicial,
-            ':df' => $dataFinal,
-        ]);
+        $stmtMensal->execute([':di' => $dataInicial, ':df' => $dataFinal]);
         $mensal = $stmtMensal->fetchAll(PDO::FETCH_ASSOC);
 
+        $taxaAnterior = null;
         foreach ($mensal as &$mes) {
-            $mes['taxa_presenca'] = self::percentual((int) ($mes['presencas'] ?? 0), (int) ($mes['total'] ?? 0));
+            $total = max(1, (int) ($mes['total'] ?? 0));
+            $taxa = round(((int) ($mes['presencas'] ?? 0) / $total) * 100, 1);
+            $mes['taxa_presenca'] = $taxa;
+            $mes['tendencia'] = $taxaAnterior !== null ? round($taxa - $taxaAnterior, 1) : null;
+            $taxaAnterior = $taxa;
         }
         unset($mes);
 
         $stmtPorGf = $conn->prepare("
             SELECT
-                gf.id,
+                gf.id AS gf_id,
                 gf.nome AS gf_nome,
-                COALESCE(
-                    (
-                        SELECT GROUP_CONCAT(p.nome, ', ')
-                        FROM grupo_lideres gl
-                        INNER JOIN pessoas p ON p.id = gl.pessoa_id
-                        WHERE gl.grupo_familiar_id = gf.id
-                          AND p.ativo = 1
-                    ),
-                    'Sem lider'
-                ) AS lider_nome,
+                " . self::nomeLideresSql('gf') . " AS lider_nome,
                 COUNT(DISTINCT gm.pessoa_id) AS qtd_membros,
                 COUNT(DISTINCT r.id) AS qtd_reunioes,
                 SUM(CASE WHEN pr.status = 'presente' THEN 1 ELSE 0 END) AS presencas,
@@ -148,16 +121,16 @@ class RelatorioRepository
             GROUP BY gf.id, gf.nome
             ORDER BY gf.nome ASC
         ");
-        $stmtPorGf->execute([
-            ':di' => $dataInicial,
-            ':df' => $dataFinal,
-        ]);
+        $stmtPorGf->execute([':di' => $dataInicial, ':df' => $dataFinal]);
         $porGf = $stmtPorGf->fetchAll(PDO::FETCH_ASSOC);
 
         foreach ($porGf as &$grupo) {
             $grupo['taxa_presenca'] = self::percentual((int) ($grupo['presencas'] ?? 0), (int) ($grupo['total_reg'] ?? 0));
         }
         unset($grupo);
+
+        $rank = $porGf;
+        usort($rank, static fn(array $a, array $b): int => (($b['taxa_presenca'] ?? 0) <=> ($a['taxa_presenca'] ?? 0)));
 
         return [
             'tipo' => 'mapeamento_assiduidade',
@@ -166,36 +139,37 @@ class RelatorioRepository
             'kpis' => [
                 'total_membros' => $totalMembros,
                 'total_presencas' => $totalPresencas,
-                'faltas_justificadas' => $faltasJustificadas,
-                'faltas_injustificadas' => $faltasInjustificadas,
+                'faltas_just' => $faltasJust,
+                'faltas_injust' => $faltasInjust,
+                'total_reunioes' => (int) ($kpi['total_reunioes'] ?? 0),
                 'total_registros' => $totalRegistros,
                 'taxa_presenca' => self::percentual($totalPresencas, $totalRegistros),
             ],
             'mensal' => $mensal,
             'por_gf' => $porGf,
+            'top_melhores' => array_slice($rank, 0, 3),
+            'top_piores' => array_slice(array_reverse($rank), 0, 3),
         ];
     }
 
     public static function termometroSobrecarga(string $dataInicial, string $dataFinal): array
     {
-        $stmt = self::connection()->prepare("
+        $conn = self::connection();
+        $temDataInicio = self::tabelaTemColuna('grupos_familiares', 'data_inicio');
+
+        $selectDataInicio = $temDataInicio ? 'gf.data_inicio' : 'NULL';
+
+        $stmt = $conn->prepare("
             SELECT
                 gf.id AS gf_id,
                 gf.nome AS gf_nome,
-                COALESCE(
-                    (
-                        SELECT GROUP_CONCAT(p.nome, ', ')
-                        FROM grupo_lideres gl
-                        INNER JOIN pessoas p ON p.id = gl.pessoa_id
-                        WHERE gl.grupo_familiar_id = gf.id
-                          AND p.ativo = 1
-                    ),
-                    'Sem lider'
-                ) AS lider_nome,
+                " . self::nomeLideresSql('gf') . " AS lider_nome,
+                {$selectDataInicio} AS gf_data_inicio,
                 COUNT(DISTINCT gm.pessoa_id) AS qtd_membros,
                 COUNT(DISTINCT r.id) AS qtd_reunioes,
-                SUM(CASE WHEN pr.status = 'ausente' AND COALESCE(pr.ausencia_tipo, 'injustificada') <> 'justificada' THEN 1 ELSE 0 END) AS faltas_injust,
+                SUM(CASE WHEN pr.status = 'presente' THEN 1 ELSE 0 END) AS presencas,
                 SUM(CASE WHEN pr.status = 'ausente' AND pr.ausencia_tipo = 'justificada' THEN 1 ELSE 0 END) AS faltas_just,
+                SUM(CASE WHEN pr.status = 'ausente' AND COALESCE(pr.ausencia_tipo, 'injustificada') <> 'justificada' THEN 1 ELSE 0 END) AS faltas_injust,
                 COUNT(pr.id) AS total_reg
             FROM grupos_familiares gf
             LEFT JOIN grupo_membros gm ON gm.grupo_familiar_id = gf.id
@@ -206,225 +180,287 @@ class RelatorioRepository
             GROUP BY gf.id, gf.nome
             ORDER BY gf.nome ASC
         ");
-        $stmt->execute([
-            ':di' => $dataInicial,
-            ':df' => $dataFinal,
-        ]);
+        $stmt->execute([':di' => $dataInicial, ':df' => $dataFinal]);
         $lideres = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         foreach ($lideres as &$lider) {
             $qtdMembros = (int) ($lider['qtd_membros'] ?? 0);
             $faltasInjust = (int) ($lider['faltas_injust'] ?? 0);
-            $score = ($qtdMembros * 0.4) + ($faltasInjust * 0.6);
+            $qtdReunioes = (int) ($lider['qtd_reunioes'] ?? 0);
+            $presencas = (int) ($lider['presencas'] ?? 0);
 
+            $score = ($qtdMembros * 0.4) + ($faltasInjust * 0.6);
             $lider['score_sobrecarga'] = round($score, 1);
             $lider['nivel'] = $score > 12 ? 'alto' : ($score > 6 ? 'medio' : 'baixo');
+            $lider['media_presentes_reuniao'] = $qtdReunioes > 0 ? round($presencas / $qtdReunioes, 1) : 0;
+            $lider['lider_contato'] = '-';
+
+            $dataInicio = (string) ($lider['gf_data_inicio'] ?? '');
+            if ($dataInicio !== '') {
+                $inicio = DateTime::createFromFormat('Y-m-d', $dataInicio);
+                if ($inicio instanceof DateTime) {
+                    $hoje = new DateTime();
+                    $diff = $inicio->diff($hoje);
+                    $meses = ($diff->y * 12) + $diff->m;
+                    $lider['tempo_lideranca'] = $meses >= 12
+                        ? floor($meses / 12) . ' ano' . (floor($meses / 12) > 1 ? 's' : '')
+                        : $meses . ' mes' . ($meses !== 1 ? 'es' : '');
+                } else {
+                    $lider['tempo_lideranca'] = '-';
+                }
+            } else {
+                $lider['tempo_lideranca'] = '-';
+            }
         }
         unset($lider);
 
-        usort($lideres, static function (array $a, array $b): int {
-            return (float) ($b['score_sobrecarga'] ?? 0) <=> (float) ($a['score_sobrecarga'] ?? 0);
-        });
+        usort($lideres, static fn(array $a, array $b): int => (($b['score_sobrecarga'] ?? 0) <=> ($a['score_sobrecarga'] ?? 0)));
 
         return [
             'tipo' => 'termometro_sobrecarga',
-            'titulo' => 'Termometro de Sobrecarga',
+            'titulo' => 'Termometro de Sobrecarga (Risco de Burnout)',
             'periodo' => [$dataInicial, $dataFinal],
             'lideres' => $lideres,
         ];
     }
 
-    public static function engajamentoVisitantes(string $dataInicial, string $dataFinal): array
+    public static function diagnosticoGF(string $dataInicial, string $dataFinal, int $gfId): array
     {
-        $stmt = self::connection()->prepare("
+        $conn = self::connection();
+
+        $temHorarioPadrao = self::tabelaTemColuna('grupos_familiares', 'horario_padrao');
+        $temDataInicio = self::tabelaTemColuna('grupos_familiares', 'data_inicio');
+        $temDataEntrada = self::tabelaTemColuna('grupo_membros', 'data_entrada');
+        $temDataSaida = self::tabelaTemColuna('grupo_membros', 'data_saida');
+
+        $selectHorarioPadrao = $temHorarioPadrao ? 'gf.horario_padrao' : 'gf.horario';
+        $selectDataInicio = $temDataInicio ? 'gf.data_inicio' : 'NULL';
+
+        $stmtGf = $conn->prepare("
             SELECT
-                p.id AS pessoa_id,
-                p.nome AS membro_nome,
+                gf.id,
                 gf.nome AS gf_nome,
-                COALESCE(
-                    (
-                        SELECT GROUP_CONCAT(pl.nome, ', ')
-                        FROM grupo_lideres gl
-                        INNER JOIN pessoas pl ON pl.id = gl.pessoa_id
-                        WHERE gl.grupo_familiar_id = gf.id
-                          AND pl.ativo = 1
-                    ),
-                    'Sem lider'
-                ) AS lider_nome,
-                MIN(r.data) AS primeira_visita,
-                MAX(r.data) AS ultima_visita,
-                COUNT(pr.id) AS qtd_visitas,
-                p.ativo AS membro_ativo
-            FROM presencas pr
-            INNER JOIN pessoas p ON p.id = pr.pessoa_id
-            INNER JOIN reunioes r ON r.id = pr.reuniao_id
-            INNER JOIN grupos_familiares gf ON gf.id = r.grupo_familiar_id
-            LEFT JOIN pedidos_oracao po ON po.reuniao_id = r.id
-                AND po.pessoa_id = p.id
-            WHERE r.data BETWEEN :di AND :df
-              AND (
-                    LOWER(COALESCE(po.pedido, '')) LIKE '%visitante%'
-                 OR LOWER(COALESCE(pr.justificativa_ausencia, '')) LIKE '%visitante%'
-                 OR LOWER(COALESCE(r.observacoes, '')) LIKE '%visitante%'
-              )
-            GROUP BY p.id, gf.id
-            ORDER BY qtd_visitas DESC, membro_nome ASC
+                gf.local_padrao,
+                {$selectHorarioPadrao} AS horario_padrao,
+                gf.item_celeiro,
+                gf.domingo_oracao_culto,
+                {$selectDataInicio} AS data_inicio,
+                " . self::nomeLideresSql('gf') . " AS lider_nome,
+                '-' AS lider_contato
+            FROM grupos_familiares gf
+            WHERE gf.id = :gf_id
+            LIMIT 1
         ");
-        $stmt->execute([
-            ':di' => $dataInicial,
-            ':df' => $dataFinal,
-        ]);
-        $visitantes = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $stmtGf->execute([':gf_id' => $gfId]);
+        $gf = $stmtGf->fetch(PDO::FETCH_ASSOC) ?: [];
 
-        $total = count($visitantes);
-        $retornaram = count(array_filter($visitantes, static fn(array $visitante): bool => (int) ($visitante['qtd_visitas'] ?? 0) > 1));
-        $convertidos = count(array_filter($visitantes, static fn(array $visitante): bool => (int) ($visitante['membro_ativo'] ?? 0) === 1));
-
-        return [
-            'tipo' => 'engajamento_visitantes',
-            'titulo' => 'Engajamento de Visitantes',
-            'periodo' => [$dataInicial, $dataFinal],
-            'visitantes' => $visitantes,
-            'total' => $total,
-            'convertidos' => $convertidos,
-            'taxa_retorno' => $total > 0 ? round(($retornaram / $total) * 100, 1) : 0.0,
-            'taxa_conversao' => $total > 0 ? round(($convertidos / $total) * 100, 1) : 0.0,
-        ];
-    }
-
-    public static function raioXVulnerabilidade(string $dataInicial, string $dataFinal, int $gfId): array
-    {
-        $gf = self::buscarInfoGrupoFamiliar($gfId);
-
-        $stmt = self::connection()->prepare("
+        $stmtKpi = $conn->prepare("
             SELECT
-                p.id AS pessoa_id,
-                p.nome AS membro_nome,
-                COALESCE(NULLIF(TRIM(p.telefone_movel), ''), NULLIF(TRIM(p.telefone_fixo), ''), '-') AS contato,
-                SUM(CASE WHEN pr.status = 'ausente' THEN 1 ELSE 0 END) AS total_ausencias,
-                SUM(CASE WHEN pr.status = 'ausente' AND pr.ausencia_tipo = 'justificada' THEN 1 ELSE 0 END) AS total_just,
-                COUNT(pr.id) AS total_reunioes,
-                GROUP_CONCAT(
-                    CASE
-                        WHEN pr.status = 'ausente' AND COALESCE(pr.justificativa_ausencia, '') <> '' THEN pr.justificativa_ausencia
-                        ELSE NULL
-                    END,
-                    ' | '
-                ) AS justificativas
-            FROM presencas pr
-            INNER JOIN reunioes r ON r.id = pr.reuniao_id
-            INNER JOIN pessoas p ON p.id = pr.pessoa_id
-            WHERE r.grupo_familiar_id = :gf_id
-              AND r.data BETWEEN :di AND :df
-            GROUP BY p.id, p.nome
-            HAVING total_ausencias >= 2
-            ORDER BY total_ausencias DESC, membro_nome ASC
-        ");
-        $stmt->execute([
-            ':gf_id' => $gfId,
-            ':di' => $dataInicial,
-            ':df' => $dataFinal,
-        ]);
-        $membros = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-        foreach ($membros as &$membro) {
-            $taxa = self::percentual((int) ($membro['total_ausencias'] ?? 0), (int) ($membro['total_reunioes'] ?? 0));
-            $membro['taxa_ausencia'] = $taxa;
-            $membro['nivel_alerta'] = $taxa >= 50 ? 'urgente' : ($taxa >= 30 ? 'atencao' : 'observacao');
-        }
-        unset($membro);
-
-        return [
-            'tipo' => 'raio_x_vulnerabilidade',
-            'titulo' => 'Raio-X de Vulnerabilidade Pastoral',
-            'periodo' => [$dataInicial, $dataFinal],
-            'gf' => $gf,
-            'membros' => $membros,
-        ];
-    }
-
-    public static function historicoPedidosOracao(string $dataInicial, string $dataFinal, int $gfId): array
-    {
-        $gf = self::buscarInfoGrupoFamiliar($gfId);
-
-        $stmt = self::connection()->prepare("
-            SELECT
-                r.data AS data_reuniao,
-                p.nome AS membro_nome,
-                po.pedido AS observacao,
-                COALESCE(pr.status, 'nao_informado') AS status
-            FROM pedidos_oracao po
-            INNER JOIN reunioes r ON r.id = po.reuniao_id
-            INNER JOIN pessoas p ON p.id = po.pessoa_id
-            LEFT JOIN presencas pr ON pr.reuniao_id = po.reuniao_id
-                AND pr.pessoa_id = po.pessoa_id
-            WHERE r.grupo_familiar_id = :gf_id
-              AND r.data BETWEEN :di AND :df
-              AND TRIM(COALESCE(po.pedido, '')) <> ''
-            ORDER BY r.data ASC, p.nome ASC
-        ");
-        $stmt->execute([
-            ':gf_id' => $gfId,
-            ':di' => $dataInicial,
-            ':df' => $dataFinal,
-        ]);
-        $pedidos = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-        return [
-            'tipo' => 'historico_oracao',
-            'titulo' => 'Historico de Pedidos de Oracao',
-            'periodo' => [$dataInicial, $dataFinal],
-            'gf' => $gf,
-            'pedidos' => $pedidos,
-        ];
-    }
-
-    public static function desempenhoPontualidade(string $dataInicial, string $dataFinal, int $gfId): array
-    {
-        $gf = self::buscarInfoGrupoFamiliar($gfId);
-        $temPontualidade = self::tabelaTemColuna('presencas', 'pontualidade');
-        $campoPontualidade = $temPontualidade
-            ? "COALESCE(NULLIF(pr.pontualidade, ''), NULLIF(pr.presente_tempo, ''), 'no_horario')"
-            : "COALESCE(NULLIF(pr.presente_tempo, ''), 'no_horario')";
-
-        $sql = "
-            SELECT
-                p.id AS pessoa_id,
-                p.nome AS membro_nome,
-                COUNT(pr.id) AS total_reunioes,
+                COUNT(DISTINCT gm.pessoa_id) AS qtd_membros,
+                COUNT(DISTINCT r.id) AS qtd_reunioes,
                 SUM(CASE WHEN pr.status = 'presente' THEN 1 ELSE 0 END) AS presencas,
-                SUM(CASE WHEN pr.status = 'presente' AND {$campoPontualidade} = 'no_horario' THEN 1 ELSE 0 END) AS no_horario,
-                SUM(CASE WHEN pr.status = 'presente' AND {$campoPontualidade} = 'atrasado' THEN 1 ELSE 0 END) AS atrasado,
-                SUM(CASE WHEN pr.status = 'ausente' THEN 1 ELSE 0 END) AS ausencias,
-                SUM(CASE WHEN pr.status = 'ausente' AND pr.ausencia_tipo = 'justificada' THEN 1 ELSE 0 END) AS just
-            FROM presencas pr
-            INNER JOIN pessoas p ON p.id = pr.pessoa_id
-            INNER JOIN reunioes r ON r.id = pr.reuniao_id
-            WHERE r.grupo_familiar_id = :gf_id
-              AND r.data BETWEEN :di AND :df
-            GROUP BY p.id, p.nome
-            ORDER BY presencas DESC, membro_nome ASC
-        ";
-        $stmt = self::connection()->prepare($sql);
-        $stmt->execute([
+                SUM(CASE WHEN pr.status = 'ausente' AND pr.ausencia_tipo = 'justificada' THEN 1 ELSE 0 END) AS faltas_just,
+                SUM(CASE WHEN pr.status = 'ausente' AND COALESCE(pr.ausencia_tipo, 'injustificada') <> 'justificada' THEN 1 ELSE 0 END) AS faltas_injust,
+                COUNT(pr.id) AS total_reg
+            FROM grupo_membros gm
+            LEFT JOIN reunioes r ON r.grupo_familiar_id = :gf_id
+                AND r.data BETWEEN :di AND :df
+            LEFT JOIN presencas pr ON pr.reuniao_id = r.id
+                AND pr.pessoa_id = gm.pessoa_id
+            WHERE gm.grupo_familiar_id = :gf_id2
+        ");
+        $stmtKpi->execute([
             ':gf_id' => $gfId,
+            ':gf_id2' => $gfId,
             ':di' => $dataInicial,
             ':df' => $dataFinal,
         ]);
-        $membros = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $kpis = $stmtKpi->fetch(PDO::FETCH_ASSOC) ?: [];
+        $kpis['taxa_presenca'] = self::percentual((int) ($kpis['presencas'] ?? 0), (int) ($kpis['total_reg'] ?? 0));
 
+        $novos = 0;
+        $saidas = 0;
+        if ($temDataEntrada || $temDataSaida) {
+            $sqlCrescimento = "SELECT ";
+            $sqlCrescimento .= $temDataEntrada
+                ? "SUM(CASE WHEN gm.data_entrada BETWEEN :di AND :df THEN 1 ELSE 0 END) AS novos_membros,"
+                : "0 AS novos_membros,";
+            $sqlCrescimento .= $temDataSaida
+                ? " SUM(CASE WHEN gm.data_saida BETWEEN :di AND :df THEN 1 ELSE 0 END) AS saidas"
+                : " 0 AS saidas";
+            $sqlCrescimento .= " FROM grupo_membros gm WHERE gm.grupo_familiar_id = :gf_id";
+
+            $stmtCrescimento = $conn->prepare($sqlCrescimento);
+            $stmtCrescimento->execute([':di' => $dataInicial, ':df' => $dataFinal, ':gf_id' => $gfId]);
+            $crescimento = $stmtCrescimento->fetch(PDO::FETCH_ASSOC) ?: [];
+            $novos = (int) ($crescimento['novos_membros'] ?? 0);
+            $saidas = (int) ($crescimento['saidas'] ?? 0);
+        }
+
+        $stmtReunioes = $conn->prepare("
+            SELECT
+                r.id,
+                r.data AS data_reuniao,
+                r.horario AS hora_inicio_reuniao,
+                r.local AS local_reuniao,
+                SUM(CASE WHEN pr.status = 'presente' THEN 1 ELSE 0 END) AS qtd_presentes,
+                SUM(CASE WHEN pr.status = 'ausente' AND pr.ausencia_tipo = 'justificada' THEN 1 ELSE 0 END) AS qtd_just,
+                SUM(CASE WHEN pr.status = 'ausente' AND COALESCE(pr.ausencia_tipo, 'injustificada') <> 'justificada' THEN 1 ELSE 0 END) AS qtd_ausentes,
+                COUNT(pr.id) AS total_convocados,
+                CASE
+                    WHEN gf.local_padrao IS NOT NULL
+                     AND TRIM(gf.local_padrao) <> ''
+                     AND r.local IS NOT NULL
+                     AND TRIM(r.local) <> ''
+                     AND TRIM(r.local) <> TRIM(gf.local_padrao)
+                    THEN 1 ELSE 0
+                END AS local_anomalo,
+                CASE
+                    WHEN {$selectHorarioPadrao} IS NOT NULL
+                     AND TRIM({$selectHorarioPadrao}) <> ''
+                     AND r.horario IS NOT NULL
+                     AND TRIM(r.horario) <> ''
+                     AND TRIM(r.horario) <> TRIM({$selectHorarioPadrao})
+                    THEN 1 ELSE 0
+                END AS horario_anomalo,
+                gf.local_padrao,
+                {$selectHorarioPadrao} AS horario_padrao
+            FROM reunioes r
+            INNER JOIN grupos_familiares gf ON gf.id = r.grupo_familiar_id
+            LEFT JOIN presencas pr ON pr.reuniao_id = r.id
+            WHERE r.grupo_familiar_id = :gf_id
+              AND r.data BETWEEN :di AND :df
+            GROUP BY r.id
+            ORDER BY r.data ASC
+        ");
+        $stmtReunioes->execute([':gf_id' => $gfId, ':di' => $dataInicial, ':df' => $dataFinal]);
+        $reunioes = $stmtReunioes->fetchAll(PDO::FETCH_ASSOC);
+
+        foreach ($reunioes as &$reuniao) {
+            $reuniao['taxa_presenca'] = self::percentual((int) ($reuniao['qtd_presentes'] ?? 0), (int) ($reuniao['total_convocados'] ?? 0));
+        }
+        unset($reuniao);
+
+        $stmtMembros = $conn->prepare("
+            SELECT
+                p.id AS pessoa_id,
+                p.nome AS membro_nome,
+                COALESCE(NULLIF(TRIM(p.telefone_movel), ''), NULLIF(TRIM(p.telefone_fixo), ''), '-') AS contato
+            FROM grupo_membros gm
+            INNER JOIN pessoas p ON p.id = gm.pessoa_id
+            WHERE gm.grupo_familiar_id = :gf_id
+              AND p.ativo = 1
+            ORDER BY p.nome ASC
+        ");
+        $stmtMembros->execute([':gf_id' => $gfId]);
+        $membros = $stmtMembros->fetchAll(PDO::FETCH_ASSOC);
+
+        $stmtPresencas = $conn->prepare("
+            SELECT
+                pr.pessoa_id,
+                pr.reuniao_id,
+                CASE
+                    WHEN pr.status = 'ausente' AND pr.ausencia_tipo = 'justificada' THEN 'falta_justificada'
+                    ELSE pr.status
+                END AS status_rel,
+                COALESCE(NULLIF(pr.pontualidade, ''), NULLIF(pr.presente_tempo, ''), 'no_horario') AS pontualidade,
+                COALESCE(pr.justificativa_ausencia, '') AS observacao
+            FROM presencas pr
+            INNER JOIN reunioes r ON r.id = pr.reuniao_id
+            WHERE r.grupo_familiar_id = :gf_id
+              AND r.data BETWEEN :di AND :df
+        ");
+        $stmtPresencas->execute([':gf_id' => $gfId, ':di' => $dataInicial, ':df' => $dataFinal]);
+        $presencas = $stmtPresencas->fetchAll(PDO::FETCH_ASSOC);
+
+        $mapaPresenca = [];
+        foreach ($presencas as $presenca) {
+            $mapaPresenca[(int) $presenca['pessoa_id']][(int) $presenca['reuniao_id']] = $presenca;
+        }
+
+        $reuniaoIds = array_map(static fn(array $r): int => (int) ($r['id'] ?? 0), $reunioes);
         foreach ($membros as &$membro) {
-            $membro['taxa_presenca'] = self::percentual((int) ($membro['presencas'] ?? 0), (int) ($membro['total_reunioes'] ?? 0));
-            $membro['taxa_pontualidade'] = self::percentual((int) ($membro['no_horario'] ?? 0), (int) ($membro['presencas'] ?? 0));
+            $pid = (int) ($membro['pessoa_id'] ?? 0);
+            $membro['mapa'] = [];
+
+            $pres = 0;
+            $noHorario = 0;
+            $atrasado = 0;
+            $ausencias = 0;
+            $maxConsec = 0;
+            $consec = 0;
+            $obs = [];
+
+            foreach ($reuniaoIds as $rid) {
+                $registro = $mapaPresenca[$pid][$rid] ?? null;
+
+                if ($registro === null) {
+                    $membro['mapa'][$rid] = null;
+                    continue;
+                }
+
+                $status = (string) ($registro['status_rel'] ?? '');
+                $membro['mapa'][$rid] = $status;
+
+                if ($status === 'presente') {
+                    $pres++;
+                    $consec = 0;
+                    $pontualidade = (string) ($registro['pontualidade'] ?? '');
+                    if ($pontualidade === 'no_horario') {
+                        $noHorario++;
+                    } elseif ($pontualidade === 'atrasado') {
+                        $atrasado++;
+                    }
+                } else {
+                    $ausencias++;
+                    $consec++;
+                    if ($consec > $maxConsec) {
+                        $maxConsec = $consec;
+                    }
+                }
+
+                $observacao = trim((string) ($registro['observacao'] ?? ''));
+                if ($observacao !== '') {
+                    $obs[] = $observacao;
+                }
+            }
+
+            $totalReunioes = count($reuniaoIds);
+            $membro['total_reunioes'] = $totalReunioes;
+            $membro['presencas'] = $pres;
+            $membro['no_horario'] = $noHorario;
+            $membro['atrasado'] = $atrasado;
+            $membro['ausencias'] = $ausencias;
+            $membro['max_consec'] = $maxConsec;
+            $membro['taxa_presenca'] = self::percentual($pres, $totalReunioes);
+            $membro['taxa_pontualidade'] = self::percentual($noHorario, $pres);
+            $membro['observacoes'] = implode(' | ', array_values(array_unique($obs)));
+
+            $taxaAusencia = $totalReunioes > 0 ? ($ausencias / $totalReunioes) : 0;
+            $membro['nivel_alerta'] = $taxaAusencia >= 0.5 ? 'urgente' : ($taxaAusencia >= 0.3 ? 'atencao' : 'normal');
         }
         unset($membro);
 
+        $vulneraveis = array_values(array_filter(
+            $membros,
+            static fn(array $m): bool => (($m['nivel_alerta'] ?? 'normal') !== 'normal') && ((int) ($m['ausencias'] ?? 0) >= 2)
+        ));
+        usort($vulneraveis, static fn(array $a, array $b): int => (($b['ausencias'] ?? 0) <=> ($a['ausencias'] ?? 0)));
+
         return [
-            'tipo' => 'pontualidade_frequencia',
-            'titulo' => 'Pontualidade e Frequencia',
+            'tipo' => 'diagnostico_gf',
+            'titulo' => 'Diagnostico Completo do GF: ' . (string) ($gf['gf_nome'] ?? ''),
             'periodo' => [$dataInicial, $dataFinal],
             'gf' => $gf,
+            'kpis' => $kpis,
+            'crescimento' => [
+                'novos_membros' => $novos,
+                'saidas' => $saidas,
+                'saldo' => $novos - $saidas,
+            ],
+            'reunioes' => $reunioes,
             'membros' => $membros,
+            'vulneraveis' => $vulneraveis,
         ];
     }
 
@@ -434,16 +470,7 @@ class RelatorioRepository
             SELECT
                 gf.id,
                 gf.nome,
-                COALESCE(
-                    (
-                        SELECT GROUP_CONCAT(p.nome, ', ')
-                        FROM grupo_lideres gl
-                        INNER JOIN pessoas p ON p.id = gl.pessoa_id
-                        WHERE gl.grupo_familiar_id = gf.id
-                          AND p.ativo = 1
-                    ),
-                    'Sem lider'
-                ) AS lider_nome
+                " . self::nomeLideresSql('gf') . " AS lider_nome
             FROM grupos_familiares gf
             WHERE gf.ativo = 1
             ORDER BY gf.nome ASC
