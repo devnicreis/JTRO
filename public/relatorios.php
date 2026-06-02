@@ -1,5 +1,4 @@
 <?php
-
 // public/relatorios.php — v2
 // Acessível apenas por administradores.
 
@@ -7,6 +6,43 @@ require_once __DIR__ . '/../src/Core/Auth.php';
 require_once __DIR__ . '/../src/Core/Database.php';
 require_once __DIR__ . '/../src/Repositories/RelatorioRepository.php';
 require_once __DIR__ . '/../vendor/autoload.php'; // TCPDF via Composer
+
+class JTRORelatorioPdf extends TCPDF
+{
+    private array $dadosRelatorio = [];
+
+    public function setDadosRelatorio(array $dados): void
+    {
+        $this->dadosRelatorio = $dados;
+    }
+
+    public function Header(): void
+    {
+        if (!empty($this->dadosRelatorio)) {
+            _renderCabecalho($this, $this->dadosRelatorio);
+        }
+    }
+
+    public function Footer(): void
+    {
+        $footerHeight = 13;
+        $pageWidth = $this->getPageWidth();
+        $pageHeight = $this->getPageHeight();
+        $topoRodape = $pageHeight - $footerHeight;
+
+        $this->SetFillColor(244, 247, 251);
+        $this->Rect(0, $topoRodape, $pageWidth, $footerHeight, 'F');
+        $this->SetDrawColor(220, 229, 240);
+        $this->Line(14, $topoRodape, $pageWidth - 14, $topoRodape);
+
+        $this->SetFont('helvetica', '', 7);
+        $this->SetTextColor(122, 143, 166);
+        $this->SetXY(14, $topoRodape + 3);
+        $this->Cell(98, 5, 'Documento gerado automaticamente pelo JTRO', 0, 0, 'L');
+        $this->SetX($pageWidth - 60);
+        $this->Cell(46, 5, 'Página ' . $this->getAliasNumPage() . ' de ' . $this->getAliasNbPages(), 0, 0, 'R');
+    }
+}
 
 if (method_exists('Auth', 'requireAuth')) {
     Auth::requireAuth();
@@ -16,10 +52,10 @@ if (method_exists('Auth', 'requireAuth')) {
 Auth::requireAdmin();
 Auth::requireSenhaAtualizada();
 
-// ── GFs para o select ──────────────────────────────────────────────────────
+// â”€â”€ GFs para o select â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 $gruposFamiliares = RelatorioRepository::listarGruposFamiliares();
 
-// ── Processamento do formulário ────────────────────────────────────────────
+// â”€â”€ Processamento do formulÃ¡rio â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $tipo        = $_POST['tipo']         ?? '';
@@ -27,14 +63,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $dataFinal   = $_POST['data_final']   ?? '';
     $gfId        = isset($_POST['gf_id']) ? (int)$_POST['gf_id'] : null;
 
-    // Validações
+    // ValidaÃ§Ãµes
     if (empty($tipo) || empty($dataInicial) || empty($dataFinal)) {
-        $_SESSION['erro_rel'] = 'Preencha todos os campos obrigatórios.';
+        $_SESSION['erro_rel'] = 'Preencha todos os campos obrigatÃ³rios.';
         header('Location: relatorios.php');
         exit;
     }
     if ($dataFinal < $dataInicial) {
-        $_SESSION['erro_rel'] = 'A data final deve ser maior ou igual à data inicial.';
+        $_SESSION['erro_rel'] = 'A data final deve ser maior ou igual Ã  data inicial.';
         header('Location: relatorios.php');
         exit;
     }
@@ -50,7 +86,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     };
 
     if ($dados === null) {
-        $_SESSION['erro_rel'] = 'Tipo inválido ou GF não selecionado.';
+        $_SESSION['erro_rel'] = 'Tipo invÃ¡lido ou GF nÃ£o selecionado.';
         header('Location: relatorios.php');
         exit;
     }
@@ -59,7 +95,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     exit;
 }
 
-// ── Renderizar a view ──────────────────────────────────────────────────────
+// â”€â”€ Renderizar a view â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 $erro = $_SESSION['erro_rel'] ?? null;
 unset($_SESSION['erro_rel']);
 $paginaAtual = 'relatorios';
@@ -67,58 +103,35 @@ $paginaAtual = 'relatorios';
 require_once __DIR__ . '/../src/Views/relatorios/index.php';
 
 
-// ═══════════════════════════════════════════════════════════════════════════
-//  FUNÇÃO DE GERAÇÃO DE PDF
-// ═══════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+//  FUNÃ‡ÃƒO DE GERAÃ‡ÃƒO DE PDF
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 function gerarPDF(array $dados): void
 {
-    $pdf = new TCPDF('P', 'mm', 'A4', true, 'UTF-8', false);
+    $pdf = new JTRORelatorioPdf('P', 'mm', 'A4', true, 'UTF-8', false);
+    $pdf->setDadosRelatorio($dados);
 
-    // ── Metadados ──
+    // â”€â”€ Metadados â”€â”€
     $pdf->SetCreator('JTRO');
-    $pdf->SetAuthor('Comunhão Cristã Abba');
+    $pdf->SetAuthor('ComunhÃ£o CristÃ£ Abba');
     $pdf->SetTitle($dados['titulo']);
-    $pdf->SetSubject('Relatório JTRO');
+    $pdf->SetSubject('RelatÃ³rio JTRO');
 
-    $pdf->SetMargins(14, 45, 14);
-    $pdf->SetAutoPageBreak(true, 22);
-    $pdf->setPrintHeader(false);
-    $pdf->setPrintFooter(false);
+    $pdf->SetMargins(14, 48, 14);
+    $pdf->SetAutoPageBreak(true, 18);
+    $pdf->setPrintHeader(true);
+    $pdf->setPrintFooter(true);
 
     $pdf->AddPage();
-    _renderCabecalho($pdf, $dados);
-
     $pdf->SetY(48);
 
-    // ── Conteúdo por tipo ──
+    // â”€â”€ ConteÃºdo por tipo â”€â”€
     switch ($dados['tipo']) {
         case 'mapeamento_assiduidade': _renderMapeamento($pdf, $dados); break;
         case 'termometro_sobrecarga':  _renderTermometro($pdf, $dados);  break;
         case 'diagnostico_gf':         _renderDiagnosticoGF($pdf, $dados); break;
     }
-
-    // ── Rodapé em todas as páginas ──
-    $total = $pdf->getNumPages();
-    for ($i = 1; $i <= $total; $i++) {
-        $pdf->setPage($i);
-        $pdf->SetFillColor(244, 247, 251);
-        $pdf->Rect(0, 284, 210, 13, 'F');
-        $pdf->SetDrawColor(220, 229, 240);
-        $pdf->Line(14, 284, 196, 284);
-        $pdf->SetFont('helvetica', '', 7);
-        $pdf->SetTextColor(122, 143, 166);
-        $pdf->SetXY(14, 287);
-        $pdf->Cell(70, 5, 'Documento gerado automaticamente pelo JTRO', 0, 0, 'L');
-        $pdf->SetFont('helvetica', 'B', 7);
-        $pdf->SetTextColor(24, 95, 165);
-        $pdf->SetX(90);
-        $pdf->SetFont('helvetica', '', 7);
-        $pdf->SetTextColor(122, 143, 166);
-        $pdf->SetX(150);
-        $pdf->Cell(46, 5, "Página {$i} de {$total}", 0, 0, 'R');
-    }
-
     $filename = 'jtro_' . $dados['tipo'] . '_' . date('Ymd_Hi') . '.pdf';
     $pdf->Output($filename, 'D');
 }
@@ -148,7 +161,7 @@ function _renderCabecalho(TCPDF $pdf, array $dados): void
     $pdf->SetFont('helvetica', '', 7.5);
     $pdf->SetTextColor(200, 225, 255);
     $pdf->SetXY(12, 28);
-    $pdf->Cell(70, 4, 'Comunhão Cristã Abba', 0, 0, 'L');
+    $pdf->Cell(70, 4, 'Comunhão Cristã Abba Fazenda Rio Grande', 0, 0, 'L');
 
     // Título do relatório + período (lado direito)
     $pdf->SetFont('helvetica', 'B', 11);
@@ -196,8 +209,8 @@ function _renderMapeamento(TCPDF $pdf, array $d): void
 
     // Destaques: top 3 melhores / piores
     _secao($pdf, 'Destaques do Período');
-    $melhores = array_map(fn($g) => [$g['gf_nome'], $g['lider_nome'] ?? '–', $g['taxa_presenca'].'%'], $d['top_melhores']);
-    $piores   = array_map(fn($g) => [$g['gf_nome'], $g['lider_nome'] ?? '–', $g['taxa_presenca'].'%'], $d['top_piores']);
+    $melhores = array_map(fn($g) => [$g['gf_nome'], $g['taxa_presenca'] . '%'], $d['top_melhores']);
+    $piores   = array_map(fn($g) => [$g['gf_nome'], $g['taxa_presenca'] . '%'], $d['top_piores']);
 
     $yBase = $pdf->GetY();
     $pdf->SetY($yBase);
@@ -207,7 +220,7 @@ function _renderMapeamento(TCPDF $pdf, array $d): void
     $pdf->SetTextColor(46, 125, 50);
     $pdf->SetXY(14, $yBase);
     $pdf->Cell(90, 5, 'Top 3 Melhores Assiduidades', 0, 1, 'L');
-    _tabelaSimples($pdf, ['Grupo Familiar', 'Líder', '% Presença'], $melhores, 90, 14, false, true);
+    _tabelaSimples($pdf, ['Grupo Familiar', '% Presença'], $melhores, 90, 14, false, true, false, [72, 18]);
 
     // Piores (direita)
     $yBase2 = $yBase;
@@ -215,7 +228,7 @@ function _renderMapeamento(TCPDF $pdf, array $d): void
     $pdf->SetTextColor(163, 45, 45);
     $pdf->SetXY(110, $yBase2);
     $pdf->Cell(96, 5, 'Top 3 Menores Assiduidades', 0, 1, 'L');
-    _tabelaSimples($pdf, ['Grupo Familiar', 'Líder', '% Presença'], $piores, 96, 110, false, false, true);
+    _tabelaSimples($pdf, ['Grupo Familiar', '% Presença'], $piores, 96, 110, false, false, true, [76, 20]);
 
     $pdf->SetY(max($pdf->GetY(), $yBase + 30) + 4);
 
@@ -240,12 +253,11 @@ function _renderMapeamento(TCPDF $pdf, array $d): void
 
     // Ranking por GF
     _secao($pdf, 'Assiduidade por Grupo Familiar');
-    $h2 = ['Grupo Familiar', 'Líder', 'Membros', 'Reuniões', 'Presenças', 'F.Just.', 'F.Injust.', '% Pres.'];
+    $h2 = ['Grupo Familiar', 'Membros', 'Reuniões', 'Presenças', 'F.Just.', 'F.Injust.', '% Pres.'];
     $r2 = [];
     foreach ($d['por_gf'] as $gf) {
         $r2[] = [
             $gf['gf_nome'],
-            $gf['lider_nome'] ?? '–',
             $gf['qtd_membros'],
             $gf['qtd_reunioes'],
             $gf['presencas'],
@@ -254,7 +266,7 @@ function _renderMapeamento(TCPDF $pdf, array $d): void
             $gf['taxa_presenca'] . '%',
         ];
     }
-    _tabela($pdf, $h2, $r2, semanatica: true, colWidths: [38, 32, 16, 18, 18, 14, 18, 18]);
+    _tabela($pdf, $h2, $r2, semanatica: true, colWidths: [48, 18, 18, 18, 18, 18, 22]);
 }
 
 // ── Render: Termômetro de Sobrecarga ──────────────────────────────────────
@@ -272,7 +284,7 @@ function _renderTermometro(TCPDF $pdf, array $d): void
     $pdf->Cell(0, 5, 'COMO É CALCULADO O SCORE DE SOBRECARGA', 0, 1, 'L');
     $pdf->SetFont('helvetica', '', 7.5);
     $pdf->SetXY(17, $yL + 7);
-    $pdf->Cell(0, 5, 'Score = (Nº de Membros × 0,4) + (Faltas Injustificadas × 0,6)  |  Baixo: <= 6  |  Médio: 7–12  |  Alto: > 12', 0, 1, 'L');
+    $pdf->Cell(0, 5, 'Score = (Nº de Membros × 0,4) + (Faltas Injustificadas × 0,6)', 0, 1, 'L');
     $pdf->SetY($pdf->GetY() + 4);
 
     // Escala de referência dos níveis
@@ -300,7 +312,7 @@ function _renderTermometro(TCPDF $pdf, array $d): void
 
     // Tabela
     _secao($pdf, 'Análise de Carga Pastoral por Líder');
-    $headers = ['Líder', 'GF', 'Membros', 'Temp. Lid.', 'Reuniões', 'Presenças', 'Méd/Reun.', 'F.Injust.', 'Score', 'Nível'];
+    $headers = ['GF', 'Membros', 'Reuniões', 'Presenças', 'Méd/Reun.', 'F.Injust.', 'Score', 'Nível'];
     $rows = [];
     foreach ($d['lideres'] as $l) {
         $nivel = match($l['nivel']) {
@@ -309,10 +321,8 @@ function _renderTermometro(TCPDF $pdf, array $d): void
             default => 'BAIXO',
         };
         $rows[] = [
-            $l['lider_nome'],
             $l['gf_nome'],
             $l['qtd_membros'],
-            $l['tempo_lideranca'],
             $l['qtd_reunioes'],
             $l['presencas'],
             $l['media_presentes_reuniao'],
@@ -321,15 +331,15 @@ function _renderTermometro(TCPDF $pdf, array $d): void
             $nivel,
         ];
     }
-    _tabela($pdf, $headers, $rows, colWidths: [28, 28, 14, 16, 14, 16, 16, 14, 12, 14]);
+    _tabela($pdf, $headers, $rows, colWidths: [58, 16, 16, 16, 18, 18, 18, 22]);
 }
-
 // ── Render: Diagnóstico Completo do GF ────────────────────────────────────
 
 function _renderDiagnosticoGF(TCPDF $pdf, array $d): void
 {
     $gf  = $d['gf'];
     $kpi = $d['kpis'];
+    $indicadores = $d['indicadores'] ?? [];
 
     // Banner do GF
     $pdf->SetFillColor(232, 248, 245);
@@ -350,13 +360,14 @@ function _renderDiagnosticoGF(TCPDF $pdf, array $d): void
     $pdf->Cell(182, 4, $local . $horario, 0, 1, 'L');
     $pdf->SetY($pdf->GetY() + 4);
 
-    // ── Seção 1: Saúde Geral ──
+    // Seção 1: Saúde Geral
     _secao($pdf, '1. Saúde Geral do Grupo');
     _kpiRow($pdf, [
-        ['Membros Ativos',    $kpi['qtd_membros'] ?? 0,   [232,248,245], [15,110,86]],
-        ['Taxa de Presença',  ($kpi['taxa_presenca'] ?? 0) . '%', $kpi['taxa_presenca'] >= 75 ? [232,245,233] : [253,236,234], $kpi['taxa_presenca'] >= 75 ? [46,125,50] : [163,45,45]],
-        ['Novos Membros',     $d['crescimento']['novos_membros'] ?? 0, [235,242,251], [24,95,165]],
-        ['Saldo do Período',  ($d['crescimento']['saldo'] >= 0 ? '+' : '') . ($d['crescimento']['saldo'] ?? 0), $d['crescimento']['saldo'] >= 0 ? [232,245,233] : [253,236,234], $d['crescimento']['saldo'] >= 0 ? [46,125,50] : [163,45,45]],
+        ['Membros Ativos', $kpi['qtd_membros'] ?? 0, [232,248,245], [15,110,86]],
+        ['Taxa de Presença', ($kpi['taxa_presenca'] ?? 0) . '%', ($kpi['taxa_presenca'] ?? 0) >= 75 ? [232,245,233] : [253,236,234], ($kpi['taxa_presenca'] ?? 0) >= 75 ? [46,125,50] : [163,45,45]],
+        ['Total de Reuniões no período', $indicadores['total_reunioes'] ?? ($kpi['qtd_reunioes'] ?? 0), [235,242,251], [24,95,165]],
+        ['Líderes no GF', $indicadores['lideres_no_gf'] ?? 0, [247,243,255], [83,74,183]],
+        ['Filhos (de 0 a 9 anos)', $indicadores['filhos_no_gf'] ?? 0, [245,243,255], [99,102,241]],
     ]);
 
     // Item celeiro e domingo
@@ -370,9 +381,9 @@ function _renderDiagnosticoGF(TCPDF $pdf, array $d): void
     }
     $pdf->SetY($pdf->GetY() + 2);
 
-    // ── Seção 2: Reuniões do Período ──
+    // Seção 2: Reuniões do Período
     _secao($pdf, '2. Reuniões Realizadas no Período');
-    $hReu = ['Data', 'Local', 'Horário', 'Presentes', 'F.Just.', 'Ausentes', '% Pres.', 'Alertas'];
+    $hReu = ['Data', 'Local', 'Horário', 'Presentes', 'F. Just.', 'F. Injust.', '% Pres.', 'Alertas'];
     $rReu = [];
     foreach ($d['reunioes'] as $r) {
         $alertas = [];
@@ -386,7 +397,7 @@ function _renderDiagnosticoGF(TCPDF $pdf, array $d): void
             $r['qtd_just'],
             $r['qtd_ausentes'],
             $r['taxa_presenca'] . '%',
-            $alertas ? implode(' ', $alertas) : 'OK',
+            $alertas ? implode(' ', $alertas) : 'N/C',
         ];
     }
     _tabela($pdf, $hReu, $rReu, colWidths: [20, 36, 18, 18, 14, 18, 18, 24]);
@@ -401,18 +412,18 @@ function _renderDiagnosticoGF(TCPDF $pdf, array $d): void
         $pdf->SetFont('helvetica', 'I', 7.5);
         $pdf->SetTextColor(133, 79, 11);
         $pdf->SetXY(17, $yA + 2.5);
-        $pdf->Cell(0, 5, 'ATENÇÃO:' . count($anomalas) . ' reunião(ões) ocorreu(eram) fora do padrão registrado (local ou horário diferente). Verifique com o líder.', 0, 1, 'L');
+        $pdf->Cell(0, 5, 'ATENÇÃO: ' . count($anomalas) . ' reunião(ões) ocorreu(eram) fora do padrão registrado (local ou horário diferente). Verifique com o líder.', 0, 1, 'L');
         $pdf->SetY($pdf->GetY() + 2);
     }
 
-    // ── Seção 3: Vulnerabilidade Pastoral ──
+    // Seção 3: Vulnerabilidade Pastoral
     _secao($pdf, '3. Membros em Situação de Vulnerabilidade Pastoral');
     if (empty($d['vulneraveis'])) {
         $pdf->SetFont('helvetica', 'I', 8);
         $pdf->SetTextColor(90, 106, 126);
         $pdf->Cell(0, 6, 'Nenhum membro com padrão de ausência elevado neste período.', 0, 1, 'L');
     } else {
-        $hVul = ['Membro', 'Contato', 'Ausências', 'Just.', '% Ausência', 'Max.Consec.', 'Nível', 'Observações'];
+    $hVul = ['Membro', 'Contato', 'Ausências', '% Pres.', 'Nível', 'Observações'];
         $rVul = [];
         foreach ($d['vulneraveis'] as $m) {
             $nivel = match($m['nivel_alerta']) {
@@ -424,18 +435,16 @@ function _renderDiagnosticoGF(TCPDF $pdf, array $d): void
                 $m['membro_nome'],
                 $m['contato'] ?? '–',
                 $m['ausencias'],
-                $kpi['faltas_just'] ?? '–', // por membro: usar campo correto
-                $m['taxa_presenca'] > 0 ? (100 - $m['taxa_presenca']) . '%' : '0%',
-                $m['max_consec'],
+                $m['taxa_presenca'] . '%',
                 $nivel,
-                mb_strimwidth($m['observacoes'] ?? '–', 0, 45, '...'),
+                mb_strimwidth($m['observacoes'] ?? '–', 0, 55, '...'),
             ];
         }
-        _tabela($pdf, $hVul, $rVul, colWidths: [30, 24, 16, 12, 18, 18, 22, 42]);
+        _tabela($pdf, $hVul, $rVul, colWidths: [34, 26, 16, 18, 20, 68], alignments: ['L', 'L', 'C', 'C', 'C', 'L']);
     }
     $pdf->SetY($pdf->GetY() + 2);
 
-    // ── Seção 4: Mapa de Frequência Individual ──
+    // Seção 4: Mapa de Frequência Individual
     _secao($pdf, '4. Mapa de Frequência Individual por Reunião');
 
     $reunioes  = $d['reunioes'];
@@ -447,17 +456,15 @@ function _renderDiagnosticoGF(TCPDF $pdf, array $d): void
         $pdf->SetTextColor(90, 106, 126);
         $pdf->Cell(0, 6, 'Sem dados de presença para o período selecionado.', 0, 1, 'L');
     } else {
-        // Larguras: col nome (40mm) + colunas de reunião (mín 8mm, máx 14mm)
         $totalW   = 182;
-        $nomeW    = 40;
-        $dispW    = $totalW - $nomeW;
+        $nomeW    = 42;
+        $pctW     = 22;
+        $dispW    = $totalW - $nomeW - $pctW;
         $celW     = min(14, max(7, round($dispW / $nReu, 1)));
-        // Se colunas não cabem, usar quebra em múltiplas passagens
         $maxCols  = max(1, (int)floor($dispW / $celW));
         $chunks   = array_chunk($reunioes, $maxCols);
 
         foreach ($chunks as $chunk) {
-            // Cabeçalho: datas
             $pdf->SetFillColor(24, 95, 165);
             $pdf->SetTextColor(255, 255, 255);
             $pdf->SetFont('helvetica', 'B', 6.5);
@@ -466,13 +473,13 @@ function _renderDiagnosticoGF(TCPDF $pdf, array $d): void
             foreach ($chunk as $r) {
                 $pdf->Cell($celW, 6, _fmtDataCurto($r['data_reuniao']), 0, 0, 'C', true);
             }
-            $pdf->Cell(20, 6, '% Pres.', 0, 0, 'C', true);
-            $pdf->Cell(20, 6, '% Pont.', 0, 0, 'C', true);
+            $pdf->Cell($pctW, 6, '% Pres.', 0, 0, 'C', true);
             $pdf->Ln();
 
-            // Linhas por membro
             foreach ($membros as $i => $mb) {
-                if ($pdf->GetY() > 268) { $pdf->AddPage(); _renderCabecalho($pdf, ['titulo' => 'Diagnóstico Completo do GF — Mapa de Frequência', 'periodo' => [$d['periodo'][0], $d['periodo'][1]]]); $pdf->SetY(50); }
+                if ($pdf->GetY() > 268) {
+                    $pdf->AddPage();
+                }
                 $bg = $i % 2 === 0 ? [255, 255, 255] : [244, 247, 251];
                 $pdf->SetFillColor(...$bg);
                 $pdf->SetFont('helvetica', '', 6.5);
@@ -493,18 +500,13 @@ function _renderDiagnosticoGF(TCPDF $pdf, array $d): void
                     $pdf->Cell($celW, 5.5, $simbolo, 0, 0, 'C', true);
                 }
 
-                // Taxa de presença e pontualidade
                 $taxaPres = $mb['taxa_presenca'];
-                $taxaPont = $mb['taxa_pontualidade'];
                 [$corP] = $taxaPres >= 85 ? [[46,125,50]] : ($taxaPres >= 70 ? [[24,95,165]] : ($taxaPres >= 50 ? [[133,79,11]] : [[163,45,45]]));
                 $pdf->SetTextColor(...$corP);
-                $pdf->Cell(20, 5.5, $taxaPres . '%', 0, 0, 'C', true);
-                $pdf->SetTextColor(26, 38, 54);
-                $pdf->Cell(20, 5.5, $taxaPont . '%', 0, 0, 'C', true);
+                $pdf->Cell($pctW, 5.5, $taxaPres . '%', 0, 0, 'C', true);
                 $pdf->Ln();
             }
 
-            // Legenda
             $pdf->SetY($pdf->GetY() + 2);
             $pdf->SetFont('helvetica', '', 6.5);
             $legendas = [
@@ -524,7 +526,7 @@ function _renderDiagnosticoGF(TCPDF $pdf, array $d): void
         }
     }
 
-    // ── Seção 5: Ranking de Pontualidade ──
+    // Seção 5: Ranking de Pontualidade
     _secao($pdf, '5. Ranking de Pontualidade e Frequência');
     $hPont = ['Membro', 'Reuniões', 'Presenças', 'No Horário', 'Atrasado', 'Ausências', '% Presença', '% Pontual'];
     $rPont = [];
@@ -595,7 +597,8 @@ function _tabela(
     array  $headers,
     array  $rows,
     bool   $semanatica  = false,
-    array  $colWidths   = []
+    array  $colWidths   = [],
+    array  $alignments  = []
 ): void {
     $n = count($headers);
 
@@ -605,20 +608,28 @@ function _tabela(
         $colWidths = array_fill(0, $n, $w);
     }
 
-    // Cabeçalho
-    $pdf->SetFillColor(24, 95, 165);
-    $pdf->SetTextColor(255, 255, 255);
-    $pdf->SetFont('helvetica', 'B', 6.5);
-    $pdf->SetX(14);
-    foreach ($headers as $i => $h) {
-        $pdf->Cell($colWidths[$i], 6, $h, 0, 0, 'C', true);
-    }
-    $pdf->Ln();
+    $renderHeader = function () use ($pdf, $headers, $colWidths, $n, $alignments): void {
+        $pdf->SetFillColor(24, 95, 165);
+        $pdf->SetTextColor(255, 255, 255);
+        $pdf->SetFont('helvetica', 'B', 6.5);
+        $pdf->SetX(14);
+        foreach ($headers as $i => $h) {
+            $align = $alignments[$i] ?? 'C';
+            $pdf->Cell($colWidths[$i], 6, $h, 0, 0, $align, true);
+        }
+        $pdf->Ln();
+    };
+
+    $renderHeader();
+    $pdf->SetFont('helvetica', '', 6.5);
 
     // Dados
-    $pdf->SetFont('helvetica', '', 6.5);
     foreach ($rows as $ri => $row) {
-        if ($pdf->GetY() > 270) { $pdf->AddPage(); }
+        if ($pdf->GetY() > 270) {
+            $pdf->AddPage();
+            $renderHeader();
+            $pdf->SetFont('helvetica', '', 6.5);
+        }
 
         $bg = $ri % 2 === 0 ? [255, 255, 255] : [244, 247, 251];
         $pdf->SetFillColor(...$bg);
@@ -633,7 +644,7 @@ function _tabela(
                 $pdf->SetTextColor(...$corSem);
             }
             // Primeira coluna: esquerda; demais: centro
-            $align = $ci === 0 ? 'L' : 'C';
+            $align = $alignments[$ci] ?? ($ci === 0 ? 'L' : 'C');
             $pdf->Cell($colWidths[$ci], 5.5, (string)$cell, 0, 0, $align, true);
             $pdf->SetTextColor(26, 38, 54);
         }
@@ -651,22 +662,37 @@ function _tabelaSimples(
     float  $startX,
     bool   $newLine   = false,
     bool   $corVerde  = false,
-    bool   $corVermelha = false
+    bool   $corVermelha = false,
+    array  $colWidths = [],
+    array  $alignments = []
 ): void {
     $n  = count($headers);
-    $cw = round($totalW / $n, 1);
-
-    $pdf->SetFillColor(24, 95, 165);
-    $pdf->SetTextColor(255, 255, 255);
-    $pdf->SetFont('helvetica', 'B', 6.5);
-    $pdf->SetX($startX);
-    foreach ($headers as $h) {
-        $pdf->Cell($cw, 5, $h, 0, 0, 'C', true);
+    if (empty($colWidths)) {
+        $cw = round($totalW / $n, 1);
+        $colWidths = array_fill(0, $n, $cw);
     }
-    $pdf->Ln();
 
+    $renderHeader = function () use ($pdf, $headers, $startX, $colWidths, $alignments): void {
+        $pdf->SetFillColor(24, 95, 165);
+        $pdf->SetTextColor(255, 255, 255);
+        $pdf->SetFont('helvetica', 'B', 6.5);
+        $pdf->SetX($startX);
+        foreach ($headers as $i => $h) {
+            $align = $alignments[$i] ?? 'C';
+            $pdf->Cell($colWidths[$i], 5, $h, 0, 0, $align, true);
+        }
+        $pdf->Ln();
+    };
+
+    $renderHeader();
     $pdf->SetFont('helvetica', '', 6.5);
+
     foreach ($rows as $ri => $row) {
+        if ($pdf->GetY() > 270) {
+            $pdf->AddPage();
+            $renderHeader();
+            $pdf->SetFont('helvetica', '', 6.5);
+        }
         $bg = $ri % 2 === 0 ? [255,255,255] : [244,247,251];
         $pdf->SetFillColor(...$bg);
         $pdf->SetX($startX);
@@ -677,7 +703,8 @@ function _tabelaSimples(
             } else {
                 $pdf->SetTextColor(26, 38, 54);
             }
-            $pdf->Cell($cw, 5, (string)$cell, 0, 0, 'C', true);
+            $align = $alignments[$ci] ?? ($ci === 0 ? 'L' : 'C');
+            $pdf->Cell($colWidths[$ci], 5, (string)$cell, 0, 0, $align, true);
         }
         $pdf->Ln();
     }

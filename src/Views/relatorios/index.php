@@ -116,7 +116,7 @@
             </svg>
           </div>
           <div class="rel-card__meta">
-            <div class="rel-card__name">Termômetro de Sobrecarga (Risco de Burnout)</div>
+            <div class="rel-card__name">Termômetro de Sobrecarga</div>
             <div class="rel-card__desc">
               Ranking de líderes por score de carga pastoral, considerando volume de membros,
               faltas injustificadas e tempo de liderança. Identifica quem precisa de apoio.
