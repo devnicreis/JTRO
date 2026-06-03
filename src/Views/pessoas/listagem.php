@@ -155,7 +155,9 @@
                     <td><?php echo htmlspecialchars(formatarTelefone($pessoa['telefone_fixo'] ?? null)); ?></td>
                     <td><?php echo htmlspecialchars(formatarTelefone($pessoa['telefone_movel'] ?? null)); ?></td>
                     <td><?php echo htmlspecialchars($pessoa['email'] ?: '—'); ?></td>
-                    <td><?php echo htmlspecialchars(formatarEnderecoPessoa($pessoa)); ?></td>
+                    <td title="<?php echo htmlspecialchars(formatarEnderecoPessoa($pessoa)); ?>">
+                        <?php echo htmlspecialchars(formatarEnderecoPessoa($pessoa)); ?>
+                    </td>
                     <td><?php echo htmlspecialchars(labelSimNao((int) ($pessoa['concluiu_integracao'] ?? 0))); ?></td>
                     <td><?php echo htmlspecialchars(labelSimNao((int) ($pessoa['participou_retiro_integracao'] ?? 0))); ?></td>
                     <td>

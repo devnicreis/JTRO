@@ -54,6 +54,42 @@ class PresencaRepository
         return $codigo;
     }
 
+    private function validarDataIntegracao(string $data): string
+    {
+        $dt = DateTime::createFromFormat('!Y-m-d', $data);
+        if ($dt === false || $dt->format('Y-m-d') !== $data || $dt > new DateTime('today')) {
+            throw new InvalidArgumentException('Informe uma data válida para a aula de integração.');
+        }
+
+        return $data;
+    }
+
+    private function labelOrigemIntegracao(?string $origem): string
+    {
+        return match ($origem) {
+            'reuniao' => 'Reunião',
+            'retiro' => 'Retiro',
+            'manual' => 'Adicionado Manualmente',
+            default => '—',
+        };
+    }
+
+    private function proximaAulaIntegracaoPendente(array $progresso): ?array
+    {
+        foreach ($progresso as $aula) {
+            if (empty($aula['concluida'])) {
+                return $aula;
+            }
+        }
+
+        return null;
+    }
+
+    public function listarAulasIntegracaoCurriculo(): array
+    {
+        return $this->aulasIntegracaoMap();
+    }
+
     private function buscarGrupoPorId(int $grupoId): ?array
     {
         $stmt = $this->connection->prepare("
@@ -444,14 +480,7 @@ class PresencaRepository
                 ) VALUES (
                     :pessoa_id, :aula_codigo, :aula_titulo, :data_aula, 'reuniao', :reuniao_id, NULL, 1
                 )
-                ON CONFLICT(pessoa_id, aula_codigo)
-                DO UPDATE SET
-                    aula_titulo = excluded.aula_titulo,
-                    data_aula = excluded.data_aula,
-                    origem = excluded.origem,
-                    reuniao_id = excluded.reuniao_id,
-                    retiro_id = excluded.retiro_id,
-                    concluida = 1
+                ON CONFLICT(pessoa_id, aula_codigo) DO NOTHING
             ");
 
             foreach ($presentes as $pessoaId) {
@@ -1537,12 +1566,15 @@ class PresencaRepository
         $resultado = [];
         foreach ($this->aulasIntegracaoMap() as $codigo => $titulo) {
             $registro = $mapa[$codigo] ?? null;
+            $origem = $registro['origem'] ?? null;
             $resultado[] = [
                 'codigo' => $codigo,
                 'titulo' => $titulo,
                 'concluida' => $registro ? (int) ($registro['concluida'] ?? 0) === 1 : false,
                 'data_aula' => $registro['data_aula'] ?? null,
-                'origem' => $registro['origem'] ?? null,
+                'origem' => $origem,
+                'origem_label' => $this->labelOrigemIntegracao($origem),
+                'pode_editar_manual' => $registro === null || $origem === 'manual',
             ];
         }
 
@@ -1563,6 +1595,157 @@ class PresencaRepository
             $this->listarGruposFamiliaresPorLider($pessoaId),
             fn($grupo) => ($grupo['perfil_grupo'] ?? '') === 'integracao'
         ));
+    }
+
+    public function salvarAulaIntegracaoManual(int $pessoaId, ?string $aulaCodigoOriginal, ?string $aulaCodigoSelecionado, string $dataAula): void
+    {
+        $dataAula = $this->validarDataIntegracao($dataAula);
+        $aulaCodigoOriginal = $this->validarAulaIntegracao($aulaCodigoOriginal);
+        $aulaCodigo = $this->validarAulaIntegracao($aulaCodigoSelecionado);
+
+        if ($aulaCodigo === null) {
+            throw new InvalidArgumentException('Selecione uma aula de integração válida.');
+        }
+
+        $stmtRegistro = $this->connection->prepare("
+            SELECT origem
+            FROM pessoa_integracao_aulas
+            WHERE pessoa_id = :pessoa_id
+              AND aula_codigo = :aula_codigo
+            LIMIT 1
+        ");
+        $stmtRegistro->execute([
+            ':pessoa_id' => $pessoaId,
+            ':aula_codigo' => $aulaCodigo,
+        ]);
+        $registroAtual = $stmtRegistro->fetch(PDO::FETCH_ASSOC) ?: null;
+
+        if ($registroAtual && in_array((string) ($registroAtual['origem'] ?? ''), ['reuniao', 'retiro'], true)) {
+            throw new InvalidArgumentException('Esta aula já foi registrada via Reunião ou Retiro e não pode ser editada manualmente.');
+        }
+
+        $this->connection->beginTransaction();
+
+        try {
+            if ($aulaCodigoOriginal !== null && $aulaCodigoOriginal !== $aulaCodigo) {
+                $stmtOrigem = $this->connection->prepare("
+                    SELECT origem
+                    FROM pessoa_integracao_aulas
+                    WHERE pessoa_id = :pessoa_id
+                      AND aula_codigo = :aula_codigo
+                    LIMIT 1
+                ");
+                $stmtOrigem->execute([
+                    ':pessoa_id' => $pessoaId,
+                    ':aula_codigo' => $aulaCodigoOriginal,
+                ]);
+                $registroOriginal = $stmtOrigem->fetch(PDO::FETCH_ASSOC) ?: null;
+
+                if (!$registroOriginal || (string) ($registroOriginal['origem'] ?? '') !== 'manual') {
+                    throw new InvalidArgumentException('A aula original não foi encontrada como lançamento manual.');
+                }
+
+                $stmtDestino = $this->connection->prepare("
+                    SELECT origem
+                    FROM pessoa_integracao_aulas
+                    WHERE pessoa_id = :pessoa_id
+                      AND aula_codigo = :aula_codigo
+                    LIMIT 1
+                ");
+                $stmtDestino->execute([
+                    ':pessoa_id' => $pessoaId,
+                    ':aula_codigo' => $aulaCodigo,
+                ]);
+                $registroDestino = $stmtDestino->fetch(PDO::FETCH_ASSOC) ?: null;
+
+                if ($registroDestino && in_array((string) ($registroDestino['origem'] ?? ''), ['reuniao', 'retiro', 'manual'], true)) {
+                    throw new InvalidArgumentException('A aula selecionada já possui registro e não pode ser substituída.');
+                }
+
+                $stmtDeleteOriginal = $this->connection->prepare("
+                    DELETE FROM pessoa_integracao_aulas
+                    WHERE pessoa_id = :pessoa_id
+                      AND aula_codigo = :aula_codigo
+                      AND origem = 'manual'
+                ");
+                $stmtDeleteOriginal->execute([
+                    ':pessoa_id' => $pessoaId,
+                    ':aula_codigo' => $aulaCodigoOriginal,
+                ]);
+            }
+
+            $stmt = $this->connection->prepare("
+                INSERT INTO pessoa_integracao_aulas (
+                    pessoa_id, aula_codigo, aula_titulo, data_aula, origem, reuniao_id, retiro_id, concluida
+                ) VALUES (
+                    :pessoa_id, :aula_codigo, :aula_titulo, :data_aula, 'manual', NULL, NULL, 1
+                )
+                ON CONFLICT(pessoa_id, aula_codigo)
+                DO UPDATE SET
+                    aula_titulo = excluded.aula_titulo,
+                    data_aula = excluded.data_aula,
+                    origem = excluded.origem,
+                    reuniao_id = excluded.reuniao_id,
+                    retiro_id = excluded.retiro_id,
+                    concluida = excluded.concluida
+            ");
+            $stmt->execute([
+                ':pessoa_id' => $pessoaId,
+                ':aula_codigo' => $aulaCodigo,
+                ':aula_titulo' => $this->aulasIntegracaoMap()[$aulaCodigo],
+                ':data_aula' => $dataAula,
+            ]);
+
+            $this->atualizarStatusConclusaoIntegracaoPessoa($pessoaId);
+            $this->connection->commit();
+        } catch (Throwable $e) {
+            if ($this->connection->inTransaction()) {
+                $this->connection->rollBack();
+            }
+            throw $e;
+        }
+    }
+
+    public function removerAulaIntegracaoManual(int $pessoaId, string $aulaCodigo): void
+    {
+        $aulaCodigo = $this->validarAulaIntegracao($aulaCodigo);
+        if ($aulaCodigo === null) {
+            throw new InvalidArgumentException('Selecione uma aula de integração válida.');
+        }
+
+        $stmtRegistro = $this->connection->prepare("
+            SELECT origem
+            FROM pessoa_integracao_aulas
+            WHERE pessoa_id = :pessoa_id
+              AND aula_codigo = :aula_codigo
+            LIMIT 1
+        ");
+        $stmtRegistro->execute([
+            ':pessoa_id' => $pessoaId,
+            ':aula_codigo' => $aulaCodigo,
+        ]);
+        $registroAtual = $stmtRegistro->fetch(PDO::FETCH_ASSOC) ?: null;
+
+        if (!$registroAtual) {
+            throw new InvalidArgumentException('A aula de integração informada não foi encontrada.');
+        }
+
+        if (!in_array((string) ($registroAtual['origem'] ?? ''), ['manual'], true)) {
+            throw new InvalidArgumentException('Somente aulas adicionadas manualmente podem ser removidas.');
+        }
+
+        $stmt = $this->connection->prepare("
+            DELETE FROM pessoa_integracao_aulas
+            WHERE pessoa_id = :pessoa_id
+              AND aula_codigo = :aula_codigo
+              AND origem = 'manual'
+        ");
+        $stmt->execute([
+            ':pessoa_id' => $pessoaId,
+            ':aula_codigo' => $aulaCodigo,
+        ]);
+
+        $this->atualizarStatusConclusaoIntegracaoPessoa($pessoaId);
     }
 
     public function listarMembrosIntegracaoPorGrupo(int $grupoId): array

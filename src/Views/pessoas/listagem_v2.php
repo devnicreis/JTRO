@@ -211,7 +211,9 @@ $exportPdfHref = '/pessoas_cadastradas_exportar.php?formato=pdf' . ($exportBaseQ
                             </div>
                         </div>
                     </td>
-                    <td><?php echo htmlspecialchars(formatarEnderecoPessoa($pessoa)); ?></td>
+                    <td title="<?php echo htmlspecialchars(formatarEnderecoPessoa($pessoa)); ?>">
+                        <?php echo htmlspecialchars(formatarEnderecoPessoa($pessoa)); ?>
+                    </td>
                     <td><?php echo htmlspecialchars(labelSimNao((int) ($pessoa['concluiu_integracao'] ?? 0))); ?></td>
                     <td><?php echo htmlspecialchars(labelSimNao((int) ($pessoa['participou_retiro_integracao'] ?? 0))); ?></td>
                     <td>
