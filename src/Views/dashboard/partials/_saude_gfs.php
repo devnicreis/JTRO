@@ -1,12 +1,6 @@
 <?php
 // Espera $painel['saude'] (total + até 8 GFs ordenados) e $indiceSaude (cascata).
 // Selo sempre com texto (e ícone, exceto "Sem registros", como no protótipo).
-$iconesDiagnostico = [
-    'otimo'     => 'i-estrela',
-    'bom'       => 'i-check',
-    'atencao'   => 'i-alerta',
-    'alarmante' => 'i-alerta',
-];
 $saudePainel = $painel['saude'];
 ?>
 <section class="ui-card ui-entra" style="--i:<?php echo (int) $indiceSaude; ?>" aria-labelledby="tituloSaude">
@@ -34,7 +28,7 @@ $saudePainel = $painel['saude'];
         <li><a class="ui-saude-linha" href="/diagnostico_gf.php?grupo_id=<?php echo (int) $gf['grupo_id']; ?>"<?php echo $indice === 0 ? ' style="border-top:0"' : ''; ?>>
           <span class="ui-saude-nome"><?php echo htmlspecialchars(rotuloGf($gf['nome'])); ?></span>
           <span class="ui-saude-freq"><span class="ui-barra ui-barra--<?php echo $codigo; ?>"><span style="width:<?php echo $largura; ?>%"></span></span><span class="ui-saude-pct"><?php echo $neutro ? '—' : htmlspecialchars(formatarPercentualBr($gf['percentual'])); ?></span></span>
-          <span class="ui-selo ui-selo--<?php echo $codigo; ?>"><?php if (isset($iconesDiagnostico[$codigo])): ?><svg class="ui-icon ui-icon--xs"><use href="#<?php echo $iconesDiagnostico[$codigo]; ?>"/></svg><?php endif; ?><?php echo htmlspecialchars($gf['classificacao']['rotulo']); ?></span>
+          <span class="ui-selo ui-selo--<?php echo $codigo; ?>"><?php if (iconeDiagnostico($codigo) !== null): ?><svg class="ui-icon ui-icon--xs"><use href="#<?php echo iconeDiagnostico($codigo); ?>"/></svg><?php endif; ?><?php echo htmlspecialchars($gf['classificacao']['rotulo']); ?></span>
           <span class="ui-saude-meta"><?php echo (int) $gf['membros']; ?></span><span class="ui-saude-meta"><?php echo $ultima !== null ? date('d/m/Y', $ultima) : '—'; ?></span>
           <span class="ui-saude-meta--mobile"><?php echo htmlspecialchars($metaMobile); ?></span>
         </a></li>

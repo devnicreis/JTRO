@@ -365,3 +365,23 @@ function rotuloGf(?string $nome): string
     $nome = trim((string) $nome);
     return preg_match('/^GF\s/iu', $nome) ? $nome : 'GF ' . $nome;
 }
+
+/** "MR" — iniciais do primeiro e do segundo nome, para os avatares. */
+function iniciaisNome(?string $nome): string
+{
+    $partes = preg_split('/\s+/u', trim((string) $nome), -1, PREG_SPLIT_NO_EMPTY);
+    $iniciais = mb_substr($partes[0] ?? '', 0, 1) . mb_substr($partes[1] ?? '', 0, 1);
+    return $iniciais !== '' ? mb_strtoupper($iniciais) : '?';
+}
+
+/** Ícone do selo de diagnóstico ("Sem registros" não tem ícone, como no protótipo). */
+function iconeDiagnostico(string $codigo): ?string
+{
+    $icones = [
+        'otimo'     => 'i-estrela',
+        'bom'       => 'i-check',
+        'atencao'   => 'i-alerta',
+        'alarmante' => 'i-alerta',
+    ];
+    return $icones[$codigo] ?? null;
+}

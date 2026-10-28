@@ -37,12 +37,35 @@ $chavesLidasMap = array_fill_keys($chavesLidas, true);
 $totalAvisos    = 0;
 $gruposDoLider = $grupoRepo->listarGruposDoLider(Auth::id());
 
-if (Auth::isAdmin()) {
-    $calendario  = new CalendarioGfService();
-    $diagnostico = new DiagnosticoPresencaService();
-    $agora       = new DateTimeImmutable('now', new DateTimeZone('America/Sao_Paulo'));
-    $hoje        = $agora->setTime(0, 0, 0);
+$calendario  = new CalendarioGfService();
+$diagnostico = new DiagnosticoPresencaService();
+$agora       = new DateTimeImmutable('now', new DateTimeZone('America/Sao_Paulo'));
+$hoje        = $agora->setTime(0, 0, 0);
+$saudacao    = $calendario->saudacao($agora) . ', ' . explode(' ', trim((string) $usuario['nome']))[0];
 
+// Dados do cartão "Próxima reunião" (partials/_proxima_reuniao_gf.php) de um GF de listarGruposDoLider().
+$montarProximaReuniaoGf = function (array $g) use ($calendario, $presencaRepo, $agora): array {
+    $data = $calendario->proximaOcorrencia((string) ($g['dia_semana'] ?? ''), $agora);
+    $ultimaReuniao = $presencaRepo->listarUltimasReunioesDoGrupo((int) $g['id'], 1)[0] ?? null;
+    return [
+        'grupo_id' => (int) $g['id'],
+        'nome'     => $g['nome'],
+        'proxima'  => $data === null ? null : [
+            'data'           => $data,
+            'rotulo'         => $calendario->rotuloRelativo($data, $agora),
+            'dia_abreviado'  => $calendario->diaSemanaAbreviado($data),
+            'mes_abreviado'  => $calendario->mesAbreviado($data),
+            'data_extenso'   => $calendario->dataPorExtenso($data, false),
+        ],
+        'horario'             => (string) ($g['horario'] ?? ''),
+        'local_padrao'        => trim((string) ($g['local_padrao'] ?? '')),
+        'membros'             => (int) ($g['total_membros_ativos'] ?? 0),
+        'ultima_reuniao_id'   => $ultimaReuniao !== null ? (int) $ultimaReuniao['id'] : null,
+        'ultima_reuniao_data' => $ultimaReuniao['data'] ?? null,
+    ];
+};
+
+if (Auth::isAdmin()) {
     // Busca base — usada para múltiplas derivações abaixo
     $todosGrupos  = $grupoRepo->listarTodos();
     $gruposAtivos = array_values(array_filter($todosGrupos, fn($g) => (int)($g['ativo'] ?? 0) === 1));
@@ -197,30 +220,10 @@ if (Auth::isAdmin()) {
     unset($item);
 
     // ── Meus GFs (admin que também é líder) ─────────────────────
-    $meusGfs = [];
-    foreach ($gruposDoLider as $g) {
-        $data = $calendario->proximaOcorrencia((string) ($g['dia_semana'] ?? ''), $agora);
-        $ultimaReuniao = $presencaRepo->listarUltimasReunioesDoGrupo((int) $g['id'], 1)[0] ?? null;
-        $meusGfs[] = [
-            'grupo_id' => (int) $g['id'],
-            'nome'     => $g['nome'],
-            'proxima'  => $data === null ? null : [
-                'data'           => $data,
-                'rotulo'         => $calendario->rotuloRelativo($data, $agora),
-                'dia_abreviado'  => $calendario->diaSemanaAbreviado($data),
-                'mes_abreviado'  => $calendario->mesAbreviado($data),
-                'data_extenso'   => $calendario->dataPorExtenso($data, false),
-            ],
-            'horario'             => (string) ($g['horario'] ?? ''),
-            'local_padrao'        => trim((string) ($g['local_padrao'] ?? '')),
-            'membros'             => (int) ($g['total_membros_ativos'] ?? 0),
-            'ultima_reuniao_id'   => $ultimaReuniao !== null ? (int) $ultimaReuniao['id'] : null,
-            'ultima_reuniao_data' => $ultimaReuniao['data'] ?? null,
-        ];
-    }
+    $meusGfs = array_map($montarProximaReuniaoGf, $gruposDoLider);
 
     $painel = [
-        'saudacao'     => $calendario->saudacao($agora) . ', ' . explode(' ', trim((string) $usuario['nome']))[0],
+        'saudacao'     => $saudacao,
         'data_extenso' => $calendario->dataPorExtenso($agora),
         'contadores'   => [
             'pessoas'  => $pessoaRepo->contarPessoasAtivas(),
@@ -253,17 +256,135 @@ if (Auth::isAdmin()) {
     require_once __DIR__ . '/../src/Views/dashboard/admin.php';
 
 } else {
-    $dashboardTipo = 'lider';
-
-    $ultimasReunioes = $presencaRepo->listarUltimasReunioesDoLider(Auth::id(), 5);
-
-    foreach ($gruposDoLider as &$grupo) {
-        $grupo['resumo_presenca'] = $presencaRepo->buscarResumoPresencaPorGrupo((int) $grupo['id']);
-        $grupo['resumo_membros']  = $presencaRepo->buscarResumoPorMembroDoGrupo((int) $grupo['id']);
-        $grupo['faltosos']        = $presencaRepo->buscarMembrosComFaltasConsecutivas((int) $grupo['id'], 2);
+    // ── Presença pendente (regras 5 e 6, só os GFs do líder) ────
+    $pendencias = [];
+    foreach ($presencaRepo->listarSituacaoUltimaReuniaoPrevista(Auth::id(), $agora) as $situacaoGf) {
+        if ($situacaoGf['registrada']) {
+            continue;
+        }
+        $dataPrevista = $situacaoGf['data_prevista'] !== null ? new DateTimeImmutable($situacaoGf['data_prevista']) : null;
+        $pendencias[] = [
+            'grupo_id'      => (int) $situacaoGf['grupo_id'],
+            'nome'          => $situacaoGf['nome'],
+            'data_prevista' => $situacaoGf['data_prevista'],
+            'dia_curto'     => $dataPrevista !== null ? $calendario->diaCurto($dataPrevista) : null,
+        ];
     }
-    unset($grupo);
 
+    // ── Um bloco por GF do líder ────────────────────────────────
+    $gfsPainel = [];
+    foreach ($gruposDoLider as $g) {
+        $grupoId = (int) $g['id'];
+
+        // Frequência (regras 1 e 2) e presentes das últimas 8 reuniões, da mais antiga para a mais recente.
+        $resumo          = $presencaRepo->buscarResumoPresencaPorGrupo($grupoId);
+        $totalRegistros  = (int) $resumo['total_presencas'] + (int) $resumo['total_ausencias'];
+        $resumoGrupo     = $presencaRepo->buscarResumoGrupo($grupoId);
+        $colunas = [];
+        foreach (array_reverse($presencaRepo->listarUltimasReunioesDoGrupo($grupoId, 8)) as $reuniao) {
+            $presentes  = (int) $reuniao['total_presentes'];
+            $registros  = $presentes + (int) $reuniao['total_ausentes'];
+            $percentual = $registros > 0 ? $presentes / $registros * 100 : 0.0;
+            $colunas[] = [
+                'data'       => $reuniao['data'],
+                'presentes'  => $presentes,
+                'registros'  => $registros,
+                'percentual' => (int) round($percentual),
+                'baixa'      => $diagnostico->ehAlarmante($percentual, $registros),
+            ];
+        }
+
+        // Escalas: só as que existirem.
+        $escalas = [];
+        if (trim((string) ($g['item_celeiro'] ?? '')) !== '') {
+            $escalas['celeiro'] = trim((string) $g['item_celeiro']);
+        }
+        $domingoOracao = (int) ($g['domingo_oracao_culto'] ?? 0);
+        $dataOracao = $domingoOracao > 0 ? $calendario->proximoDomingoDeOracao($domingoOracao, $agora) : null;
+        if ($dataOracao !== null) {
+            $escalas['oracao'] = ['domingo' => $domingoOracao, 'data' => $dataOracao];
+        }
+        if (!empty($g['proxima_cantina_data'])) {
+            $escalas['cantina'] = (string) $g['proxima_cantina_data'];
+        }
+
+        // Precisam de cuidado: faltas seguidas + última presença do resumo por membro.
+        $resumoMembros = $presencaRepo->buscarResumoPorMembroDoGrupo($grupoId);
+        $ultimaPresencaPorPessoa = array_column($resumoMembros, 'ultima_presenca', 'pessoa_id');
+        $cuidado = [];
+        foreach ($presencaRepo->buscarMembrosComFaltasConsecutivas($grupoId, 2) as $faltoso) {
+            $cuidado[] = [
+                'grupo_id'        => $grupoId,
+                'grupo_nome'      => $g['nome'],
+                'pessoa_id'       => (int) $faltoso['pessoa_id'],
+                'nome'            => $faltoso['nome'],
+                'faltas'          => (int) $faltoso['faltas_consecutivas'],
+                'ultima_presenca' => $ultimaPresencaPorPessoa[$faltoso['pessoa_id']] ?? null,
+            ];
+        }
+
+        // Integração: mesma filtragem da tela antiga (index_v2.php).
+        $integracao = [];
+        if (($g['perfil_grupo'] ?? '') === 'integracao') {
+            $integracao = array_values(array_filter(
+                $resumoMembros,
+                static function (array $membro): bool {
+                    if ((int) ($membro['pessoa_id'] ?? 0) <= 0) {
+                        return false;
+                    }
+                    return (int) ($membro['lider_grupo_familiar'] ?? 0) !== 1
+                        && (int) ($membro['lider_departamento'] ?? 0) !== 1;
+                }
+            ));
+        }
+
+        $gfsPainel[] = [
+            'proxima'    => $montarProximaReuniaoGf($g),
+            'frequencia' => [
+                'percentual'     => (float) $resumo['percentual_presencas'],
+                'classificacao'  => $diagnostico->classificar((float) $resumo['percentual_presencas'], $totalRegistros),
+                'total_reunioes' => (int) ($resumoGrupo['total_reunioes'] ?? 0),
+            ],
+            'colunas'    => $colunas,
+            'escalas'    => $escalas,
+            'cuidado'    => $cuidado,
+            'integracao' => $integracao,
+        ];
+    }
+
+    // Uma lista só, com quem tem mais faltas seguidas primeiro.
+    $cuidadoPainel = array_merge([], ...array_column($gfsPainel, 'cuidado'));
+    usort($cuidadoPainel, fn($a, $b) => [$b['faltas'], $a['nome']] <=> [$a['faltas'], $b['nome']]);
+
+    // ── Últimas reuniões dos GFs do líder ────────────────────────
+    $ultimas = [];
+    foreach ($presencaRepo->listarUltimasReunioesDoLider(Auth::id(), 4) as $reuniao) {
+        $dataReuniao = new DateTimeImmutable($reuniao['data']);
+        $presentes   = (int) $reuniao['total_presentes'];
+        $registros   = $presentes + (int) $reuniao['total_ausentes'];
+        $percentual  = $registros > 0 ? $presentes / $registros * 100 : 0.0;
+        $ultimas[] = [
+            'reuniao_id'    => (int) $reuniao['id'],
+            'grupo_nome'    => $reuniao['grupo_nome'],
+            'data'          => $dataReuniao,
+            'mes_abreviado' => $calendario->mesAbreviado($dataReuniao),
+            'presentes'     => $presentes,
+            'registros'     => $registros,
+            'percentual'    => (int) round($percentual),
+            'classificacao' => $diagnostico->classificar($percentual, $registros),
+        ];
+    }
+
+    $painel = [
+        'saudacao'     => $saudacao,
+        'data_extenso' => $calendario->dataPorExtenso($agora),
+        'pendencias'   => $pendencias,
+        'gfs'          => $gfsPainel,
+        'cuidado'      => $cuidadoPainel,
+        'ultimas'      => $ultimas,
+    ];
+
+    // ── Contagem de avisos não lidos (o header depende de $totalAvisos) ──
     $gruposAlarmantesAvisos     = $presencaRepo->buscarGruposAlarmantesDoLider(Auth::id());
     $membrosFaltososAvisos      = $presencaRepo->buscarMembrosComFaltasConsecutivasDoLider(Auth::id(), 2);
     $reunioesForaDoPadraoAvisos = $presencaRepo->buscarReunioesForaDoPadraoDoLider(Auth::id(), 20);
@@ -282,5 +403,5 @@ if (Auth::isAdmin()) {
         if ($chaveAviso !== '' && !isset($chavesLidasMap[$chaveAviso])) $totalAvisos++;
     }
 
-    require_once __DIR__ . '/../src/Views/dashboard/index_v2.php';
+    require_once __DIR__ . '/../src/Views/dashboard/lider.php';
 }
