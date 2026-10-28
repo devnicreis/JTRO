@@ -497,9 +497,9 @@ textarea { min-height: 100px; resize: vertical; }
     grid-column: span 2;
 }
 
-/* Botão global — exclui componentes especiais */
+/* Botão global — exclui componentes especiais (inclui os ui-* do jtro-ui.css) */
 button[type="submit"],
-button:not(.nav-item):not(.nav-item-trigger):not(.notif-btn):not(.notif-tab):not(.notif-acao-btn):not(.notif-marcar-todos):not([class^="ql-"]):not([class*=" ql-"]) {
+button:not(.nav-item):not(.nav-item-trigger):not(.notif-btn):not(.notif-tab):not(.notif-acao-btn):not(.notif-marcar-todos):not([class^="ql-"]):not([class*=" ql-"]):not([class^="ui-"]):not([class*=" ui-"]) {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -517,7 +517,7 @@ button:not(.nav-item):not(.nav-item-trigger):not(.notif-btn):not(.notif-tab):not
 }
 
 button[type="submit"]:hover,
-button:not(.nav-item):not(.nav-item-trigger):not(.notif-btn):not(.notif-tab):not(.notif-acao-btn):not(.notif-marcar-todos):not([class^="ql-"]):not([class*=" ql-"]):hover { opacity: 0.88; }
+button:not(.nav-item):not(.nav-item-trigger):not(.notif-btn):not(.notif-tab):not(.notif-acao-btn):not(.notif-marcar-todos):not([class^="ql-"]):not([class*=" ql-"]):not([class^="ui-"]):not([class*=" ui-"]):hover { opacity: 0.88; }
 
 .form-acao { margin: 0; padding: 0; border: none; background: transparent; display: inline; }
 

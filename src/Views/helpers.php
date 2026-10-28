@@ -352,3 +352,16 @@ function opcoesUF(): array
         'TO' => 'TO',
     ];
 }
+
+/** "87,4%" — percentual com 1 casa decimal no padrão brasileiro. */
+function formatarPercentualBr(float $percentual): string
+{
+    return number_format($percentual, 1, ',', '.') . '%';
+}
+
+/** "GF Nicolas e Camille" — prefixa "GF " quando o nome cadastrado ainda não começa assim. */
+function rotuloGf(?string $nome): string
+{
+    $nome = trim((string) $nome);
+    return preg_match('/^GF\s/iu', $nome) ? $nome : 'GF ' . $nome;
+}

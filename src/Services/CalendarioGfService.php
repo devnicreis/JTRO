@@ -29,6 +29,15 @@ class CalendarioGfService
         9 => 'setembro', 10 => 'outubro', 11 => 'novembro', 12 => 'dezembro',
     ];
 
+    private const ABREVIACOES_DIAS = [
+        1 => 'Seg', 2 => 'Ter', 3 => 'Qua', 4 => 'Qui', 5 => 'Sex', 6 => 'Sáb', 7 => 'Dom',
+    ];
+
+    private const ABREVIACOES_MESES = [
+        1 => 'Jan', 2 => 'Fev', 3 => 'Mar', 4 => 'Abr', 5 => 'Mai', 6 => 'Jun',
+        7 => 'Jul', 8 => 'Ago', 9 => 'Set', 10 => 'Out', 11 => 'Nov', 12 => 'Dez',
+    ];
+
     private const ACENTOS = [
         'á' => 'a', 'à' => 'a', 'â' => 'a', 'ã' => 'a', 'é' => 'e', 'ê' => 'e',
         'í' => 'i', 'ó' => 'o', 'ô' => 'o', 'õ' => 'o', 'ú' => 'u', 'ç' => 'c',
@@ -144,6 +153,18 @@ class CalendarioGfService
     public function diaCurto(DateTimeImmutable $data): string
     {
         return self::NOMES_DIAS[(int) $data->format('N')] . ', ' . $data->format('d/m');
+    }
+
+    /** "Sáb" (bloco de data dos cartões) */
+    public function diaSemanaAbreviado(DateTimeImmutable $data): string
+    {
+        return self::ABREVIACOES_DIAS[(int) $data->format('N')];
+    }
+
+    /** "Out" (bloco de data dos cartões) */
+    public function mesAbreviado(DateTimeImmutable $data): string
+    {
+        return self::ABREVIACOES_MESES[(int) $data->format('n')];
     }
 
     public function saudacao(DateTimeImmutable $agora): string

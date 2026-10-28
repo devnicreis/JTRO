@@ -597,8 +597,10 @@ a.ui-linha:hover, .ui-linha--clicavel:hover { background: var(--ui-surface-2); }
       min-height 38px e display inline-flex. Isso atingiria o botão X da gaveta
       (aparecendo até no desktop, porque o display:none de .ui-gaveta-fechar perde)
       e o botão "Mais" da barra inferior. Nenhuma classe ui- vence 0,8,1, então os
-      valores do shell são reafirmados com !important. Remover quando a regra
-      global de app.css excluir [class*="ui-"]. */
+      valores do shell são reafirmados com !important. Desde a Tela Inicial nova a
+      regra global de app.css exclui [class^="ui-"] e [class*=" ui-"] (era a única forma
+      de as abas, o "marcar como lido" e os .ui-btn em <button> não ficarem azuis sem
+      !important), então os blocos abaixo ficaram redundantes; saem na limpeza final. */
 .ui-sidebar .ui-gaveta-fechar {
     display: none !important;
     padding: 0 !important;
@@ -649,3 +651,14 @@ a.ui-linha:hover, .ui-linha--clicavel:hover { background: var(--ui-surface-2); }
     .ui-sidebar, .ui-topbar, .ui-bottomnav, .ui-overlay { display: none !important; }
     .ui-main { margin-left: 0 !important; padding: 0 !important; }
 }
+
+/* 5) Dentro das telas novas (.ui-page), regras de elemento de app.css que o protótipo
+      não tem e que alterariam a marcação copiada dele:
+      - "a:hover { opacity: .8 }": cartões, linhas e botões indicam hover pelo fundo;
+      - "p { margin-bottom: 8px; color; font-size }": .ui-vazio;
+      - "small { display: block; margin-top: 4px; ... }": desalinha o anel, o bloco de
+        data e os cabeçalhos de seção. As regras com classe de jtro-ui.css continuam
+        valendo porque estas têm especificidade de elemento (0,0,1). */
+.ui-page a:hover { opacity: 1; }
+:where(.ui-page) p { margin-bottom: 0; color: inherit; font-size: inherit; }
+:where(.ui-page) small { display: inline; margin-top: 0; font-size: inherit; color: inherit; line-height: inherit; }
