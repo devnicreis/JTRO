@@ -26,3 +26,9 @@ Thumbs.db
 # Guias internos de infraestrutura/deploy (não versionar em repositórios públicos)
 docs/cloudflare-producao.md
 docs/deploy-hostinger-vps.md
+
+# Docs de Arquitetura
+docs/arquitetura/
+docs/decisoes/
+docs/claude/
+redesign-tela-inicial/
