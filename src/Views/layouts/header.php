@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <title><?php echo htmlspecialchars($pageTitle ?? 'JTRO'); ?></title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="theme-color" content="#185FA5">
+    <meta name="theme-color" content="#092D53">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="JTRO">
@@ -14,9 +14,39 @@
     <link rel="icon" type="image/png" sizes="192x192" href="/assets/icons/pwa-192.png">
     <link rel="apple-touch-icon" href="/assets/icons/pwa-192.png">
     <link rel="stylesheet" href="/assets/css/app.css">
+    <link rel="stylesheet" href="/assets/css/jtro-ui.css">
 </head>
 
-<body>
+<body class="ui-body">
+    <svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true">
+        <symbol id="i-inicio" viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9.5"/></symbol>
+        <symbol id="i-pessoa" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></symbol>
+        <symbol id="i-pessoas" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6.5 6.5-6.5s6.5 2.9 6.5 6.5"/><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8M18 13.8c2.1.8 3.5 3 3.5 6.2"/></symbol>
+        <symbol id="i-reuniao" viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="16.5" rx="2.5"/><path d="M8 2.5v4M16 2.5v4M3 9.5h18"/><path d="m9 15 2 2 4-4"/></symbol>
+        <symbol id="i-reuniao-alerta" viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="16.5" rx="2.5"/><path d="M8 2.5v4M16 2.5v4M3 9.5h18"/><path d="M12 13v3M12 18.5h.01"/></symbol>
+        <symbol id="i-agenda" viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="16.5" rx="2.5"/><path d="M8 2.5v4M16 2.5v4M3 9.5h18"/><path d="M7.5 13.5h.01M12 13.5h.01M16.5 13.5h.01M7.5 17h.01M12 17h.01"/></symbol>
+        <symbol id="i-carta" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="m3.5 6.5 8.5 6.5 8.5-6.5"/></symbol>
+        <symbol id="i-sino" viewBox="0 0 24 24"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 8 3 8H3s3-1 3-8"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></symbol>
+        <symbol id="i-mais" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="7" height="7" rx="2"/><rect x="13.5" y="3.5" width="7" height="7" rx="2"/><rect x="3.5" y="13.5" width="7" height="7" rx="2"/><rect x="13.5" y="13.5" width="7" height="7" rx="2"/></symbol>
+        <symbol id="i-diagnostico" viewBox="0 0 24 24"><path d="M3 12h4l3-7 4 14 3-7h4"/></symbol>
+        <symbol id="i-relatorio" viewBox="0 0 24 24"><path d="M3 20h18"/><path d="M6 17v-5M12 17V7M18 17v-8"/></symbol>
+        <symbol id="i-chamado" viewBox="0 0 24 24"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20.5l1.4-4.9A8 8 0 1 1 21 12z"/></symbol>
+        <symbol id="i-auditoria" viewBox="0 0 24 24"><path d="M12 3 4 6v6c0 4.5 3.4 8.2 8 9 4.6-.8 8-4.5 8-9V6z"/><path d="m9 12 2 2 4-4"/></symbol>
+        <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></symbol>
+        <symbol id="i-alerta" viewBox="0 0 24 24"><path d="M10.3 3.9 2.4 17.6A2 2 0 0 0 4.1 20.6h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></symbol>
+        <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></symbol>
+        <symbol id="i-mais-sinal" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+        <symbol id="i-sair" viewBox="0 0 24 24"><path d="M15 12H4M8 8l-4 4 4 4"/><path d="M10 4h8a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-8"/></symbol>
+        <symbol id="i-estrela" viewBox="0 0 24 24"><path d="m12 3 2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.4 6.8 19.1l1-5.8L3.5 9.2l5.9-.9z"/></symbol>
+        <symbol id="i-lua" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></symbol>
+        <symbol id="i-fechar" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+        <symbol id="i-marca" viewBox="0 0 180 180"><circle cx="70" cy="70" r="56"/><circle cx="110" cy="70" r="56"/><circle cx="90" cy="105" r="56"/></symbol>
+        <symbol id="i-relogio" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+        <symbol id="i-local" viewBox="0 0 24 24"><path d="M12 21s-7-6.1-7-11.5a7 7 0 1 1 14 0C19 14.9 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></symbol>
+        <symbol id="i-oracao" viewBox="0 0 24 24"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20.5l1.4-4.9A8 8 0 1 1 21 12z"/><path d="M12 15.5s-3-1.8-3-3.7a1.6 1.6 0 0 1 3-.8 1.6 1.6 0 0 1 3 .8c0 1.9-3 3.7-3 3.7z"/></symbol>
+        <symbol id="i-celeiro" viewBox="0 0 24 24"><path d="M4 10h16l-1.5 8.6a2 2 0 0 1-2 1.7h-9a2 2 0 0 1-2-1.7z"/><path d="M8.5 10 11 4.5M15.5 10 13 4.5"/></symbol>
+        <symbol id="i-cantina" viewBox="0 0 24 24"><path d="M4 8h13v6a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5z"/><path d="M17 10h1.5a2.5 2.5 0 0 1 0 5H17"/><path d="M8 2.5V5M12 2.5V5"/></symbol>
+    </svg>
 
     <?php
     $paginaAtual = basename($_SERVER['PHP_SELF'], '.php');
@@ -27,25 +57,18 @@
 
     $isAdmin = Auth::isAdmin();
 
-    function navItem(string $href, string $label, string $pagina, string $paginaAtual, string $icon, int $badge = 0): string
+    // Também usada pelo footer.php (barra inferior), que é incluído no mesmo escopo.
+    function uiAtual(bool $ativo): string
     {
-        $ativo = $pagina === $paginaAtual ? ' ativo' : '';
-        $badgeHtml = $badge > 0 ? '<span class="nav-badge">' . $badge . '</span>' : '';
-        return '<a href="' . $href . '" class="nav-item' . $ativo . '">' . $icon . '<span>' . $label . '</span>' . $badgeHtml . '</a>';
+        return $ativo ? ' aria-current="page"' : '';
     }
 
-    $iconDashboard = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="6" height="6" rx="1.5"/><rect x="9" y="1" width="6" height="6" rx="1.5"/><rect x="1" y="9" width="6" height="6" rx="1.5"/><rect x="9" y="9" width="6" height="6" rx="1.5"/></svg>';
-    $iconPessoas = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="5" r="3"/><path d="M2 15c0-3.3 2.7-6 6-6s6 2.7 6 6"/></svg>';
-    $iconGrupos = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="5" cy="5" r="2.5"/><circle cx="11" cy="5" r="2.5"/><path d="M1 14c0-2.8 1.8-5 4-5M15 14c0-2.8-1.8-5-4-5M5 14c0-2.2 1.3-4 3-4s3 1.8 3 4"/></svg>';
-    $iconPresencas = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="12" height="11" rx="2"/><path d="M5 1v4M11 1v4M2 7h12"/><path d="M5.5 10.5l1.5 1.5 3-3"/></svg>';
-    $iconNotificacoes = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 1a5 5 0 015 5c0 3 1 4 1.5 5h-13C2 10 3 9 3 6a5 5 0 015-5z"/><path d="M6.5 13a1.5 1.5 0 003 0"/></svg>';
-    $iconAuditoria = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 4h10M3 8h7M3 12h5"/></svg>';
-    $iconAgenda = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="12" height="11" rx="2"/><path d="M5 1v4M11 1v4M2 7h12"/><path d="M5 10h2M9 10h2M5 13h2"/></svg>';
-    $iconCarta = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="3" width="14" height="10" rx="2"/><path d="M1 5l7 5 7-5"/></svg>';
-    $iconChamados = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 9.5V3.5A1.5 1.5 0 013.5 2h4.8a1.5 1.5 0 011.06.44l2.2 2.2A1.5 1.5 0 0112 5.7v3.8"/><path d="M9 2v2.5A1.5 1.5 0 0010.5 6H13"/><path d="M4 12.5h4"/><path d="M6 10.5v4"/></svg>';
-    $iconRelatorios = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 13h12"/><path d="M4 11V8"/><path d="M8 11V5"/><path d="M12 11V3"/></svg>';
-    $iconChevron = '<svg class="nav-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 7l3 3 3-3"/></svg>';
-    $iconSair = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 8H2M6 5l-3 3 3 3"/><path d="M6 2h6a1 1 0 011 1v10a1 1 0 01-1 1H6"/></svg>';
+    function uiNavItem(string $href, string $label, string $icone, bool $ativo, string $badgeHtml = ''): string
+    {
+        return '<a class="ui-nav-item" href="' . $href . '"' . uiAtual($ativo) . '><svg class="ui-icon"><use href="#i-' . $icone . '"/></svg><span>' . $label . '</span>' . $badgeHtml . '</a>';
+    }
+
+    $iconeChevron = '<svg class="ui-icon ui-icon--sm ui-chevron"><use href="#i-chevron"/></svg>';
 
     $pessoasPaginas = [
         'pessoas',
@@ -72,7 +95,7 @@
     $presencasAberto = in_array($paginaAtual, $presencasPaginas, true);
 
     $nomeUsuario = $usuario['nome'] ?? 'Usuário';
-    $perfilUsuario = $isAdmin ? 'Administrador' : 'Líder';
+    $perfilUsuario = $isAdmin ? 'Administrador' : 'Líder de GF';
 
     $partes = preg_split('/\s+/', trim($nomeUsuario));
     $primeiraInicial = !empty($partes[0]) ? mb_substr($partes[0], 0, 1) : 'U';
@@ -143,125 +166,87 @@
     $totalAvisosNav = (int) ($totalAvisos ?? 0);
     $totalCartasBadge = $totalCartasNaoLidas;
     $agendaPaginas = ['agenda', 'agenda_criar', 'agenda_editar'];
+    $agendaAtivo = in_array($paginaAtual, $agendaPaginas, true);
+
+    $badgeCartasHtml = $totalCartasBadge > 0 ? '<span class="ui-nav-badge">' . (int) $totalCartasBadge . '</span>' : '';
+    $badgeAvisosHtml = $totalAvisosNav > 0 ? '<span class="ui-nav-badge" data-ui-contador="avisos" data-ui-ocultar-zero>' . $totalAvisosNav . '</span>' : '';
     ?>
 
-    <button class="mobile-nav-toggle" id="mobileNavToggle" type="button" aria-label="Abrir menu" aria-controls="jtroSidebar" aria-expanded="false">
-        <span></span>
-        <span></span>
-        <span></span>
-    </button>
-    <div class="mobile-nav-overlay" id="mobileNavOverlay" hidden></div>
+    <div class="ui-overlay" data-ui-gaveta="fechar"></div>
 
-    <div class="jtro-layout">
-        <aside class="jtro-sidebar" id="jtroSidebar">
-            <div class="sidebar-logo">
-                <div class="sidebar-logo-topo">
-                    <img src="/assets/icons/logo-com-nome-lado.png" alt="Logo JTRO" class="sidebar-logo-img" onerror="this.style.display='none'">
-                </div>
-                <span class="sidebar-logo-igreja">Comunhão Cristã Abba FRG</span>
-            </div>
+    <aside class="ui-sidebar" id="uiSidebar" aria-label="Menu">
+        <div class="ui-sidebar-topo">
+            <a class="ui-brand" href="/index.php">
+                <img src="/assets/icons/logo-jtro.png" alt="">
+                <span><span class="ui-brand-nome">JTRO</span><span class="ui-brand-igreja">Comunhão Cristã Abba FRG</span></span>
+            </a>
+            <button class="ui-iconbtn ui-gaveta-fechar" type="button" data-ui-gaveta="fechar" aria-label="Fechar menu"><svg class="ui-icon"><use href="#i-fechar"/></svg></button>
+        </div>
 
-            <div class="nav-secao">Visão geral</div>
-            <?php echo navItem('/index.php', 'Tela Inicial', 'index', $paginaAtual, $iconDashboard); ?>
+        <nav class="ui-nav" aria-label="Navegação principal">
+            <?php echo uiNavItem('/index.php', 'Início', 'inicio', $paginaAtual === 'index'); ?>
 
-            <div class="nav-secao">Gestão</div>
-
+            <div class="ui-nav-secao">Cuidado</div>
             <?php if ($isAdmin): ?>
-                <div class="nav-item-grupo <?php echo $pessoasAberto ? 'aberto' : ''; ?>">
-                    <button class="nav-item nav-item-trigger <?php echo $pessoasAberto ? 'ativo' : ''; ?>" onclick="toggleSubmenu(this)" type="button">
-                        <?php echo $iconPessoas; ?>
-                        <span>Pessoas</span>
-                        <?php echo $iconChevron; ?>
-                    </button>
-                    <div class="nav-submenu">
-                        <a href="/pessoas.php" class="nav-subitem <?php echo $paginaAtual === 'pessoas' ? 'ativo' : ''; ?>">Cadastrar Nova Pessoa</a>
-                        <a href="/pessoas_cadastradas.php" class="nav-subitem <?php echo $paginaAtual === 'pessoas_cadastradas' ? 'ativo' : ''; ?>">Pessoas Cadastradas</a>
+                <details class="ui-nav-grupo"<?php echo $pessoasAberto ? ' open' : ''; ?>>
+                    <summary class="ui-nav-item"><svg class="ui-icon"><use href="#i-pessoa"/></svg><span>Pessoas</span><?php echo $iconeChevron; ?></summary>
+                    <div class="ui-nav-sub">
+                        <a href="/pessoas.php"<?php echo uiAtual($paginaAtual === 'pessoas'); ?>>Cadastrar nova pessoa</a>
+                        <a href="/pessoas_cadastradas.php"<?php echo uiAtual($paginaAtual === 'pessoas_cadastradas'); ?>>Pessoas cadastradas</a>
                     </div>
-                </div>
+                </details>
+                <details class="ui-nav-grupo"<?php echo $gruposAberto ? ' open' : ''; ?>>
+                    <summary class="ui-nav-item"><svg class="ui-icon"><use href="#i-pessoas"/></svg><span>Grupos Familiares</span><?php echo $iconeChevron; ?></summary>
+                    <div class="ui-nav-sub">
+                        <a href="/grupos_familiares.php"<?php echo uiAtual($paginaAtual === 'grupos_familiares'); ?>>Cadastrar novo GF</a>
+                        <a href="/grupos_familiares_cadastrados.php"<?php echo uiAtual($paginaAtual === 'grupos_familiares_cadastrados'); ?>>GFs cadastrados</a>
+                        <a href="/cantina.php"<?php echo uiAtual($paginaAtual === 'cantina'); ?>>Cantina</a>
+                        <a href="/diagnostico_gf.php"<?php echo uiAtual($paginaAtual === 'diagnostico_gf'); ?>>Diagnóstico de GFs</a>
+                    </div>
+                </details>
+            <?php else: ?>
+                <?php echo uiNavItem('/diagnostico_gf.php', 'Diagnóstico do GF', 'diagnostico', $paginaAtual === 'diagnostico_gf'); ?>
             <?php endif; ?>
-
-            <div class="nav-item-grupo <?php echo $gruposAberto ? 'aberto' : ''; ?>">
-                <button class="nav-item nav-item-trigger <?php echo $gruposAberto ? 'ativo' : ''; ?>" onclick="toggleSubmenu(this)" type="button">
-                    <?php echo $iconGrupos; ?>
-                    <span>Grupos Familiares</span>
-                    <?php echo $iconChevron; ?>
-                </button>
-                <div class="nav-submenu">
-                    <?php if ($isAdmin): ?>
-                        <a href="/grupos_familiares.php" class="nav-subitem <?php echo $paginaAtual === 'grupos_familiares' ? 'ativo' : ''; ?>">Cadastrar Novo GF</a>
-                        <a href="/grupos_familiares_cadastrados.php" class="nav-subitem <?php echo $paginaAtual === 'grupos_familiares_cadastrados' ? 'ativo' : ''; ?>">GFs Cadastrados</a>
-                        <a href="/cantina.php" class="nav-subitem <?php echo $paginaAtual === 'cantina' ? 'ativo' : ''; ?>">Cantina</a>
-                    <?php endif; ?>
-                    <a href="/diagnostico_gf.php" class="nav-subitem <?php echo $paginaAtual === 'diagnostico_gf' ? 'ativo' : ''; ?>">Diagnóstico de GFs</a>
-                </div>
-            </div>
-
-            <div class="nav-item-grupo <?php echo $presencasAberto ? 'aberto' : ''; ?>">
-                <button class="nav-item nav-item-trigger <?php echo $presencasAberto ? 'ativo' : ''; ?>" onclick="toggleSubmenu(this)" type="button">
-                    <?php echo $iconPresencas; ?>
-                    <span>Reuniões e Presenças</span>
-                    <?php echo $iconChevron; ?>
-                </button>
-                <div class="nav-submenu">
-                    <a href="/presencas.php" class="nav-subitem <?php echo $paginaAtual === 'presencas' ? 'ativo' : ''; ?>">Reuniões</a>
+            <details class="ui-nav-grupo"<?php echo $presencasAberto ? ' open' : ''; ?>>
+                <summary class="ui-nav-item"><svg class="ui-icon"><use href="#i-reuniao"/></svg><span>Reuniões e Presenças</span><?php echo $iconeChevron; ?></summary>
+                <div class="ui-nav-sub">
+                    <a href="/presencas.php"<?php echo uiAtual($paginaAtual === 'presencas'); ?>>Reuniões</a>
                     <?php if ($temAcessoRetiroIntegracao): ?>
-                        <a href="/retiro_integracao.php" class="nav-subitem <?php echo $paginaAtual === 'retiro_integracao' ? 'ativo' : ''; ?>">Retiro de Integração</a>
+                        <a href="/retiro_integracao.php"<?php echo uiAtual($paginaAtual === 'retiro_integracao'); ?>>Retiro de Integração</a>
                     <?php endif; ?>
                 </div>
-            </div>
+            </details>
 
-            <?php
-            $agendaAtivo = in_array($paginaAtual, $agendaPaginas, true) ? 'agenda' : $paginaAtual;
-            echo navItem('/agenda.php', 'Agenda', 'agenda', $agendaAtivo, $iconAgenda);
-            ?>
-            <?php echo navItem('/cartas.php', 'Carta Semanal', 'cartas', $paginaAtual, $iconCarta, $totalCartasBadge); ?>
+            <div class="ui-nav-secao">Comunicação</div>
+            <?php echo uiNavItem('/agenda.php', 'Agenda', 'agenda', $agendaAtivo); ?>
+            <?php echo uiNavItem('/cartas.php', 'Carta Semanal', 'carta', $paginaAtual === 'cartas', $badgeCartasHtml); ?>
+            <?php echo uiNavItem('/avisos.php', 'Notificações', 'sino', $paginaAtual === 'avisos', $badgeAvisosHtml); ?>
+
             <?php if ($isAdmin): ?>
-                <?php echo navItem('/relatorios.php', 'Relatórios', 'relatorios', $paginaAtual, $iconRelatorios); ?>
+                <div class="ui-nav-secao">Gestão</div>
+                <?php echo uiNavItem('/relatorios.php', 'Relatórios', 'relatorio', $paginaAtual === 'relatorios'); ?>
+                <?php echo uiNavItem('/chamados.php', 'Chamados', 'chamado', $paginaAtual === 'chamados'); ?>
+                <?php echo uiNavItem('/auditoria.php', 'Auditoria', 'auditoria', $paginaAtual === 'auditoria'); ?>
+            <?php else: ?>
+                <div class="ui-nav-secao">Sistema</div>
+                <?php echo uiNavItem('/chamados.php', 'Chamados', 'chamado', $paginaAtual === 'chamados'); ?>
             <?php endif; ?>
+        </nav>
 
-            <div class="nav-secao">Sistema</div>
-            <?php echo navItem('/chamados.php', 'Chamados', 'chamados', $paginaAtual, $iconChamados); ?>
-            <?php echo navItem('/avisos.php', 'Notificações', 'avisos', $paginaAtual, $iconNotificacoes, $totalAvisosNav); ?>
-            <?php if ($isAdmin): ?>
-                <?php echo navItem('/auditoria.php', 'Auditoria', 'auditoria', $paginaAtual, $iconAuditoria); ?>
-            <?php endif; ?>
+        <a class="ui-usuario" href="/meu_perfil.php">
+            <span class="ui-avatar"><?php echo htmlspecialchars($iniciais); ?></span>
+            <span><span class="ui-usuario-nome"><?php echo htmlspecialchars($nomeUsuario); ?></span><span class="ui-usuario-papel"><?php echo htmlspecialchars($perfilUsuario); ?></span></span>
+        </a>
+        <a class="ui-sair" href="/logout.php"><svg class="ui-icon"><use href="#i-sair"/></svg>Sair</a>
+    </aside>
 
-            <div class="sidebar-footer">
-                <a href="/meu_perfil.php" class="sidebar-usuario">
-                    <div class="usuario-avatar"><?php echo htmlspecialchars($iniciais); ?></div>
-                    <div>
-                        <span class="usuario-nome"><?php echo htmlspecialchars($nomeUsuario); ?></span>
-                        <span class="usuario-perfil"><?php echo htmlspecialchars($perfilUsuario); ?></span>
-                    </div>
-                </a>
-                <a href="/logout.php" class="sidebar-sair">
-                    <?php echo $iconSair; ?>
-                    <span>Sair</span>
-                </a>
-            </div>
-        </aside>
-        <main class="jtro-main">
-            <script>
-                function toggleSubmenu(btn) {
-                    const grupo = btn.closest('.nav-item-grupo');
-                    if (grupo) grupo.classList.toggle('aberto');
-                }
+    <header class="ui-topbar">
+        <a class="ui-brand" href="/index.php">
+            <img src="/assets/icons/logo-jtro.png" alt="">
+            <span style="min-width:0"><span class="ui-brand-nome">JTRO</span><span class="ui-brand-igreja">Comunhão Cristã Abba FRG</span></span>
+        </a>
+        <a class="ui-iconbtn" href="/avisos.php" aria-label="Notificações"><svg class="ui-icon"><use href="#i-sino"/></svg><?php if ($totalAvisosNav > 0): ?><span class="ui-iconbtn-badge" data-ui-contador="avisos" data-ui-ocultar-zero><?php echo $totalAvisosNav; ?></span><?php endif; ?></a>
+        <a class="ui-avatar" href="/meu_perfil.php" aria-label="Meu perfil"><?php echo htmlspecialchars($iniciais); ?></a>
+    </header>
 
-                document.addEventListener('DOMContentLoaded', function() {
-                    const pa = <?php echo json_encode($paginaAtual); ?>;
-                    const pp = <?php echo json_encode($pessoasPaginas); ?>;
-                    const gp = <?php echo json_encode($gruposPaginas); ?>;
-                    const rp = <?php echo json_encode($presencasPaginas); ?>;
-                    const grupos = document.querySelectorAll('.nav-item-grupo');
-
-                    if (pp.includes(pa) && grupos.length > 0) {
-                        grupos[0].classList.add('aberto');
-                    }
-                    if (gp.includes(pa) && grupos.length > 1) {
-                        grupos[1].classList.add('aberto');
-                    }
-                    if (rp.includes(pa) && grupos.length > 2) {
-                        grupos[2].classList.add('aberto');
-                    }
-                });
-            </script>
+    <main class="ui-main" id="conteudo">

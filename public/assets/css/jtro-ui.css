@@ -586,3 +586,66 @@ a.ui-linha:hover, .ui-linha--clicavel:hover { background: var(--ui-surface-2); }
     .ui-iconbtn-badge, .ui-nav-badge--pulso { animation: none !important; }
     .ui-sidebar, .ui-overlay, .ui-linha, .ui-btn, .ui-kpi, .ui-aba { transition: none !important; }
 }
+
+/* ---------- 13. Compatibilidade com app.css ----------
+   app.css continua carregado ANTES deste arquivo e nenhuma regra dele foi apagada.
+   As regras de .jtro-layout/.jtro-main/.jtro-sidebar e .mobile-nav-* não afetam mais
+   o shell porque essas classes saíram do header.php. O que ainda interfere:
+
+   1) app.css: "button:not(.nav-item):not(.nav-item-trigger)...:not([class*=" ql-"])"
+      (especificidade 0,8,1) pinta todo <button> de azul, com padding 9px 20px,
+      min-height 38px e display inline-flex. Isso atingiria o botão X da gaveta
+      (aparecendo até no desktop, porque o display:none de .ui-gaveta-fechar perde)
+      e o botão "Mais" da barra inferior. Nenhuma classe ui- vence 0,8,1, então os
+      valores do shell são reafirmados com !important. Remover quando a regra
+      global de app.css excluir [class*="ui-"]. */
+.ui-sidebar .ui-gaveta-fechar {
+    display: none !important;
+    padding: 0 !important;
+    min-height: 0 !important;
+    border: 0 !important;
+    border-radius: 22px !important;
+    background: none !important;
+    color: var(--ui-text) !important;
+    transition: background-color .2s ease, transform .15s ease !important;
+}
+.ui-sidebar .ui-gaveta-fechar:hover { background: var(--ui-surface-2) !important; opacity: 1 !important; }
+@media (max-width: 1023.98px) { .ui-sidebar .ui-gaveta-fechar { display: inline-grid !important; } }
+
+.ui-bottomnav button.ui-bottomnav-item {
+    display: flex !important;
+    padding: 0 !important;
+    min-height: 48px !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: none !important;
+    color: var(--ui-muted) !important;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    transition: none !important;
+}
+.ui-bottomnav button.ui-bottomnav-item:hover { opacity: 1 !important; }
+
+/* 2) app.css: "a:hover { opacity: .8 }" esmaece os links do menu, da topbar e da
+      barra inferior no hover. O shell indica hover pelo fundo, não pela opacidade. */
+.ui-sidebar a:hover, .ui-topbar a:hover, .ui-bottomnav a:hover { opacity: 1; }
+
+/* 3) O sentido inverso: a seção 2 deste arquivo zera a margem e herda a cor de h1–h4
+      e faz <a> herdar a cor no body inteiro. Nas telas antigas (conteúdo de .ui-main
+      fora de .ui-page) isso tiraria o espaçamento dos títulos (ex.: 48 <h2> sem classe)
+      e o azul dos links sem classe. Estas regras devolvem os valores de app.css com a
+      mesma especificidade (0,0,1), então qualquer regra com classe de app.css continua
+      vencendo como antes. Telas novas (dentro de .ui-page) não são afetadas. */
+:where(main) h1:not(:where(.ui-page *)) { margin-bottom: 4px; color: var(--color-text-primary); }
+:where(main) h2:not(:where(.ui-page *)) { margin-bottom: 12px; color: var(--color-text-primary); }
+:where(main) h3:not(:where(.ui-page *)) { margin-bottom: 8px; color: var(--color-text-primary); }
+:where(main) h4:not(:where(.ui-page *)) { color: var(--color-text-primary); }
+:where(main) a:not(:where(.ui-page *)) { color: var(--color-blue); }
+
+/* 4) Impressão: src/Views/cartas/visualizar.php escondia .jtro-sidebar e zerava a margem
+      de .jtro-main no @media print. Sem isso, o menu, a topbar e a barra inferior (fixa)
+      sairiam no papel e o conteúdo ficaria deslocado 272px. Vale para todas as telas. */
+@media print {
+    .ui-sidebar, .ui-topbar, .ui-bottomnav, .ui-overlay { display: none !important; }
+    .ui-main { margin-left: 0 !important; padding: 0 !important; }
+}
