@@ -183,7 +183,7 @@
                                         <td style="text-align:center;"><?php echo htmlspecialchars($membro['total_ausencias']); ?></td>
                                         <td>
                                             <div style="display:flex; align-items:center; gap:6px;">
-                                                <div style="width:44px; height:5px; background:#edeae4; border-radius:99px; overflow:hidden; flex-shrink:0;">
+                                                <div style="width:44px; height:5px; background:var(--ui-app-neutro, #edeae4); border-radius:99px; overflow:hidden; flex-shrink:0;">
                                                     <div style="width:<?php echo $largBarra; ?>%; height:100%; background:<?php echo $corPct; ?>; border-radius:99px;"></div>
                                                 </div>
                                                 <span style="font-size:12px; font-weight:500; color:<?php echo $corPct; ?>;">

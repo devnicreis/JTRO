@@ -104,7 +104,7 @@ if ($isEdicao && !empty($carta['avisos'])) {
     <div class="carta-secao">
         <div class="carta-secao-titulo" style="display:flex; justify-content:space-between; align-items:center;">
             Avisos da Semana
-            <button type="button" onclick="adicionarAviso()" style="display:inline-flex; align-items:center; gap:5px; padding:5px 12px; background:var(--color-green-light); color:var(--color-teal); border:1px solid #9fe1cb; border-radius:var(--radius-md); font-size:12px; font-weight:500; cursor:pointer; font-family:'Plus Jakarta Sans',sans-serif; min-height:unset;">
+            <button type="button" onclick="adicionarAviso()" style="display:inline-flex; align-items:center; gap:5px; padding:5px 12px; background:var(--color-green-light); color:var(--color-teal); border:1px solid var(--ui-app-borda-verde, #9fe1cb); border-radius:var(--radius-md); font-size:12px; font-weight:500; cursor:pointer; font-family:'Plus Jakarta Sans',sans-serif; min-height:unset;">
                 <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 2v12M2 8h12"/></svg>
                 Adicionar aviso
             </button>

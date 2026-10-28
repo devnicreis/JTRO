@@ -6,17 +6,17 @@ if (!function_exists('renderIntegracaoIcon')) {
     function renderIntegracaoIcon(string $tipo): string
     {
         return match ($tipo) {
-            'edit' => '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 20h4l10.5-10.5a2.1 2.1 0 0 0 0-3L16.5 4a2.1 2.1 0 0 0-3 0L3 14.5V20h1Z" stroke="#475467" stroke-width="1.8" stroke-linejoin="round"/><path d="m13.5 6.5 4 4" stroke="#475467" stroke-width="1.8" stroke-linecap="round"/></svg>',
-            'delete' => '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 7h16M9 7V5.8A1.8 1.8 0 0 1 10.8 4h2.4A1.8 1.8 0 0 1 15 5.8V7m-7 0 .7 12a1.8 1.8 0 0 0 1.8 1.7h2.8a1.8 1.8 0 0 0 1.8-1.7L16 7M10 11.5v4.5M14 11.5v4.5" stroke="#475467" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
-            'lock' => '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M7 10V8a5 5 0 0 1 10 0v2" stroke="#98a2b3" stroke-width="1.8" stroke-linecap="round"/><rect x="5" y="10" width="14" height="10" rx="2.2" stroke="#98a2b3" stroke-width="1.8"/><path d="M12 13.3v2.4" stroke="#98a2b3" stroke-width="1.8" stroke-linecap="round"/></svg>',
+            'edit' => '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 20h4l10.5-10.5a2.1 2.1 0 0 0 0-3L16.5 4a2.1 2.1 0 0 0-3 0L3 14.5V20h1Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="m13.5 6.5 4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
+            'delete' => '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 7h16M9 7V5.8A1.8 1.8 0 0 1 10.8 4h2.4A1.8 1.8 0 0 1 15 5.8V7m-7 0 .7 12a1.8 1.8 0 0 0 1.8 1.7h2.8a1.8 1.8 0 0 0 1.8-1.7L16 7M10 11.5v4.5M14 11.5v4.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+            'lock' => '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M7 10V8a5 5 0 0 1 10 0v2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><rect x="5" y="10" width="14" height="10" rx="2.2" stroke="currentColor" stroke-width="1.8"/><path d="M12 13.3v2.4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
             default => '',
         };
     }
 }
 
-$acaoIntegracaoBotaoStyle = 'all:unset !important;box-sizing:border-box !important;width:34px !important;height:34px !important;display:inline-flex !important;align-items:center !important;justify-content:center !important;flex:0 0 auto !important;padding:0 !important;margin:0 !important;border:1px solid #d0d5dd !important;border-radius:10px !important;background:#fff !important;color:#475467 !important;cursor:pointer !important;line-height:0 !important;box-shadow:none !important;appearance:none !important;-webkit-appearance:none !important;';
-$acaoIntegracaoBotaoDeleteStyle = 'background:#fff !important;color:#475467 !important;border-color:#d0d5dd !important;';
-$acaoIntegracaoLockStyle = 'all:unset !important;box-sizing:border-box !important;width:34px !important;height:34px !important;display:inline-flex !important;align-items:center !important;justify-content:center !important;flex:0 0 auto !important;padding:0 !important;margin:0 !important;border:1px solid #d0d5dd !important;border-radius:10px !important;background:#f8fafc !important;color:#98a2b3 !important;line-height:0 !important;cursor:default !important;pointer-events:none !important;';
+$acaoIntegracaoBotaoStyle = 'all:unset !important;box-sizing:border-box !important;width:34px !important;height:34px !important;display:inline-flex !important;align-items:center !important;justify-content:center !important;flex:0 0 auto !important;padding:0 !important;margin:0 !important;border:1px solid var(--ui-app-cinza-300, #d0d5dd) !important;border-radius:10px !important;background:var(--ui-surface, #fff) !important;color:var(--ui-app-cinza-600, #475467) !important;cursor:pointer !important;line-height:0 !important;box-shadow:none !important;appearance:none !important;-webkit-appearance:none !important;';
+$acaoIntegracaoBotaoDeleteStyle = 'background:var(--ui-surface, #fff) !important;color:var(--ui-app-cinza-600, #475467) !important;border-color:var(--ui-app-cinza-300, #d0d5dd) !important;';
+$acaoIntegracaoLockStyle = 'all:unset !important;box-sizing:border-box !important;width:34px !important;height:34px !important;display:inline-flex !important;align-items:center !important;justify-content:center !important;flex:0 0 auto !important;padding:0 !important;margin:0 !important;border:1px solid var(--ui-app-cinza-300, #d0d5dd) !important;border-radius:10px !important;background:var(--ui-app-ardosia-50, #f8fafc) !important;color:var(--ui-app-cinza-400, #98a2b3) !important;line-height:0 !important;cursor:default !important;pointer-events:none !important;';
 $acaoIntegracaoFormStyle = 'all:unset !important;box-sizing:border-box !important;display:inline-flex !important;margin:0 !important;padding:0 !important;border:0 !important;background:transparent !important;';
 ?>
 
@@ -39,10 +39,10 @@ $acaoIntegracaoFormStyle = 'all:unset !important;box-sizing:border-box !importan
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    border: 1px solid #d0d5dd !important;
+    border: 1px solid var(--ui-app-cinza-300, #d0d5dd) !important;
     border-radius: 10px;
-    background: #fff !important;
-    color: #475467 !important;
+    background: var(--ui-surface, #fff) !important;
+    color: var(--ui-app-cinza-600, #475467) !important;
     flex: 0 0 auto;
     cursor: pointer;
     transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.15s ease, color 0.15s ease;
@@ -51,8 +51,8 @@ $acaoIntegracaoFormStyle = 'all:unset !important;box-sizing:border-box !importan
 }
 
 .integracao-acoes button.integracao-acao-btn:hover {
-    background: #f2f4f7 !important;
-    border-color: #cfd4dc !important;
+    background: var(--ui-surface-2, #f2f4f7) !important;
+    border-color: var(--ui-app-cinza-300, #cfd4dc) !important;
     transform: translateY(-1px);
 }
 
@@ -69,21 +69,21 @@ $acaoIntegracaoFormStyle = 'all:unset !important;box-sizing:border-box !importan
 }
 
 .integracao-acoes button.integracao-acao-btn--delete {
-    color: #475467 !important;
+    color: var(--ui-app-cinza-600, #475467) !important;
 }
 
 .integracao-acoes button.integracao-acao-lock,
 .integracao-acoes .integracao-acao-lock {
     cursor: default;
-    color: #98a2b3 !important;
-    background: #f8fafc !important;
+    color: var(--ui-app-cinza-400, #98a2b3) !important;
+    background: var(--ui-app-ardosia-50, #f8fafc) !important;
 }
 
 .integracao-acoes button.integracao-acao-lock:hover,
 .integracao-acoes .integracao-acao-lock:hover {
     transform: none;
-    background: #f8fafc !important;
-    border-color: #d0d5dd !important;
+    background: var(--ui-app-ardosia-50, #f8fafc) !important;
+    border-color: var(--ui-app-cinza-300, #d0d5dd) !important;
 }
 
 .integracao-acao-form {
@@ -119,7 +119,7 @@ $acaoIntegracaoFormStyle = 'all:unset !important;box-sizing:border-box !importan
 </div>
 
 <?php if ($erro !== ''): ?>
-    <div class="mensagem" style="margin-bottom:20px; background:#fdecea; color:#b42318;">
+    <div class="mensagem" style="margin-bottom:20px; background:var(--ui-alarmante-bg, #fdecea); color:var(--ui-app-erro-forte, #b42318);">
         <?php echo htmlspecialchars($erro); ?>
     </div>
 <?php endif; ?>

@@ -145,7 +145,7 @@
                             <div class="agenda-evento-info">
                                 <div class="agenda-evento-titulo"><?php echo htmlspecialchars($ev['titulo']); ?></div>
                                 <div style="margin-top:3px;">
-                                    <span class="agenda-badge" style="background:<?php echo $cor; ?>22; color:<?php echo $cor; ?>;">
+                                    <span class="agenda-badge" style="background:<?php echo $cor; ?>22; color:var(--agenda-cor-texto, <?php echo $cor; ?>); --agenda-cor:<?php echo $cor; ?>;">
                                         <?php echo htmlspecialchars($ev['departamento']); ?>
                                     </span>
                                 </div>
@@ -162,7 +162,7 @@
                                           onsubmit="return confirm('Excluir este evento?');">
                                         <input type="hidden" name="acao" value="excluir">
                                         <input type="hidden" name="id" value="<?php echo $ev['id']; ?>">
-                                        <button type="submit" style="font-size:11px; padding:3px 9px; background:var(--color-red-light); color:var(--color-red); border:1px solid #f7c1c1; border-radius:var(--radius-md); cursor:pointer; min-height:unset; width:100%;">
+                                        <button type="submit" style="font-size:11px; padding:3px 9px; background:var(--color-red-light); color:var(--color-red); border:1px solid var(--ui-app-borda-vermelha, #f7c1c1); border-radius:var(--radius-md); cursor:pointer; min-height:unset; width:100%;">
                                             Excluir
                                         </button>
                                     </form>

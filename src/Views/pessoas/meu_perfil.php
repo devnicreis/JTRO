@@ -288,6 +288,51 @@ $cargoLabel = (($pessoa['cargo'] ?? '') === 'admin') ? 'Administrador' : 'Membro
     </form>
 </div>
 
+<div class="card-perfil ui-aparencia" id="secao-aparencia" hidden>
+    <h2 id="aparencia-titulo">Aparência</h2>
+
+    <div class="status-group" role="radiogroup" aria-labelledby="aparencia-titulo" aria-describedby="aparencia-ajuda">
+        <label><input type="radio" name="aparencia" value="light"> Claro</label>
+        <label><input type="radio" name="aparencia" value="dark"> Escuro</label>
+        <label><input type="radio" name="aparencia" value="auto"> Automático (segue o tema do aparelho)</label>
+    </div>
+    <small id="aparencia-ajuda">Vale só para este aparelho e navegador. Nada é gravado no seu cadastro.</small>
+</div>
+
+<script>
+// Preferência do aparelho: só localStorage 'jtro-tema' ('light' | 'dark'; sem valor = automático).
+// Quem aplica o tema é window.jtroAplicarTema, definido no script inline de layouts/header.php.
+(function () {
+    var secao = document.getElementById('secao-aparencia');
+    var opcoes = secao.querySelectorAll('input[name="aparencia"]');
+    var salvo = null;
+    try { salvo = localStorage.getItem('jtro-tema'); } catch (e) { /* sem armazenamento */ }
+    var atual = (salvo === 'light' || salvo === 'dark') ? salvo : 'auto';
+
+    opcoes.forEach(function (opcao) {
+        opcao.checked = opcao.value === atual;
+        opcao.addEventListener('change', function () {
+            var gravou = true;
+            try {
+                if (opcao.value === 'auto') localStorage.removeItem('jtro-tema');
+                else localStorage.setItem('jtro-tema', opcao.value);
+            } catch (e) {
+                gravou = false;
+            }
+            if (gravou || opcao.value === 'auto') {
+                window.jtroAplicarTema();
+            } else if (opcao.value === 'dark') {
+                // Sem armazenamento: vale só até sair desta página.
+                document.documentElement.setAttribute('data-theme', 'dark');
+            } else {
+                document.documentElement.removeAttribute('data-theme');
+            }
+        });
+    });
+    secao.hidden = false;
+})();
+</script>
+
 <div class="card-perfil">
     <h2>Privacidade e LGPD</h2>
 

@@ -65,10 +65,53 @@
     --color-blue:            var(--ui-accent);
     --color-blue-strong:     var(--ui-brand-navy);
     --color-blue-strong-hover: #071F3A;
+
+    /* Cores próprias das telas antigas (app.css e o <style> de algumas views), que não
+       têm equivalente --ui-* acima. No tema claro cada token guarda EXATAMENTE a cor fixa
+       que substituiu (nada muda); só no tema escuro ganha valor próprio. Telas que
+       carregam app.css sem este arquivo (login, senha, consentimento, páginas legais)
+       usam a cor de reserva escrita no próprio var(--ui-app-..., #cor). */
+    --ui-app-zebra:           #F4F2EE;
+    --ui-app-neutro:          #EDEAE4;  /* .card-resumo e trilhos de barra */
+    --ui-app-tabela-cab:      #F7F4EF;
+    --ui-app-tabela-filtros:  #FCFAF6;
+    --ui-app-tabela-campo:    #FFFDFA;
+    --ui-app-meta-badge:      #F6F4F1;
+    --ui-app-linha-destaque:  #FCFBF8;
+    --ui-app-diag-neutro:     #5C5850;  --ui-app-diag-neutro-bg: #E8E5DF;
+    --ui-app-sucesso-texto:   #1A4A1E;
+    --ui-app-erro-texto:      #5A1A1A;
+    --ui-app-erro-forte:      #B42318;
+    --ui-app-borda-azul:      #B5D4F4;
+    --ui-app-borda-verde:     #9FE1CB;
+    --ui-app-borda-vermelha:  #F7C1C1;
+    --ui-app-borda-alerta:    #F0C4C0;
+    --ui-app-laranja:         #B5651D;  --ui-app-laranja-borda:  #F3C27D;
+    --ui-app-aviso-borda:     #B7D3EF;  --ui-app-aviso-hover:    #D8E9FA;
+    --ui-app-terracota:       #9B5628;  --ui-app-terracota-bg:   #F7E4D3;
+    --ui-app-violeta:         #6A48B3;  --ui-app-violeta-bg:     #F1EAFE;
+    --ui-app-celeiro:         #9A6400;  --ui-app-celeiro-bg:     #FFF4DF;  --ui-app-celeiro-borda: #F0C36A;
+    --ui-app-oracao:          #5646C0;  --ui-app-oracao-bg:      #EFEDFF;  --ui-app-oracao-borda:  #B5AEF8;
+    --ui-app-cantina:         #246B39;  --ui-app-cantina-bg:     #E9F5EA;  --ui-app-cantina-borda: #ABD2B2;
+    --ui-app-relatorio-hover: #BFD8F3;  --ui-app-relatorio-aberto: #9FC3EA;
+    --ui-app-azul:            #185FA5;  /* azul original de app.css, ainda fixo em Relatórios */
+    /* Cinzas da tela de Integração (cinza-*) e da de Relatórios (ardosia-*) */
+    --ui-app-cinza-900:   #1D2939;
+    --ui-app-cinza-600:   #475467;
+    --ui-app-cinza-500:   #667085;
+    --ui-app-cinza-400:   #98A2B3;
+    --ui-app-cinza-300:   #D0D5DD;
+    --ui-app-ardosia-700: #334155;
+    --ui-app-ardosia-600: #475569;
+    --ui-app-ardosia-500: #64748B;
+    --ui-app-ardosia-400: #94A3B8;
+    --ui-app-ardosia-300: #CBD5E1;
+    --ui-app-ardosia-50:  #F8FAFC;
 }
 
-/* Tema escuro: SOMENTE quando <html data-theme="dark">. Não é automático
-   (prefers-color-scheme) porque as telas antigas ainda têm cores fixas. */
+/* Tema escuro: SOMENTE quando <html data-theme="dark">. Quem liga o atributo é o script
+   inline de layouts/header.php (escolha salva em localStorage 'jtro-tema' ou, sem escolha,
+   prefers-color-scheme). As telas sem header.php (login, senha, legais) seguem claras. */
 html[data-theme="dark"] {
     color-scheme: dark;
     --ui-bg:          #08111D;
@@ -94,6 +137,63 @@ html[data-theme="dark"] {
     --ui-info:        #93C3F4;  --ui-info-bg:      #16304D;
     --ui-shadow:      0 1px 2px rgba(0, 0, 0, .3);
     --ui-shadow-lg:   0 10px 30px rgba(0, 0, 0, .45);
+
+    /* Variáveis de app.css que a ponte do tema claro não cobre (no claro valem as de app.css).
+       Cores usadas como fundo de botão ficam claras aqui; o texto desses botões usa
+       --ui-accent-ink, que no escuro é tinta escura. */
+    --color-border-md:         #2E4563;
+    --color-blue-light:        var(--ui-bom-bg);
+    --color-blue-mid:          var(--ui-bom-bar);
+    --color-blue-strong:       var(--ui-accent);
+    --color-blue-strong-hover: #B9D9F8;
+    --color-green:             var(--ui-otimo);
+    --color-green-light:       var(--ui-otimo-bg);
+    --color-amber:             var(--ui-atencao);
+    --color-amber-light:       var(--ui-atencao-bg);
+    --color-amber-mid:         #E9A23B;
+    --color-red:               var(--ui-alarmante);
+    --color-red-light:         var(--ui-alarmante-bg);
+    --color-red-mid:           var(--ui-alarmante-bar);
+    --color-teal:              #6FD6B8;
+    --color-teal-light:        #0D2E28;
+    --color-purple:            #B9B2F5;
+    --color-purple-light:      #221E45;
+
+    --ui-app-zebra:           #132233;
+    --ui-app-neutro:          var(--ui-surface-2);
+    --ui-app-tabela-cab:      var(--ui-surface-2);
+    --ui-app-tabela-filtros:  var(--ui-surface);
+    --ui-app-tabela-campo:    var(--ui-bg);
+    --ui-app-meta-badge:      var(--ui-surface-2);
+    --ui-app-linha-destaque:  #132233;
+    --ui-app-diag-neutro:     var(--ui-neutro);     --ui-app-diag-neutro-bg: var(--ui-neutro-bg);
+    --ui-app-sucesso-texto:   var(--ui-otimo);
+    --ui-app-erro-texto:      var(--ui-alarmante);
+    --ui-app-erro-forte:      var(--ui-alarmante);
+    --ui-app-borda-azul:      #2A4D74;
+    --ui-app-borda-verde:     #1F5A44;
+    --ui-app-borda-vermelha:  #6B2A2E;
+    --ui-app-borda-alerta:    #6B2A2E;
+    --ui-app-laranja:         #F3B27A;              --ui-app-laranja-borda:  #6A4A1A;
+    --ui-app-aviso-borda:     #2A4D74;              --ui-app-aviso-hover:    var(--ui-pill);
+    --ui-app-terracota:       #F2B48A;              --ui-app-terracota-bg:   #3A2314;
+    --ui-app-violeta:         #C9B6FA;              --ui-app-violeta-bg:     #2A1F45;
+    --ui-app-celeiro:         var(--ui-atencao);    --ui-app-celeiro-bg:     var(--ui-atencao-bg);  --ui-app-celeiro-borda: #6A4A1A;
+    --ui-app-oracao:          #C4B8FF;              --ui-app-oracao-bg:      #231D45;               --ui-app-oracao-borda:  #4A3F8C;
+    --ui-app-cantina:         var(--ui-otimo);      --ui-app-cantina-bg:     var(--ui-otimo-bg);    --ui-app-cantina-borda: #1F5A44;
+    --ui-app-relatorio-hover: #2F5680;              --ui-app-relatorio-aberto: #4A7AAD;
+    --ui-app-azul:            var(--ui-accent);
+    --ui-app-cinza-900:   var(--ui-text);
+    --ui-app-cinza-600:   var(--ui-text-2);
+    --ui-app-cinza-500:   var(--ui-muted);
+    --ui-app-cinza-400:   #6B7C90;
+    --ui-app-cinza-300:   #2E4563;
+    --ui-app-ardosia-700: #CBD5E1;
+    --ui-app-ardosia-600: var(--ui-text-2);
+    --ui-app-ardosia-500: var(--ui-muted);
+    --ui-app-ardosia-400: var(--ui-muted);
+    --ui-app-ardosia-300: #2E4563;
+    --ui-app-ardosia-50:  var(--ui-surface-2);
 }
 
 /* ---------- 2. Base ---------- */
@@ -664,3 +764,13 @@ a.ui-linha:hover, .ui-linha--clicavel:hover { background: var(--ui-surface-2); }
 .ui-page a:hover { opacity: 1; }
 :where(.ui-page) p { margin-bottom: 0; color: inherit; font-size: inherit; }
 :where(.ui-page) small { display: inline; margin-top: 0; font-size: inherit; color: inherit; line-height: inherit; }
+
+/* ---------- 14. Tema escuro nas telas antigas ----------
+   1) Agenda: o selo do departamento usa a cor do departamento como texto (inline, vinda de
+      src/Views/agenda/index.php). Cores como #860d0d somem no fundo escuro; aqui o texto é
+      clareado misturando a cor com branco. Navegador sem color-mix ignora a declaração e o
+      texto herda a cor normal do tema (legível). */
+html[data-theme="dark"] .agenda-badge { --agenda-cor-texto: color-mix(in srgb, var(--agenda-cor) 40%, #FFFFFF); }
+
+/* 2) Meu perfil, "Aparência": rádios com área de toque de 44px (SAD 14.6). */
+.ui-aparencia label { min-height: 44px; cursor: pointer; }

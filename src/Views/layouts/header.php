@@ -5,6 +5,24 @@
     <meta charset="UTF-8">
     <title><?php echo htmlspecialchars($pageTitle ?? 'JTRO'); ?></title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light dark">
+    <script>
+        // Tema antes de qualquer CSS (evita piscar claro). Escolha do aparelho em
+        // localStorage 'jtro-tema' ('light' | 'dark'); sem escolha, segue o sistema.
+        (function () {
+            var sistema = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
+            window.jtroAplicarTema = function () {
+                var salvo = null;
+                try { salvo = localStorage.getItem('jtro-tema'); } catch (e) { /* sem armazenamento */ }
+                var escuro = salvo === 'dark' || (salvo !== 'light' && !!sistema && sistema.matches);
+                if (escuro) document.documentElement.setAttribute('data-theme', 'dark');
+                else document.documentElement.removeAttribute('data-theme');
+            };
+            window.jtroAplicarTema();
+            if (sistema && sistema.addEventListener) sistema.addEventListener('change', window.jtroAplicarTema);
+            window.addEventListener('storage', function (e) { if (e.key === 'jtro-tema') window.jtroAplicarTema(); });
+        })();
+    </script>
     <meta name="theme-color" content="#092D53">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
