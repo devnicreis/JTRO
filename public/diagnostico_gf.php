@@ -3,14 +3,16 @@
 require_once __DIR__ . '/../src/Core/Auth.php';
 require_once __DIR__ . '/../src/Repositories/GrupoFamiliarRepository.php';
 require_once __DIR__ . '/../src/Repositories/PresencaRepository.php';
+require_once __DIR__ . '/../src/Services/DiagnosticoPresencaService.php';
 
 date_default_timezone_set('America/Sao_Paulo');
 
 Auth::requireLogin();
 Auth::requireSenhaAtualizada();
 
-$grupoRepo    = new GrupoFamiliarRepository();
-$presencaRepo = new PresencaRepository();
+$grupoRepo          = new GrupoFamiliarRepository();
+$presencaRepo       = new PresencaRepository();
+$diagnosticoService = new DiagnosticoPresencaService();
 
 $pageTitle = 'Diagnóstico de GFs - JTRO';
 
@@ -90,22 +92,9 @@ if ($grupoSelecionadoId > 0) {
         $percentual      = (float) $resumoPresenca['percentual_presencas'];
         $totalRegistros  = (int) $resumoPresenca['total_presencas'] + (int) $resumoPresenca['total_ausencias'];
 
-        if ($totalRegistros === 0) {
-            $diagnostico = 'NEUTRO';
-            $diagnosticoClasse = 'diagnostico-neutro';
-        } elseif ($percentual >= 90) {
-            $diagnostico = 'ÓTIMO';
-            $diagnosticoClasse = 'diagnostico-otimo';
-        } elseif ($percentual >= 70) {
-            $diagnostico = 'BOM';
-            $diagnosticoClasse = 'diagnostico-bom';
-        } elseif ($percentual >= 51) {
-            $diagnostico = 'ATENÇÃO';
-            $diagnosticoClasse = 'diagnostico-atencao';
-        } else {
-            $diagnostico = 'ALARMANTE';
-            $diagnosticoClasse = 'diagnostico-alarmante';
-        }
+        $classificacao     = $diagnosticoService->classificar($percentual, $totalRegistros);
+        $diagnostico       = $classificacao['rotulo_maiusculo'];
+        $diagnosticoClasse = 'diagnostico-' . $classificacao['codigo'];
     }
 }
 

@@ -3,16 +3,22 @@
 require_once __DIR__ . '/../Core/Database.php';
 require_once __DIR__ . '/../Models/Presenca.php';
 require_once __DIR__ . '/AvisoRepository.php';
+require_once __DIR__ . '/../Services/DiagnosticoPresencaService.php';
+require_once __DIR__ . '/../Services/CalendarioGfService.php';
 
 class PresencaRepository
 {
     private PDO $connection;
     private AvisoRepository $avisoRepository;
+    private DiagnosticoPresencaService $diagnosticoService;
+    private CalendarioGfService $calendarioGf;
 
     public function __construct()
     {
         $this->connection = Database::getConnection();
         $this->avisoRepository = new AvisoRepository();
+        $this->diagnosticoService = new DiagnosticoPresencaService();
+        $this->calendarioGf = new CalendarioGfService();
     }
 
     private function comprimentoTexto(string $texto): int
@@ -1146,7 +1152,7 @@ class PresencaRepository
         foreach ($grupos as $grupo) {
             $resumo = $this->buscarResumoPresencaPorGrupo((int) $grupo['id']);
             $totalRegistros = (int) $resumo['total_presencas'] + (int) $resumo['total_ausencias'];
-            if ($totalRegistros > 0 && (float) $resumo['percentual_presencas'] < 50) {
+            if ($this->diagnosticoService->ehAlarmante((float) $resumo['percentual_presencas'], $totalRegistros)) {
                 $grupo['resumo_presenca'] = $resumo;
                 $resultado[] = $grupo;
             }
@@ -1182,11 +1188,124 @@ class PresencaRepository
         foreach ($grupos as $grupo) {
             $resumo = $this->buscarResumoPresencaPorGrupo((int) $grupo['id']);
             $totalRegistros = (int) $resumo['total_presencas'] + (int) $resumo['total_ausencias'];
-            if ($totalRegistros > 0 && (float) $resumo['percentual_presencas'] < 50) {
+            if ($this->diagnosticoService->ehAlarmante((float) $resumo['percentual_presencas'], $totalRegistros)) {
                 $grupo['resumo_presenca'] = $resumo;
                 $resultado[] = $grupo;
             }
         }
+        return $resultado;
+    }
+
+    /**
+     * Situação da última reunião prevista de cada GF ativo (ou só dos GFs do líder).
+     * O GF está registrado se existe reunião finalizada dele com data entre
+     * (data prevista − 6 dias) e hoje, inclusive.
+     */
+    public function listarSituacaoUltimaReuniaoPrevista(?int $liderId = null, ?DateTimeImmutable $agora = null): array
+    {
+        $agora = $agora ?? new DateTimeImmutable('now', new DateTimeZone('America/Sao_Paulo'));
+        $hoje = $agora->format('Y-m-d');
+
+        $filtroLider = '';
+        $params = [];
+        if ($liderId !== null) {
+            $filtroLider = 'AND EXISTS (
+                SELECT 1
+                FROM grupo_lideres glf
+                WHERE glf.grupo_familiar_id = gf.id
+                  AND glf.pessoa_id = :lider_id
+            )';
+            $params[':lider_id'] = $liderId;
+        }
+
+        $stmt = $this->connection->prepare("
+            SELECT
+                gf.id,
+                gf.nome,
+                gf.dia_semana,
+                gf.horario,
+                (
+                    SELECT GROUP_CONCAT(p.nome, ', ')
+                    FROM grupo_lideres gl
+                    INNER JOIN pessoas p ON p.id = gl.pessoa_id
+                    WHERE gl.grupo_familiar_id = gf.id
+                      AND p.ativo = 1
+                ) AS lideres
+            FROM grupos_familiares gf
+            WHERE gf.ativo = 1
+              {$filtroLider}
+            ORDER BY gf.nome ASC
+        ");
+        $stmt->execute($params);
+        $grupos = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $resultado = [];
+        $inicioPorGrupo = [];
+        foreach ($grupos as $grupo) {
+            $grupoId = (int) $grupo['id'];
+            $dataPrevista = $this->calendarioGf->dataPrevistaUltimaReuniao(
+                (string) ($grupo['dia_semana'] ?? ''),
+                (string) ($grupo['horario'] ?? ''),
+                $agora
+            );
+
+            if ($dataPrevista !== null) {
+                $inicioPorGrupo[$grupoId] = $dataPrevista->modify('-6 days')->format('Y-m-d');
+            }
+
+            $resultado[] = [
+                'grupo_id' => $grupoId,
+                'nome' => $grupo['nome'],
+                'lideres' => $grupo['lideres'],
+                'dia_semana' => $grupo['dia_semana'],
+                'horario' => $grupo['horario'],
+                'data_prevista' => $dataPrevista?->format('Y-m-d'),
+                'registrada' => false,
+                'reuniao_id' => null,
+            ];
+        }
+
+        if (count($inicioPorGrupo) === 0) {
+            return $resultado;
+        }
+
+        $placeholders = [];
+        $paramsReunioes = [
+            ':inicio' => min($inicioPorGrupo),
+            ':hoje' => $hoje,
+        ];
+        foreach (array_keys($inicioPorGrupo) as $indice => $grupoId) {
+            $placeholders[] = ":grupo_{$indice}";
+            $paramsReunioes[":grupo_{$indice}"] = $grupoId;
+        }
+
+        $stmt = $this->connection->prepare("
+            SELECT r.id, r.grupo_familiar_id, r.data
+            FROM reunioes r
+            WHERE r.finalizada = 1
+              AND r.data BETWEEN :inicio AND :hoje
+              AND r.grupo_familiar_id IN (" . implode(', ', $placeholders) . ")
+            ORDER BY r.data DESC, r.id DESC
+        ");
+        $stmt->execute($paramsReunioes);
+
+        // Primeira reunião (mais recente) de cada GF dentro da janela daquele GF.
+        $reuniaoPorGrupo = [];
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $reuniao) {
+            $grupoId = (int) $reuniao['grupo_familiar_id'];
+            if (!isset($reuniaoPorGrupo[$grupoId]) && $reuniao['data'] >= $inicioPorGrupo[$grupoId]) {
+                $reuniaoPorGrupo[$grupoId] = (int) $reuniao['id'];
+            }
+        }
+
+        foreach ($resultado as &$item) {
+            if (isset($reuniaoPorGrupo[$item['grupo_id']])) {
+                $item['registrada'] = true;
+                $item['reuniao_id'] = $reuniaoPorGrupo[$item['grupo_id']];
+            }
+        }
+        unset($item);
+
         return $resultado;
     }
 
