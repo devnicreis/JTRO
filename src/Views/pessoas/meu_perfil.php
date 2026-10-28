@@ -305,12 +305,18 @@ $cargoLabel = (($pessoa['cargo'] ?? '') === 'admin') ? 'Administrador' : 'Membro
 (function () {
     var secao = document.getElementById('secao-aparencia');
     var opcoes = secao.querySelectorAll('input[name="aparencia"]');
-    var salvo = null;
-    try { salvo = localStorage.getItem('jtro-tema'); } catch (e) { /* sem armazenamento */ }
-    var atual = (salvo === 'light' || salvo === 'dark') ? salvo : 'auto';
+
+    function marcarAtual() {
+        var salvo = null;
+        try { salvo = localStorage.getItem('jtro-tema'); } catch (e) { /* sem armazenamento: vale o automático */ }
+        var atual = (salvo === 'light' || salvo === 'dark') ? salvo : 'auto';
+        opcoes.forEach(function (opcao) { opcao.checked = opcao.value === atual; });
+    }
+    marcarAtual();
+    // Botão de tema do menu lateral (ou outra aba) mudou a escolha: remarca aqui.
+    document.addEventListener('jtro-tema', marcarAtual);
 
     opcoes.forEach(function (opcao) {
-        opcao.checked = opcao.value === atual;
         opcao.addEventListener('change', function () {
             var gravou = true;
             try {

@@ -172,7 +172,11 @@
             if (!e.target.closest('[data-ui-tema]')) return;
             var escuro = html.getAttribute('data-theme') !== 'dark';
             if (escuro) html.setAttribute('data-theme', 'dark'); else html.removeAttribute('data-theme');
-            try { localStorage.setItem('jtro-tema', escuro ? 'dark' : 'light'); } catch (err) { /* ignora */ }
+            var gravou = true;
+            try { localStorage.setItem('jtro-tema', escuro ? 'dark' : 'light'); } catch (err) { gravou = false; }
+            // No sistema, layouts/header.php define jtroAplicarTema: reaplica a partir da chave
+            // salva e avisa a página (evento 'jtro-tema'), mantendo o cartão Aparência em sincronia.
+            if (gravou && window.jtroAplicarTema) window.jtroAplicarTema();
         });
     }
 

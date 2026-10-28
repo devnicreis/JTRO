@@ -17,6 +17,8 @@
                 var escuro = salvo === 'dark' || (salvo !== 'light' && !!sistema && sistema.matches);
                 if (escuro) document.documentElement.setAttribute('data-theme', 'dark');
                 else document.documentElement.removeAttribute('data-theme');
+                // Avisa a página (cartão Aparência do Meu perfil) que o tema foi reaplicado.
+                document.dispatchEvent(new CustomEvent('jtro-tema'));
             };
             window.jtroAplicarTema();
             if (sistema && sistema.addEventListener) sistema.addEventListener('change', window.jtroAplicarTema);
@@ -57,6 +59,7 @@
         <symbol id="i-sair" viewBox="0 0 24 24"><path d="M15 12H4M8 8l-4 4 4 4"/><path d="M10 4h8a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-8"/></symbol>
         <symbol id="i-estrela" viewBox="0 0 24 24"><path d="m12 3 2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.4 6.8 19.1l1-5.8L3.5 9.2l5.9-.9z"/></symbol>
         <symbol id="i-lua" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></symbol>
+        <symbol id="i-sol" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M4.6 4.6 6 6M18 18l1.4 1.4M2.5 12h2M19.5 12h2M4.6 19.4 6 18M18 6l1.4-1.4"/></symbol>
         <symbol id="i-fechar" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
         <symbol id="i-marca" viewBox="0 0 180 180"><circle cx="70" cy="70" r="56"/><circle cx="110" cy="70" r="56"/><circle cx="90" cy="105" r="56"/></symbol>
         <symbol id="i-relogio" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
@@ -255,6 +258,11 @@
             <span class="ui-avatar"><?php echo htmlspecialchars($iniciais); ?></span>
             <span><span class="ui-usuario-nome"><?php echo htmlspecialchars($nomeUsuario); ?></span><span class="ui-usuario-papel"><?php echo htmlspecialchars($perfilUsuario); ?></span></span>
         </a>
+        <!-- Alterna Claro ↔ Escuro (jtro-ui.js); o CSS mostra o destino conforme html[data-theme] -->
+        <button class="ui-sair ui-tema" type="button" data-ui-tema>
+            <span class="ui-tema-para-escuro"><svg class="ui-icon"><use href="#i-lua"/></svg><span><span class="ui-sr-only">Mudar para </span>Tema escuro</span></span>
+            <span class="ui-tema-para-claro"><svg class="ui-icon"><use href="#i-sol"/></svg><span><span class="ui-sr-only">Mudar para </span>Tema claro</span></span>
+        </button>
         <a class="ui-sair" href="/logout.php"><svg class="ui-icon"><use href="#i-sair"/></svg>Sair</a>
     </aside>
 

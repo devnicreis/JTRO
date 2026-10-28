@@ -290,6 +290,12 @@ body.ui-body {
 .ui-usuario-papel { display: block; font-size: 11.5px; color: var(--ui-muted); }
 .ui-sair { display: flex; align-items: center; gap: 10px; min-height: 40px; padding: 0 12px; border-radius: 12px; color: var(--ui-text-2); font-weight: 600; font-size: 13px; }
 .ui-sair:hover { background: var(--ui-surface-2); }
+/* Botão de tema (mesma linha visual do "Sair"): mostra o destino do clique */
+.ui-tema { width: 100%; text-align: left; }
+.ui-tema > span { display: flex; align-items: center; gap: 10px; }
+.ui-tema .ui-tema-para-claro { display: none; }
+html[data-theme="dark"] .ui-tema .ui-tema-para-escuro { display: none; }
+html[data-theme="dark"] .ui-tema .ui-tema-para-claro { display: flex; }
 
 .ui-main {
     margin-left: var(--ui-sidebar-w);
