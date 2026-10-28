@@ -11,7 +11,11 @@ Sistema web para gestão organizacional de igrejas, com foco em grupos familiare
 - Criação automática de reuniões recorrentes
 - Registro de presença e ausência
 - Pedidos de oração por reunião
-- Dashboard administrativo e de líderes
+- Tela Inicial responsiva (celular, tablet e desktop), com versão para o administrador
+  (presença registrada na última reunião prevista de cada GF, contadores, alertas não lidos,
+  próximas reuniões e saúde dos GFs) e para o líder (pendências de presença, próxima reunião,
+  frequência, membros com faltas seguidas, escalas e últimas reuniões)
+- Menu lateral no desktop e barra inferior no celular em todas as telas autenticadas
 - Diagnóstico de grupos (presença, faltas, etc.)
 - Sistema de avisos (alertas e notificações)
 - Auditoria de ações do sistema
@@ -77,8 +81,9 @@ Acesse: http://localhost:8000
 Em desenvolvimento contínuo.
 
 Próximos passos:
-* Melhorias de UI/UX
-* Responsividade
+* Levar o novo visual às demais telas (hoje só o menu e a Tela Inicial foram redesenhados;
+  as outras páginas ganharam o menu novo, mas mantêm o conteúdo antigo)
+* Revisar a responsividade das telas antigas, principalmente tabelas largas no celular
 * Separação mais clara entre frontend/backend
 * API futura
 

@@ -588,9 +588,9 @@ a.ui-linha:hover, .ui-linha--clicavel:hover { background: var(--ui-surface-2); }
 }
 
 /* ---------- 13. Compatibilidade com app.css ----------
-   app.css continua carregado ANTES deste arquivo e nenhuma regra dele foi apagada.
-   As regras de .jtro-layout/.jtro-main/.jtro-sidebar e .mobile-nav-* não afetam mais
-   o shell porque essas classes saíram do header.php. O que ainda interfere:
+   app.css continua carregado ANTES deste arquivo. As regras do shell antigo
+   (.jtro-layout/.jtro-main/.jtro-sidebar, .mobile-nav-*, menu .nav-*/.sidebar-*) e as
+   da tela inicial antiga foram apagadas na limpeza final. O que ainda interfere:
 
    1) app.css: "button:not(.nav-item):not(.nav-item-trigger)...:not([class*=" ql-"])"
       (especificidade 0,8,1) pinta todo <button> de azul, com padding 9px 20px,
@@ -600,7 +600,9 @@ a.ui-linha:hover, .ui-linha--clicavel:hover { background: var(--ui-surface-2); }
       valores do shell são reafirmados com !important. Desde a Tela Inicial nova a
       regra global de app.css exclui [class^="ui-"] e [class*=" ui-"] (era a única forma
       de as abas, o "marcar como lido" e os .ui-btn em <button> não ficarem azuis sem
-      !important), então os blocos abaixo ficaram redundantes; saem na limpeza final. */
+      !important). Os blocos abaixo continuam porque o reset ":where(.ui-body) button"
+      não zera o padding nem o border-radius padrão do <button>; tirá-los exige
+      conferência visual do X da gaveta e do "Mais". */
 .ui-sidebar .ui-gaveta-fechar {
     display: none !important;
     padding: 0 !important;
@@ -644,9 +646,9 @@ a.ui-linha:hover, .ui-linha--clicavel:hover { background: var(--ui-surface-2); }
 :where(main) h4:not(:where(.ui-page *)) { color: var(--color-text-primary); }
 :where(main) a:not(:where(.ui-page *)) { color: var(--color-blue); }
 
-/* 4) Impressão: src/Views/cartas/visualizar.php escondia .jtro-sidebar e zerava a margem
-      de .jtro-main no @media print. Sem isso, o menu, a topbar e a barra inferior (fixa)
-      sairiam no papel e o conteúdo ficaria deslocado 272px. Vale para todas as telas. */
+/* 4) Impressão: sem isso, o menu, a topbar e a barra inferior (fixa) sairiam no papel e
+      o conteúdo ficaria deslocado 272px. Vale para todas as telas;
+      src/Views/cartas/visualizar.php ainda devolve 20px de respiro em .ui-main. */
 @media print {
     .ui-sidebar, .ui-topbar, .ui-bottomnav, .ui-overlay { display: none !important; }
     .ui-main { margin-left: 0 !important; padding: 0 !important; }

@@ -108,8 +108,8 @@ $dataExtenso = $ts ? date('j', $ts) . ' de ' . $meses[date('n',$ts)-1] . ' de ' 
 
 <style>
 @media print {
-    .jtro-sidebar, .page-header a, button, .botao-link { display: none !important; }
-    .jtro-main { margin-left: 0 !important; padding: 20px !important; }
+    .page-header a, button, .botao-link { display: none !important; }
+    .ui-main { margin-left: 0 !important; padding: 20px !important; }
     .carta-visualizar-wrap { max-width: 100% !important; }
 }
 </style>
